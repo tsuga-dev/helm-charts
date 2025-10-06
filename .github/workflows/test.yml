@@ -2,11 +2,11 @@ name: Test OpenTelemetry Helm Chart
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
     paths:
       - 'charts/opentelemetry-kube-stack/**'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
     paths:
       - 'charts/opentelemetry-kube-stack/**'
 

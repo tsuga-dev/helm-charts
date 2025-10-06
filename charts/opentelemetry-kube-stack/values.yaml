@@ -45,22 +45,14 @@ tsuga:
 # Secret configuration
 secret:
   # Create a secret for OpenTelemetry configuration
-  create: true
-  # Name of the secret
+  # If true: create secret with values from command line
+  # If false: don't create secret, use existing secret with default name and keyMapping
+  create: false
+  # Name of the secret (used when create=true or as fallback when create=false)
   name: "otel-secret"
-  # Use existing secret instead of creating a new one
-  # When enabled, the chart will reference an existing secret instead of creating one
-  existing:
-    enabled: false
-    name: ""
-    # Key mapping for existing secret
-    # Maps chart expected keys to keys in the existing secret
-    keyMapping:
-      TSUGA_API_KEY: "api-key"
-      TSUGA_OTLP_ENDPOINT: "otlp-endpoint"
-  # Secret key naming conventions
-  # Standardized key names for consistent secret management
-  keys:
+  # Key mapping for existing secret (used when create=false)
+  # Maps chart expected keys to keys in the existing secret
+  keyMapping:
     TSUGA_API_KEY: "TSUGA_API_KEY"
     TSUGA_OTLP_ENDPOINT: "TSUGA_OTLP_ENDPOINT"
   # Validation settings

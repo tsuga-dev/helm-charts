@@ -1,5 +1,4 @@
 {{- if .Values.cluster.enabled }}
-{{- include "opentelemetry-kube-stack.validateSecretValues" . }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector

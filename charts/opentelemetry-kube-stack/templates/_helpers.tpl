@@ -65,11 +65,7 @@ Create the name of the service account to use
 Get the secret name to use
 */}}
 {{- define "opentelemetry-kube-stack.secretName" -}}
-{{- if .Values.secret.existing.enabled }}
-{{- .Values.secret.existing.name }}
-{{- else }}
 {{- .Values.secret.name | default "otel-secret" }}
-{{- end }}
 {{- end }}
 
 {{/*
@@ -77,10 +73,10 @@ Get the secret key for a given key name
 */}}
 {{- define "opentelemetry-kube-stack.secretKey" -}}
 {{- $keyName := .keyName -}}
-{{- if .Values.secret.existing.enabled }}
-{{- index .Values.secret.existing.keyMapping $keyName | default $keyName }}
+{{- if .Values.secret.create }}
+{{- $keyName }}
 {{- else }}
-{{- index .Values.secret.keys $keyName | default $keyName }}
+{{- index .Values.secret.keyMapping $keyName | default $keyName }}
 {{- end }}
 {{- end }}
 
@@ -88,7 +84,7 @@ Get the secret key for a given key name
 Validate that required secret values are provided
 */}}
 {{- define "opentelemetry-kube-stack.validateSecretValues" -}}
-{{- if and .Values.secret.validation.requireMandatoryKeys (not .Values.secret.existing.enabled) }}
+{{- if and .Values.secret.validation.requireMandatoryKeys .Values.secret.create }}
 {{- $missingKeys := list }}
 {{- if not .Values.tsuga.apiKey }}
   {{- $missingKeys = append $missingKeys "TSUGA_API_KEY" }}

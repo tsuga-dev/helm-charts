@@ -2,11 +2,7 @@
 OpenTelemetry Kubernetes Stack - Post-Installation Guide
 */}}
 
-{{- if .Values.secret.existing.enabled }}
-{{- $secretName := .Values.secret.existing.name }}
-{{- else }}
-{{- $secretName := .Values.secret.name | default "otel-secret" }}
-{{- end }}
+{{- $secretName := include "opentelemetry-kube-stack.secretName" . }}
 
 {{- $fullname := include "opentelemetry-kube-stack.fullname" . }}
 
