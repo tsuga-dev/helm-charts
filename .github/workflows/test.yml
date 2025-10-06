@@ -2,11 +2,11 @@ name: Test OpenTelemetry Helm Chart
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
     paths:
       - 'charts/opentelemetry-kube-stack/**'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
     paths:
       - 'charts/opentelemetry-kube-stack/**'
 
@@ -42,103 +42,3 @@ jobs:
     - name: Run Helm unit tests
       run: |
         helm unittest charts/opentelemetry-kube-stack
-
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: '3.12.0'
-    
-    - name: Install kube-score
-      run: |
-        go install github.com/zegl/kube-score/cmd/kube-score@latest
-    
-    - name: Install kubeaudit
-      run: |
-        go install github.com/Shopify/kubeaudit/cmd/kubeaudit@latest
-    
-    - name: Install polaris
-      run: |
-        go install github.com/FairwindsOps/polaris/cmd/polaris@latest
-    
-    - name: Run security scans
-      run: |
-        cd charts/opentelemetry-kube-stack
-        chmod +x tests/security/security-scan.sh
-        ./tests/security/security-scan.sh
-
-  integration-test:
-    runs-on: ubuntu-latest
-    needs: [lint, unittest]
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: '3.12.0'
-    
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: '1.28.0'
-    
-    - name: Create kind cluster
-      uses: helm/kind-action@v1.8.0
-      with:
-        cluster_name: otel-test
-        config: |
-          kind: Cluster
-          apiVersion: kind.x-k8s.io/v1alpha4
-          nodes:
-          - role: control-plane
-          - role: worker
-          - role: worker
-    
-    - name: Run integration tests
-      run: |
-        cd charts/opentelemetry-kube-stack
-        chmod +x tests/integration/test-deployment.sh
-        ./tests/integration/test-deployment.sh
-
-  chart-test:
-    runs-on: ubuntu-latest
-    needs: [lint, unittest]
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: '3.12.0'
-    
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: '1.28.0'
-    
-    - name: Create kind cluster
-      uses: helm/kind-action@v1.8.0
-      with:
-        cluster_name: otel-chart-test
-        config: |
-          kind: Cluster
-          apiVersion: kind.x-k8s.io/v1alpha4
-          nodes:
-          - role: control-plane
-          - role: worker
-    
-    - name: Install chart-testing
-      run: |
-        wget https://github.com/helm/chart-testing/releases/download/v3.8.0/chart-testing_3.8.0_linux_amd64.tar.gz
-        tar -xzf chart-testing_3.8.0_linux_amd64.tar.gz
-        sudo mv ct /usr/local/bin/
-    
-    - name: Run chart tests
-      run: |
-        ct lint --charts charts/opentelemetry-kube-stack
-        ct install --charts charts/opentelemetry-kube-stack

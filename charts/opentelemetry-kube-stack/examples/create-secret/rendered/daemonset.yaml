@@ -1,13 +1,15 @@
 ---
-# Source: opentelemetry-kube-stack/templates/deamonset.yaml
+# Source: opentelemetry-kube-stack/templates/daemonset.yaml
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: opentelemetry-kube-stak-opentelemetry-kube-stack-agent
+  name: example-opentelemetry-kube-stack-agent
   labels:
     app.kubernetes.io/name: opentelemetry-kube-stack
-    app.kubernetes.io/instance: opentelemetry-kube-stak
+    app.kubernetes.io/instance: example
     app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: opentelemetry-kube-stack
+    app.kubernetes.io/managed-by: Helm
 spec:
   mode: daemonset
   hostNetwork: true
@@ -33,10 +35,13 @@ spec:
     - name: varlibdockercontainers
       hostPath:
         path: /var/lib/docker/containers
-  serviceAccount: opentelemetry-kube-stak-opentelemetry-kube-stack
+  serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
-      value: https://intake.astronomical-oak.tsuga.com:443/api/v1/otlp
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_OTLP_ENDPOINT
     - name: MY_POD_IP
       valueFrom:
         fieldRef:
