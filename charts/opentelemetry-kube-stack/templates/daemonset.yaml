@@ -1,0 +1,91 @@
+{{- if .Values.agent.enabled }}
+{{- include "opentelemetry-kube-stack.validateSecretValues" . }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-agent
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "agent" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+spec:
+  mode: daemonset
+  hostNetwork: {{ .Values.agent.hostNetwork }}
+  image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  {{- if or .Values.agent.resources .Values.resources }}
+  resources:
+    {{- if .Values.agent.resources }}
+    {{- toYaml .Values.agent.resources | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.resources | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.agent.nodeSelector .Values.nodeSelector }}
+  nodeSelector:
+    {{- if .Values.agent.nodeSelector }}
+    {{- toYaml .Values.agent.nodeSelector | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.nodeSelector | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.agent.tolerations .Values.tolerations }}
+  tolerations:
+    {{- if .Values.agent.tolerations }}
+    {{- toYaml .Values.agent.tolerations | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.tolerations | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.agent.collectKubernetesLogs }}
+  volumeMounts:
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+  volumes:    
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
+  {{- end }}
+  {{- if or .Values.agent.affinity .Values.affinity }}
+  affinity:
+    {{- if .Values.agent.affinity }}
+    {{- toYaml .Values.agent.affinity | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.affinity | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.serviceAccount.create }}
+  serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- end }}
+  env:
+    {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    {{- if .Values.agent.extraEnvs }}
+    {{- toYaml .Values.agent.extraEnvs | nindent 4 }}
+    {{- end }}
+  config:
+    connectors:
+      spanmetrics: {}
+      {{- if and .Values.agent.config .Values.agent.config.connectors }}
+      {{- toYaml .Values.agent.config.connectors | nindent 6 }}
+      {{- end }}
+    extensions:
+      {{- include "opentelemetry-kube-stack.agentExtensions" . | nindent 6 }}
+    exporters:
+      {{- include "opentelemetry-kube-stack.agentExporters" . | nindent 6 }}
+    receivers:
+      {{- include "opentelemetry-kube-stack.agentReceivers" . | nindent 6 }}
+    processors:
+      {{- include "opentelemetry-kube-stack.agentProcessors" . | nindent 6 }}
+    service:
+      extensions:
+      {{- include "opentelemetry-kube-stack.serviceExtensions" . | nindent 6 }}
+      pipelines:
+        {{- include "opentelemetry-kube-stack.agentServicePipelines" . | nindent 8 }}
+      telemetry:
+        {{- include "opentelemetry-kube-stack.telemetryConfig" . | nindent 6 }}
+{{- end }}

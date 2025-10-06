@@ -1,0 +1,19 @@
+suite: cluster-receiver tests
+templates:
+  - cluster-receiver.yaml
+tests:
+  - it: should create deployment with default values
+    set:
+      cluster.enabled: true
+      serviceAccount.create: true
+      serviceAccount.name: ""
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"

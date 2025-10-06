@@ -1,0 +1,14 @@
+suite: rbac tests
+templates:
+  - rbac.yaml
+tests:
+  - it: should create cluster role and role binding
+    set:
+      rbac.create: true
+      serviceAccount.create: true
+      serviceAccount.name: ""
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 2

@@ -1,0 +1,22 @@
+# Agent-only configuration
+tsuga:
+  otlpEndpoint: "https://test-endpoint.com"
+  apiKey: "test-api-key"
+
+secret:
+  create: true
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+
+agent:
+  enabled: true
+  hostNetwork: true
+  collectOtelLogs: true
+  collectKubernetesLogs: true
+
+cluster:
+  enabled: false

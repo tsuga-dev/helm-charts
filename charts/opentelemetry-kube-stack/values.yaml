@@ -1,0 +1,296 @@
+# =============================================================================
+# SECURITY NOTICE: This values.yaml file has been sanitized for security
+# =============================================================================
+# 
+# IMPORTANT SECURITY GUIDELINES:
+# 1. Never commit sensitive credentials (API keys, passwords, tokens) to version control
+# 2. Use --set flags to provide sensitive values at deployment time
+# 3. Consider using external secret management systems (e.g., Sealed Secrets, External Secrets Operator)
+# 4. Use Kubernetes secrets for sensitive configuration data
+# 5. Rotate credentials regularly and use least-privilege access
+#
+# SECRET MANAGEMENT OPTIONS:
+# 
+# Option 1: Generate new secret (default)
+# helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
+#   --set tsuga.apiKey="your-api-key-here"
+#
+# Option 2: Use existing secret
+# helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set secret.existing.enabled=true \
+#   --set secret.existing.name="my-existing-secret" \
+#   --set secret.existing.keyMapping.TSUGA_API_KEY="api-key" \
+#   --set secret.existing.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
+#
+# Option 3: External secret management (recommended for production)
+# - Use Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
+# - Use External Secrets Operator: https://external-secrets.io/
+# - Use HashiCorp Vault with External Secrets Operator
+#
+# =============================================================================
+
+# Tsuga configuration
+# SECURITY WARNING: Never commit sensitive credentials to version control
+# Provide these values via --set flags or external secrets management
+tsuga:
+  # Tsuga OTLP endpoint for telemetry data
+  # Set via: --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com"
+  otlpEndpoint: ""
+  # Tsuga API key for authentication
+  # Set via: --set tsuga.apiKey="your-api-key-here"
+  # Or use external secrets: --set tsuga.apiKey=""
+  apiKey: ""
+
+# Secret configuration
+secret:
+  # Create a secret for OpenTelemetry configuration
+  create: true
+  # Name of the secret
+  name: "otel-secret"
+  # Use existing secret instead of creating a new one
+  # When enabled, the chart will reference an existing secret instead of creating one
+  existing:
+    enabled: false
+    name: ""
+    # Key mapping for existing secret
+    # Maps chart expected keys to keys in the existing secret
+    keyMapping:
+      TSUGA_API_KEY: "api-key"
+      TSUGA_OTLP_ENDPOINT: "otlp-endpoint"
+  # Secret key naming conventions
+  # Standardized key names for consistent secret management
+  keys:
+    TSUGA_API_KEY: "TSUGA_API_KEY"
+    TSUGA_OTLP_ENDPOINT: "TSUGA_OTLP_ENDPOINT"
+  # Validation settings
+  validation:
+    # Require all mandatory keys to be present
+    requireMandatoryKeys: true
+    # Mandatory keys that must be present in the secret
+    mandatoryKeys:
+      - "TSUGA_API_KEY"
+      - "TSUGA_OTLP_ENDPOINT"
+
+# OpenTelemetry Collector configuration
+# Recommended pattern: Deploy both agent (DaemonSet) and Kubernetes Cluster Receiver (Deployment)
+cluster:
+  # Enable gateway deployment
+  enabled: true
+  # OpenTelemetry Collector image (defaults to contrib distribution)
+  image: ""
+  # Extra environment variables for gateway (in addition to automatic secret env vars)
+  extraEnvs: []
+  # Note: All secret.data and secret.stringData entries are automatically added as environment variables
+  # Gateway collector configuration
+  config:
+    # receivers:
+    #   k8s_cluster:
+    #     collection_interval: 10s
+    # exporters:
+    #   debug: {}
+    #   otlphttp/tsuga:
+    #     endpoint: ${TSUGA_OTLP_ENDPOINT}
+    #     headers:
+    #       Authorization: Bearer ${TSUGA_API_KEY}
+    # processors:
+    # service:
+    #   pipelines:
+    #     metrics:
+    #       receivers:
+    #       - k8s_cluster
+    #       exporters:
+    #       - otlphttp/tsuga
+    #     logs/entity_events:
+    #       receivers:
+    #       - k8s_cluster
+    #       exporters:
+    #       - otlphttp/tsuga
+    #   telemetry:
+    
+# Agent (DaemonSet) configuration
+agent:
+  # Enable agent daemonset
+  enabled: true
+  # Enable host network for agent
+  hostNetwork: true
+  # OpenTelemetry Collector image (defaults to contrib distribution)
+  image: ""
+  # Extra environment variables for agent (in addition to automatic secret env vars)
+  extraEnvs: []
+  
+  # Collect OpenTelemetry logs
+  collectOtelLogs: true
+
+  # Collect Kubernetes logs
+  collectKubernetesLogs: true
+  # Agent collector configuration
+  config:
+    # connectors:
+    #   spanmetrics: {}
+    # extensions:
+    #   health_check:
+    #     endpoint: ${env:MY_POD_IP}:13133
+    # exporters:
+    #   otlphttp/tsuga:
+    #     endpoint: ${TSUGA_OTLP_ENDPOINT}
+    #     headers:
+    #       Authorization: Bearer ${TSUGA_API_KEY}
+    # receivers:
+    #   filelog:
+    #     include:
+    #     - /var/log/pods/*/*/*.log
+    #     include_file_name: false
+    #     include_file_path: true
+    #     operators:
+    #     - id: container-parser
+    #       max_log_size: 102400
+    #       type: container
+    #     retry_on_failure:
+    #       enabled: true
+    #     start_at: end
+    #   jaeger:
+    #     protocols:
+    #       grpc:
+    #         endpoint: ${env:MY_POD_IP}:14250
+    #       thrift_compact:
+    #         endpoint: ${env:MY_POD_IP}:6831
+    #       thrift_http:
+    #         endpoint: ${env:MY_POD_IP}:14268
+    #   kubeletstats:
+    #     insecure_skip_verify: true
+    #     auth_type: serviceAccount
+    #     collection_interval: 20s
+    #     endpoint: ${env:K8S_NODE_NAME}:10250
+    #   otlp:
+    #     protocols:
+    #       grpc:
+    #         endpoint: ${env:MY_POD_IP}:4317
+    #       http:
+    #         endpoint: ${env:MY_POD_IP}:4318
+    #   prometheus:
+    #     config:
+    #       scrape_configs:
+    #       - job_name: opentelemetry-collector
+    #         scrape_interval: 10s
+    #         static_configs:
+    #         - targets:
+    #           - ${env:MY_POD_IP}:8888
+    #   zipkin:
+    #     endpoint: ${env:MY_POD_IP}:9411
+    # processors:
+    #   batch: {}
+    #   k8sattributes:
+    #     extract:
+    #       metadata:
+    #       - k8s.namespace.name
+    #       - k8s.deployment.name
+    #       - k8s.statefulset.name
+    #       - k8s.daemonset.name
+    #       - k8s.cronjob.name
+    #       - k8s.job.name
+    #       - k8s.node.name
+    #       - k8s.pod.name
+    #       - k8s.pod.uid
+    #       - k8s.pod.start_time
+    #       - k8s.node.name
+    #     filter:
+    #       node_from_env_var: K8S_NODE_NAME
+    #     passthrough: false
+    #     pod_association:
+    #     - sources:
+    #       - from: resource_attribute
+    #         name: k8s.pod.ip
+    #     - sources:
+    #       - from: resource_attribute
+    #         name: k8s.pod.uid
+    #     - sources:
+    #       - from: connection
+    #   memory_limiter:
+    #     check_interval: 5s
+    #     limit_percentage: 80
+    #     spike_limit_percentage: 25
+    # service:
+    #   extensions:
+    #   - health_check
+    #   pipelines:
+    #     logs:
+    #       exporters:
+    #       - otlphttp/tsuga
+    #       processors:
+    #       - k8sattributes
+    #       - memory_limiter
+    #       - batch
+    #       receivers:
+    #       - otlp
+    #       - filelog
+    #     metrics:
+    #       exporters:
+    #       - otlphttp/tsuga
+    #       processors:
+    #       - k8sattributes
+    #       - memory_limiter
+    #       - batch
+    #       receivers:
+    #       - otlp
+    #       - prometheus
+    #       - kubeletstats
+    #       - spanmetrics
+    #     traces:
+    #       exporters:
+    #       - otlphttp/tsuga
+    #       - spanmetrics
+    #       processors:
+    #       - k8sattributes
+    #       - memory_limiter
+    #       - batch
+    #       receivers:
+    #       - otlp
+    #       - jaeger
+    #       - zipkin
+    #   telemetry:
+    #     metrics:
+    #       readers:
+    #       - pull:
+    #           exporter:
+    #             prometheus:
+    #               host: ${env:MY_POD_IP}
+    #               port: 8888
+    
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Node selector for daemonset mode
+nodeSelector: {}
+
+# Tolerations for daemonset mode
+tolerations: []
+
+# Affinity rules
+affinity: {}
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# RBAC configuration
+rbac:
+  create: true
+
+# Resource naming validation
+validation:
+  # Enable resource name validation
+  enabled: true
+  # Maximum length for resource names (Kubernetes limit is 63)
+  maxNameLength: 63
+  # Validate naming conventions
+  enforceNamingConventions: true

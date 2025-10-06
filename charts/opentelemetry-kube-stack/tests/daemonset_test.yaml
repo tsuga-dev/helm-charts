@@ -1,0 +1,23 @@
+suite: daemonset tests
+templates:
+  - daemonset.yaml
+tests:
+  - it: should create daemonset with default values
+    set:
+      agent.enabled: true
+      agent.hostNetwork: true
+      serviceAccount.create: true
+      serviceAccount.name: ""
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.hostNetwork
+          value: true
+      - equal:
+          path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"

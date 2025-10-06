@@ -1,0 +1,50 @@
+# Production configuration with resource limits and security
+tsuga:
+  otlpEndpoint: "https://prod-endpoint.com"
+  apiKey: "prod-api-key"
+
+secret:
+  create: true
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/otel-role"
+
+rbac:
+  create: true
+
+agent:
+  enabled: true
+  hostNetwork: true
+  collectOtelLogs: true
+  collectKubernetesLogs: true
+
+cluster:
+  enabled: true
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+          - linux

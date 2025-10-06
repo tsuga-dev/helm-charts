@@ -1,0 +1,51 @@
+{{- if .Values.cluster.enabled }}
+{{- include "opentelemetry-kube-stack.validateSecretValues" . }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-cluster-receiver
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "cluster-receiver" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+spec:
+  mode: deployment
+  image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  {{- if .Values.resources }}
+  resources:
+    {{- toYaml .Values.resources | nindent 4 }}
+  {{- end }}
+  {{- if .Values.nodeSelector }}
+  nodeSelector:
+    {{- toYaml .Values.nodeSelector | nindent 4 }}
+  {{- end }}
+  {{- if .Values.tolerations }}
+  tolerations:
+    {{- toYaml .Values.tolerations | nindent 4 }}
+  {{- end }}
+  {{- if .Values.affinity }}
+  affinity:
+    {{- toYaml .Values.affinity | nindent 4 }}
+  {{- end }}
+  {{- if .Values.serviceAccount.create }}
+  serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- end }}
+  env:
+    {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    {{- if .Values.cluster.extraEnvs }}
+    {{- toYaml .Values.cluster.extraEnvs | nindent 4 }}
+    {{- end }}
+  config:
+    receivers:
+      {{- include "opentelemetry-kube-stack.clusterReceivers" . | nindent 6 }}
+    exporters:
+      {{- include "opentelemetry-kube-stack.clusterExporters" . | nindent 6 }}
+    processors:
+      {{- include "opentelemetry-kube-stack.clusterProcessors" . | nindent 6 }}
+    service:
+      pipelines:
+        {{- include "opentelemetry-kube-stack.clusterServicePipelines" . | nindent 8 }}
+      telemetry:
+        {{- if and .Values.cluster.config .Values.cluster.config.telemetry }}
+        {{- toYaml .Values.cluster.config.telemetry | nindent 6 }}
+        {{- end }}
+{{- end }}

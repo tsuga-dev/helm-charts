@@ -1,0 +1,58 @@
+{{/*
+OpenTelemetry Kubernetes Stack - Post-Installation Guide
+*/}}
+
+{{- if .Values.secret.existing.enabled }}
+{{- $secretName := .Values.secret.existing.name }}
+{{- else }}
+{{- $secretName := .Values.secret.name | default "otel-secret" }}
+{{- end }}
+
+{{- $fullname := include "opentelemetry-kube-stack.fullname" . }}
+
+🎉 OpenTelemetry Kubernetes Stack Deployed Successfully!
+
+Release: {{ .Release.Name }} | Namespace: {{ .Release.Namespace }} | Version: {{ .Chart.Version }}
+
+=============================================================================
+📊 STATUS CHECK
+=============================================================================
+
+# Check all pods
+kubectl get pods -l app.kubernetes.io/name={{ include "opentelemetry-kube-stack.name" . }} -n {{ .Release.Namespace }}
+
+{{- if .Values.agent.enabled }}
+# Check agent DaemonSet
+kubectl get daemonset {{ $fullname }}-agent -n {{ .Release.Namespace }}
+{{- end }}
+
+{{- if .Values.cluster.enabled }}
+# Check cluster receiver
+kubectl get deployment {{ $fullname }}-cluster-receiver -n {{ .Release.Namespace }}
+{{- end }}
+
+# Check secret
+kubectl get secret {{ $secretName }} -n {{ .Release.Namespace }}
+
+=============================================================================
+📋 LOGS & TROUBLESHOOTING
+=============================================================================
+
+# View logs
+kubectl logs -l app.kubernetes.io/name={{ include "opentelemetry-kube-stack.name" . }} -n {{ .Release.Namespace }} --tail=50
+
+# Check for issues
+kubectl describe pods -l app.kubernetes.io/name={{ include "opentelemetry-kube-stack.name" . }} -n {{ .Release.Namespace }}
+
+# Verify configuration
+kubectl exec -l app.kubernetes.io/name={{ include "opentelemetry-kube-stack.name" . }} -n {{ .Release.Namespace }} -- env | grep -E "(TSUGA_|OTEL_)"
+
+=============================================================================
+📚 DOCUMENTATION
+=============================================================================
+
+- OpenTelemetry Collector: https://opentelemetry.io/docs/collector/
+- Kubernetes Operator: https://github.com/open-telemetry/opentelemetry-operator
+- Support: https://github.com/open-telemetry/opentelemetry-operator/issues
+
+✅ Deployment Complete! Check logs to verify data flow to your Tsuga endpoint.
