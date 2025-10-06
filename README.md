@@ -10,7 +10,7 @@ Helm's [documentation](https://helm.sh/docs) to get started.
 Once Helm has been set up correctly, add the repo as follows:
 
 ```bash
-helm repo add otel-charts https://antoninbruneau.github.io/otel_charts
+helm repo add otel-charts https://tsuga-dev.github.io/helm-charts/
 ```
 
 If you had already added this repo earlier, run `helm repo update` to retrieve
@@ -20,7 +20,7 @@ otel-charts` to see the charts.
 To install the opentelemetry-kube-stack chart:
 
 ```bash
-helm install my-opentelemetry-kube-stack otel-charts/opentelemetry-kube-stack
+helm install my-opentelemetry-kube-stack helm-charts/opentelemetry-kube-stack
 ```
 
 To uninstall the chart:
@@ -35,7 +35,7 @@ helm uninstall my-opentelemetry-kube-stack
 
 ## Chart Repository
 
-The charts are published to: https://antoninbruneau.github.io/otel_charts
+The charts are published to: https://tsuga-dev.github.io/helm-charts/
 
 ## Contributing
 
