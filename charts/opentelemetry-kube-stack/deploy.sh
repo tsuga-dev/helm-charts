@@ -338,6 +338,10 @@ deploy_helm_chart() {
     if [[ -n "$OTEL_API_KEY" ]]; then
         helm_args="$helm_args --set tsuga.apiKey=\"$OTEL_API_KEY\""
     fi
+
+    if [[ -n "$OTEL_ENDPOINT" && -n "$OTEL_API_KEY" ]]; then
+        helm_args="$helm_args --set secret.create=true"
+    fi
     
     # Check if release already exists
     if helm list -n "$NAMESPACE" | grep -q "$RELEASE_NAME"; then

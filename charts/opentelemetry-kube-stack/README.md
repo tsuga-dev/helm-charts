@@ -9,8 +9,6 @@ A comprehensive Helm chart for deploying OpenTelemetry collectors with the Kuber
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Security Considerations](#security-considerations)
-- [Usage Examples](#usage-examples)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -67,11 +65,12 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 
 ```bash
 # Add the repository
-helm repo add opentelemetry-stack https://your-repo-url
+helm repo add tsuga-charts https://tsuga-dev.github.io/helm-charts/
 helm repo update
 
 # Install with Tsuga configuration
-helm install my-otel-stack opentelemetry-stack/opentelemetry-kube-stack \
+helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set secret.create=true \
   --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
   --set tsuga.apiKey="your-api-key-here"
 ```
@@ -81,6 +80,7 @@ helm install my-otel-stack opentelemetry-stack/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
+  --set secret.create=true \
   --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
   --set tsuga.apiKey="your-api-key-here"
 ```
@@ -118,10 +118,8 @@ The following table lists all configurable parameters and their default values:
 |-----------|-------------|---------|
 | `secret.create` | Create a secret for OpenTelemetry configuration | `true` |
 | `secret.name` | Name of the secret | `"otel-secret"` |
-| `secret.existing.enabled` | Use existing secret instead of creating one | `false` |
-| `secret.existing.name` | Name of existing secret | `""` |
-| `secret.existing.keyMapping.TSUGA_API_KEY` | Key mapping for API key in existing secret | `"api-key"` |
-| `secret.existing.keyMapping.TSUGA_OTLP_ENDPOINT` | Key mapping for endpoint in existing secret | `"otlp-endpoint"` |
+| `secret.keyMapping.TSUGA_API_KEY` | Key mapping for API key in existing secret | `"TSUGA_API_KEY"` |
+| `secret.keyMapping.TSUGA_OTLP_ENDPOINT` | Key mapping for endpoint in existing secret | `"TSUGA_OTLP_ENDPOINT"` |
 | `secret.validation.requireMandatoryKeys` | Require all mandatory keys to be present | `true` |
 | `secret.validation.mandatoryKeys` | List of mandatory keys | `["TSUGA_API_KEY", "TSUGA_OTLP_ENDPOINT"]` |
 
@@ -232,172 +230,6 @@ The chart provides intelligent defaults for production use:
 **Service Pipelines:**
 - **Traces**: `otlp`, `jaeger` → `memory_limiter`, `resource`, `batch` → `otlp`, `debug`
 - **Metrics**: `otlp` → `memory_limiter`, `resource`, `batch` → `otlp`, `debug`
-
-## Security Considerations
-
-### Credential Management
-
-**Never commit sensitive credentials to version control.** Use one of these secure methods:
-
-#### 1. Command Line Flags (Recommended for Development)
-```bash
-helm install my-otel-stack ./opentelemetry-kube-stack \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
-```
-
-#### 2. External Secret Management (Recommended for Production)
-
-**Sealed Secrets:**
-```bash
-# Create sealed secret
-kubectl create secret generic otel-secret \
-  --from-literal=TSUGA_API_KEY="your-api-key" \
-  --from-literal=TSUGA_OTLP_ENDPOINT="https://your-endpoint.com" \
-  --dry-run=client -o yaml | kubeseal -o yaml > sealed-secret.yaml
-
-# Deploy with existing secret
-helm install my-otel-stack ./opentelemetry-kube-stack \
-  --set secret.existing.enabled=true \
-  --set secret.existing.name="otel-secret"
-```
-
-## Usage Examples
-
-### Basic Deployment (Both Agent and Cluster Receiver)
-
-```yaml
-# values.yaml
-tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
-
-# Both components enabled by default
-agent:
-  enabled: true
-  hostNetwork: true
-  collectOtelLogs: true
-  collectKubernetesLogs: true
-
-cluster:
-  enabled: true
-```
-
-### Agent-Only Deployment
-
-```yaml
-# values.yaml
-tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
-
-# Disable cluster receiver, only deploy agents
-agent:
-  enabled: true
-  hostNetwork: true
-  collectOtelLogs: true
-  collectKubernetesLogs: true
-
-cluster:
-  enabled: false
-```
-
-### Cluster Receiver Only
-
-```yaml
-# values.yaml
-tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
-
-# Disable agent, only deploy cluster receiver
-agent:
-  enabled: false
-
-cluster:
-  enabled: true
-```
-
-### Custom Configuration
-
-```yaml
-# values.yaml
-tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
-
-# Custom agent configuration
-agent:
-  enabled: true
-  hostNetwork: true
-  collectOtelLogs: true
-  collectKubernetesLogs: true
-  config:
-    receivers:
-      hostmetrics:
-        root_path: /hostfs
-        scrapers: [cpu, memory, disk, network]
-      otlp:
-        protocols:
-          grpc: {}
-    processors:
-      batch: {}
-      memory_limiter:
-        limit_mib: 512
-    exporters:
-      otlp:
-        endpoint: "http://cluster-receiver:4317"
-    service:
-      pipelines:
-        metrics:
-          receivers: [hostmetrics]
-          processors: [memory_limiter, batch]
-          exporters: [otlp]
-
-# Custom cluster receiver configuration
-cluster:
-  enabled: true
-  config:
-    receivers:
-      otlp:
-        protocols:
-          grpc: {}
-          http: {}
-    processors:
-      batch: {}
-      memory_limiter:
-        limit_mib: 1024
-    exporters:
-      otlp:
-        endpoint: "https://your-backend:4317"
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [otlp]
-```
-
-### External Secret Management
-
-```yaml
-# values.yaml
-# Use existing secret instead of creating one
-secret:
-  create: false
-  existing:
-    enabled: true
-    name: "otel-secret"
-    keyMapping:
-      TSUGA_API_KEY: "api-key"
-      TSUGA_OTLP_ENDPOINT: "otlp-endpoint"
-
-agent:
-  enabled: true
-
-cluster:
-  enabled: true
-```
 
 ## Contributing
 
