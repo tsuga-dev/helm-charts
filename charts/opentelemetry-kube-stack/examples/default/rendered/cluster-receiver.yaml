@@ -43,6 +43,7 @@ spec:
       k8s_cluster:
         collection_interval: 10s
     exporters:
+      
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:

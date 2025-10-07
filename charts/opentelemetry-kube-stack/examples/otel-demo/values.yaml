@@ -1,0 +1,39 @@
+agent:
+  config:
+    extraReceivers:
+      nginx:
+        collection_interval: 10s
+        endpoint: http://image-provider:8081/status
+      postgresql:
+        endpoint: postgresql:5432
+        metrics:
+          postgresql.blks_hit:
+            enabled: true
+          postgresql.blks_read:
+            enabled: true
+          postgresql.deadlocks:
+            enabled: true
+          postgresql.tup_deleted:
+            enabled: true
+          postgresql.tup_fetched:
+            enabled: true
+          postgresql.tup_inserted:
+            enabled: true
+          postgresql.tup_returned:
+            enabled: true
+          postgresql.tup_updated:
+            enabled: true
+        password: otel
+        tls:
+          insecure: true
+        username: root
+      redis:
+        collection_interval: 10s
+        endpoint: valkey-cart:6379
+        username: valkey
+    service:
+      pipelines:
+        metrics:
+          extraReceivers:
+            - postgresql
+            - redis

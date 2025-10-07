@@ -59,6 +59,7 @@ spec:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
     exporters:
+      
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:

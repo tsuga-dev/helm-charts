@@ -139,6 +139,15 @@ The following table lists all configurable parameters and their default values:
 | `agent.tolerations` | Agent-specific tolerations | `[]` (inherits from global) |
 | `agent.affinity` | Agent-specific affinity rules | `{}` (inherits from global) |
 
+**Configuration Behavior:**
+- **`agent.config.receivers`**: Completely replaces the default receivers (filelog, jaeger, kubeletstats, otlp, prometheus, zipkin)
+- **`agent.config.extraReceivers`**: Adds additional receivers to the default ones
+- **`agent.config.processors`**: Completely replaces the default processors (batch, k8sattributes, memory_limiter)
+- **`agent.config.extraProcessors`**: Adds additional processors to the default ones
+- **`agent.config.exporters`**: Completely replaces the default exporters (otlphttp/tsuga)
+- **`agent.config.extraExporters`**: Adds additional exporters to the default ones
+- The same pattern applies to pipeline components: `extraReceivers`, `extraProcessors`, `extraExporters` can be used within specific pipeline configurations
+
 #### Cluster Receiver Configuration
 
 | Parameter | Description | Default |
@@ -147,6 +156,15 @@ The following table lists all configurable parameters and their default values:
 | `cluster.image` | OpenTelemetry Collector image | `""` (uses default) |
 | `cluster.extraEnvs` | Additional environment variables | `[]` |
 | `cluster.config` | Cluster receiver configuration | See values.yaml |
+
+**Configuration Behavior:**
+- **`cluster.config.receivers`**: Completely replaces the default receivers (k8s_cluster)
+- **`cluster.config.extraReceivers`**: Adds additional receivers to the default ones
+- **`cluster.config.processors`**: Completely replaces the default processors (none by default)
+- **`cluster.config.extraProcessors`**: Adds additional processors to the default ones
+- **`cluster.config.exporters`**: Completely replaces the default exporters (otlphttp/tsuga)
+- **`cluster.config.extraExporters`**: Adds additional exporters to the default ones
+- The same pattern applies to pipeline components: `extraReceivers`, `extraProcessors`, `extraExporters` can be used within specific pipeline configurations
 
 #### Resource Management
 
