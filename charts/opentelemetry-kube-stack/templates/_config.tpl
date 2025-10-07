@@ -124,6 +124,9 @@ prometheus:
         - ${env:MY_POD_IP}:8888
 zipkin:
   endpoint: ${env:MY_POD_IP}:9411
+{{- if and .Values.agent.config .Values.agent.config.extraReceivers }}
+{{- toYaml .Values.agent.config.extraReceivers | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -138,6 +141,9 @@ Generate OpenTelemetry Cluster receivers configuration
 {{- else }}
 k8s_cluster:
   collection_interval: 10s
+{{- if and .Values.cluster.config .Values.cluster.config.extraReceivers }}
+{{- toYaml .Values.cluster.config.extraReceivers | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -156,9 +162,13 @@ otlphttp/tsuga:
 Generate OpenTelemetry Agent exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.agentExporters" -}}
-{{include "opentelemetry-kube-stack.tsugaExporters" .}}
 {{- if and .Values.agent.config .Values.agent.config.exporters }}
 {{- toYaml .Values.agent.config.exporters | nindent 0 }}
+{{- else }}
+{{include "opentelemetry-kube-stack.tsugaExporters" .}}
+{{- if and .Values.agent.config .Values.agent.config.extraExporters }}
+{{- toYaml .Values.agent.config.extraExporters | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -166,9 +176,13 @@ Generate OpenTelemetry Agent exporters configuration
 Generate OpenTelemetry Cluster exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.clusterExporters" -}}
-{{include "opentelemetry-kube-stack.tsugaExporters" .}}
 {{- if and .Values.cluster.config .Values.cluster.config.exporters }}
 {{- toYaml .Values.cluster.config.exporters | nindent 0 }}
+{{- else }}
+{{include "opentelemetry-kube-stack.tsugaExporters" .}}
+{{- if and .Values.cluster.config .Values.cluster.config.extraExporters }}
+{{- toYaml .Values.cluster.config.extraExporters | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -212,6 +226,9 @@ memory_limiter:
   check_interval: 5s
   limit_percentage: 80
   spike_limit_percentage: 25
+{{- if and .Values.agent.config .Values.agent.config.extraProcessors }}
+{{- toYaml .Values.agent.config.extraProcessors | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -223,6 +240,10 @@ Generate OpenTelemetry Cluster processors configuration
 {{- if eq .Values.cluster.enabled true }}
 {{- if and .Values.cluster.config .Values.cluster.config.processors }}
 {{- toYaml .Values.cluster.config.processors | nindent 0 }}
+{{- else }}
+{{- if and .Values.cluster.config .Values.cluster.config.extraProcessors }}
+{{- toYaml .Values.cluster.config.extraProcessors | nindent 0 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -239,6 +260,9 @@ logs:
   {{- toYaml .Values.agent.config.service.pipelines.logs.exporters | nindent 2 }}
   {{- else }}
   - otlphttp/tsuga
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraExporters }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraExporters | nindent 2 }}
+  {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.processors }}
@@ -247,6 +271,9 @@ logs:
   - k8sattributes
   - memory_limiter
   - batch
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraProcessors }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraProcessors | nindent 2 }}
+  {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.receivers }}
@@ -254,6 +281,9 @@ logs:
   {{- else }}
   - otlp
   - filelog
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraReceivers }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraReceivers | nindent 2 }}
+  {{- end }}
   {{- end }}
 metrics:
   exporters:
@@ -261,6 +291,9 @@ metrics:
   {{- toYaml .Values.agent.config.service.pipelines.metrics.exporters | nindent 2 }}
   {{- else }}
   - otlphttp/tsuga
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraExporters }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraExporters | nindent 2 }}
+  {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.processors }}
@@ -269,6 +302,9 @@ metrics:
   - k8sattributes
   - memory_limiter
   - batch
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraProcessors }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraProcessors | nindent 2 }}
+  {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.receivers }}
@@ -278,6 +314,9 @@ metrics:
   - prometheus
   - kubeletstats
   - spanmetrics
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraReceivers }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraReceivers | nindent 2 }}
+  {{- end }}
   {{- end }}
 traces:
   exporters:
@@ -286,6 +325,9 @@ traces:
   {{- else }}
   - otlphttp/tsuga
   - spanmetrics
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraExporters }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraExporters | nindent 2 }}
+  {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.processors }}
@@ -294,6 +336,9 @@ traces:
   - k8sattributes
   - memory_limiter
   - batch
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraProcessors }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraProcessors | nindent 2 }}
+  {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.receivers }}
@@ -302,6 +347,9 @@ traces:
   - otlp
   - jaeger
   - zipkin
+  {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraReceivers }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraReceivers | nindent 2 }}
+  {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}
@@ -320,12 +368,18 @@ metrics:
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.receivers | nindent 2 }}
   {{- else }}
   - k8s_cluster
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.extraReceivers }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraReceivers | nindent 2 }}
+  {{- end}}
   {{- end }}
   exporters:
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.exporters }}
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.exporters | nindent 2 }}
   {{- else }}
   - otlphttp/tsuga
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.extraExporters }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraExporters | nindent 2 }}
+  {{- end}}
   {{- end }}
 logs/entity_events:
   receivers:
@@ -333,12 +387,18 @@ logs/entity_events:
   {{- toYaml .Values.cluster.config.service.pipelines.logs.receivers | nindent 2 }}
   {{- else }}
   - k8s_cluster
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.extraReceivers }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.extraReceivers | nindent 2 }}
+  {{- end}}
   {{- end }}
   exporters:
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.exporters }}
   {{- toYaml .Values.cluster.config.service.pipelines.logs.exporters | nindent 2 }}
   {{- else }}
   - otlphttp/tsuga
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.extraExporters }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.extraExporters | nindent 2 }}
+  {{- end}}
   {{- end }}
 {{- end }}
 {{- end }}
