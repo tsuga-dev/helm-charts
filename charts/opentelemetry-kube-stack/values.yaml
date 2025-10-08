@@ -116,6 +116,13 @@ agent:
 
   # Collect Kubernetes logs
   collectKubernetesLogs: true
+
+  # Collect Host Network
+  collectNetwork: false
+
+  # Collect Host Processes
+  collectProcesses: false
+  
   # Agent collector configuration
   config:
     # connectors:

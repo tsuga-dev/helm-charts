@@ -27,6 +27,10 @@ NAMESPACE=""
 OTEL_ENDPOINT=""
 OTEL_API_KEY=""
 
+# Global variables for collection settings
+COLLECT_NETWORK=""
+COLLECT_PROCESSES=""
+
 # Function to print colored output
 print_status() {
     local color=$1
@@ -205,6 +209,67 @@ configure_tsuga_settings() {
     echo ""
 }
 
+# Function to configure collection settings
+configure_collection_settings() {
+    print_step "0.6" "Collection Settings Configuration"
+    
+    echo -e "${YELLOW}Configure what data to collect from your Kubernetes nodes.${NC}"
+    echo -e "${BLUE}These settings control additional host-level metrics collection.${NC}"
+    echo ""
+    
+    # Ask about network collection
+    echo -e "${CYAN}Network Metrics Collection:${NC}"
+    echo -e "${BLUE}Collect network interface statistics, connection counts, and network errors.${NC}"
+    echo -e "${YELLOW}This provides insights into network performance and connectivity issues.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Collect network metrics? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            COLLECT_NETWORK="true"
+            print_status $GREEN "✅ Network metrics collection enabled"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]] || [[ -z "$REPLY" ]]; then
+            COLLECT_NETWORK="false"
+            print_status $YELLOW "⚠️  Network metrics collection disabled"
+            break
+        else
+            print_status $RED "❌ Please answer with 'y' for yes or 'n' for no"
+        fi
+    done
+    
+    echo ""
+    
+    # Ask about process collection
+    echo -e "${CYAN}Process Metrics Collection:${NC}"
+    echo -e "${BLUE}Collect process-level metrics including CPU, memory, and disk usage.${NC}"
+    echo -e "${YELLOW}This provides detailed insights into running processes and resource consumption.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Collect process metrics? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            COLLECT_PROCESSES="true"
+            print_status $GREEN "✅ Process metrics collection enabled"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]] || [[ -z "$REPLY" ]]; then
+            COLLECT_PROCESSES="false"
+            print_status $YELLOW "⚠️  Process metrics collection disabled"
+            break
+        else
+            print_status $RED "❌ Please answer with 'y' for yes or 'n' for no"
+        fi
+    done
+    
+    # Show final collection settings
+    echo -e "\n${BLUE}Final Collection Settings:${NC}"
+    echo -e "  Network Metrics: ${CYAN}${COLLECT_NETWORK}${NC}"
+    echo -e "  Process Metrics: ${CYAN}${COLLECT_PROCESSES}${NC}"
+    echo ""
+}
+
 # Function to check and display current Kubernetes context
 check_kubectl_context() {
     print_step "1" "Checking Kubernetes Context"
@@ -343,6 +408,15 @@ deploy_helm_chart() {
         helm_args="$helm_args --set secret.create=true"
     fi
     
+    # Add collection settings if configured
+    if [[ -n "$COLLECT_NETWORK" ]]; then
+        helm_args="$helm_args --set agent.collectNetwork=$COLLECT_NETWORK"
+    fi
+    
+    if [[ -n "$COLLECT_PROCESSES" ]]; then
+        helm_args="$helm_args --set agent.collectProcesses=$COLLECT_PROCESSES"
+    fi
+    
     # Check if release already exists
     if helm list -n "$NAMESPACE" | grep -q "$RELEASE_NAME"; then
         print_status $YELLOW "⚠️  Release '$RELEASE_NAME' already exists in namespace '$NAMESPACE'"
@@ -363,13 +437,24 @@ deploy_helm_chart() {
     
     # Show the command being executed
     if [[ -n "$helm_args" ]]; then
-        print_status $BLUE "Using Tsuga configuration from user input"
+        print_status $BLUE "Using configuration from user input"
         # Mask API key in displayed command
         local masked_cmd="$helm_cmd"
         if [[ -n "$OTEL_API_KEY" ]]; then
             masked_cmd=$(echo "$helm_cmd" | sed "s/--set tsuga\.apiKey=\"[^\"]*\"/--set tsuga.apiKey=\"[MASKED]\"/")
         fi
         echo -e "${CYAN}Helm command: $masked_cmd${NC}"
+        
+        # Show collection settings summary
+        if [[ -n "$COLLECT_NETWORK" ]] || [[ -n "$COLLECT_PROCESSES" ]]; then
+            echo -e "\n${BLUE}Collection Settings:${NC}"
+            if [[ -n "$COLLECT_NETWORK" ]]; then
+                echo -e "  Network Metrics: ${CYAN}${COLLECT_NETWORK}${NC}"
+            fi
+            if [[ -n "$COLLECT_PROCESSES" ]]; then
+                echo -e "  Process Metrics: ${CYAN}${COLLECT_PROCESSES}${NC}"
+            fi
+        fi
     fi
     
     # Execute the Helm command
@@ -425,6 +510,9 @@ main() {
     
     # Configure OpenTelemetry settings
     configure_tsuga_settings
+    
+    # Configure collection settings
+    configure_collection_settings
     
     # Check prerequisites
     check_kubectl

@@ -64,4 +64,3 @@ spec:
           - k8s_cluster
           exporters:
           - otlphttp/tsuga
-      telemetry:

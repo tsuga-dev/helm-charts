@@ -43,8 +43,8 @@ spec:
     service:
       pipelines:
         {{- include "opentelemetry-kube-stack.clusterServicePipelines" . | nindent 8 }}
+      {{- if and .Values.cluster.config .Values.cluster.config.telemetry }}
       telemetry:
-        {{- if and .Values.cluster.config .Values.cluster.config.telemetry }}
-        {{- toYaml .Values.cluster.config.telemetry | nindent 6 }}
-        {{- end }}
+        {{- toYaml .Values.cluster.config.telemetry | nindent 8 }}
+      {{- end }}
 {{- end }}
