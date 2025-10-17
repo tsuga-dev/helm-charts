@@ -65,7 +65,6 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
-          - k8sattributes
           - resource
         logs/entity_events:
           receivers:
