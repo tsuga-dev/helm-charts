@@ -429,7 +429,6 @@ metrics:
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.processors }}
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.processors | nindent 2 }}
   {{- else }}
-  - k8sattributes
   - resource
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.extraProcessors }}
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraProcessors | nindent 2 }}
