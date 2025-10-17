@@ -254,6 +254,12 @@ memory_limiter:
   check_interval: 5s
   limit_percentage: 80
   spike_limit_percentage: 25
+cumulativetodelta: {}
+resource:
+  attributes:
+  - key: k8s.cluster.name
+    value: {{ .Values.clusterName }}
+    action: upsert
 {{- if and .Values.agent.config .Values.agent.config.extraProcessors }}
 {{- toYaml .Values.agent.config.extraProcessors | nindent 0 }}
 {{- end }}
@@ -269,6 +275,11 @@ Generate OpenTelemetry Cluster processors configuration
 {{- if and .Values.cluster.config .Values.cluster.config.processors }}
 {{- toYaml .Values.cluster.config.processors | nindent 0 }}
 {{- else }}
+resource:
+  attributes:
+  - key: k8s.cluster.name
+    value: {{ .Values.clusterName }}
+    action: upsert
 {{- if and .Values.cluster.config .Values.cluster.config.extraProcessors }}
 {{- toYaml .Values.cluster.config.extraProcessors | nindent 0 }}
 {{- end }}
@@ -299,6 +310,7 @@ logs:
     - k8sattributes
     - memory_limiter
     - batch
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraProcessors }}
   {{- toYaml .Values.agent.config.service.pipelines.logs.extraProcessors | nindent 4 }}
   {{- end }}
@@ -330,6 +342,8 @@ metrics:
     - k8sattributes
     - memory_limiter
     - batch
+    - cumulativetodelta
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraProcessors }}
   {{- toYaml .Values.agent.config.service.pipelines.metrics.extraProcessors | nindent 4 }}
   {{- end }}
@@ -365,6 +379,7 @@ traces:
     - k8sattributes
     - memory_limiter
     - batch
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraProcessors }}
   {{- toYaml .Values.agent.config.service.pipelines.traces.extraProcessors | nindent 4 }}
   {{- end }}
@@ -410,6 +425,16 @@ metrics:
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraExporters | nindent 2 }}
   {{- end}}
   {{- end }}
+  processors:
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.processors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.processors | nindent 2 }}
+  {{- else }}
+  - k8sattributes
+  - resource
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.extraProcessors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraProcessors | nindent 2 }}
+  {{- end }}
+  {{- end }}
 logs/entity_events:
   receivers:
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.receivers }}
@@ -429,7 +454,14 @@ logs/entity_events:
   {{- toYaml .Values.cluster.config.service.pipelines.logs.extraExporters | nindent 2 }}
   {{- end}}
   {{- end }}
+  processors:
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.processors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.processors | nindent 2 }}
+  {{- else }}
+  - resource
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.extraProcessors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.extraProcessors | nindent 2 }}
+  {{- end}}
+  {{- end }}
 {{- end }}
 {{- end }}
-
-

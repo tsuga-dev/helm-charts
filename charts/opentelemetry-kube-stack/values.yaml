@@ -30,6 +30,10 @@
 #
 # =============================================================================
 
+# Cluster name
+# The name of the cluster to be used in the resource attributes
+clusterName: ""
+
 # Tsuga configuration
 # SECURITY WARNING: Never commit sensitive credentials to version control
 # Provide these values via --set flags or external secrets management

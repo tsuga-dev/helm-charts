@@ -31,6 +31,9 @@ OTEL_API_KEY=""
 COLLECT_NETWORK=""
 COLLECT_PROCESSES=""
 
+# Global variable for cluster name
+CLUSTER_NAME=""
+
 # Function to print colored output
 print_status() {
     local color=$1
@@ -270,6 +273,35 @@ configure_collection_settings() {
     echo ""
 }
 
+# Function to get cluster name from user
+get_cluster_name() {
+    print_step "0.7" "Cluster Name Configuration"
+    
+    echo -e "${YELLOW}Please specify the name of your Kubernetes cluster.${NC}"
+    echo -e "${BLUE}This will be used as a resource attribute in your telemetry data.${NC}"
+    echo -e "${CYAN}This helps identify which cluster the data is coming from.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Enter cluster name: " -r input_cluster_name
+        if [[ -n "$input_cluster_name" ]]; then
+            # Validate cluster name format (alphanumeric, hyphens, underscores)
+            if [[ "$input_cluster_name" =~ ^[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?$ ]]; then
+                CLUSTER_NAME="$input_cluster_name"
+                break
+            else
+                print_status $RED "❌ Invalid cluster name format. Use alphanumeric characters, hyphens, and underscores only."
+                echo -e "${YELLOW}Valid format: letters, numbers, hyphens, and underscores (not starting/ending with hyphen or underscore)${NC}"
+            fi
+        else
+            print_status $RED "❌ Cluster name cannot be empty"
+        fi
+    done
+    
+    print_status $GREEN "✅ Using cluster name: $CLUSTER_NAME"
+    echo ""
+}
+
 # Function to check and display current Kubernetes context
 check_kubectl_context() {
     print_step "1" "Checking Kubernetes Context"
@@ -417,6 +449,11 @@ deploy_helm_chart() {
         helm_args="$helm_args --set agent.collectProcesses=$COLLECT_PROCESSES"
     fi
     
+    # Add cluster name if provided
+    if [[ -n "$CLUSTER_NAME" ]]; then
+        helm_args="$helm_args --set clusterName=\"$CLUSTER_NAME\""
+    fi
+    
     # Check if release already exists
     if helm list -n "$NAMESPACE" | grep -q "$RELEASE_NAME"; then
         print_status $YELLOW "⚠️  Release '$RELEASE_NAME' already exists in namespace '$NAMESPACE'"
@@ -446,8 +483,11 @@ deploy_helm_chart() {
         echo -e "${CYAN}Helm command: $masked_cmd${NC}"
         
         # Show collection settings summary
-        if [[ -n "$COLLECT_NETWORK" ]] || [[ -n "$COLLECT_PROCESSES" ]]; then
-            echo -e "\n${BLUE}Collection Settings:${NC}"
+        if [[ -n "$COLLECT_NETWORK" ]] || [[ -n "$COLLECT_PROCESSES" ]] || [[ -n "$CLUSTER_NAME" ]]; then
+            echo -e "\n${BLUE}Configuration Summary:${NC}"
+            if [[ -n "$CLUSTER_NAME" ]]; then
+                echo -e "  Cluster Name: ${CYAN}${CLUSTER_NAME}${NC}"
+            fi
             if [[ -n "$COLLECT_NETWORK" ]]; then
                 echo -e "  Network Metrics: ${CYAN}${COLLECT_NETWORK}${NC}"
             fi
@@ -513,6 +553,9 @@ main() {
     
     # Configure collection settings
     configure_collection_settings
+    
+    # Get cluster name
+    get_cluster_name
     
     # Check prerequisites
     check_kubectl

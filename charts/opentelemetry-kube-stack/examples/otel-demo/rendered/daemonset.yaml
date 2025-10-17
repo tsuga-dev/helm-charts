@@ -191,6 +191,12 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      cumulativetodelta: {}
+      resource:
+        attributes:
+        - key: k8s.cluster.name
+          value: 
+          action: upsert
     service:
       extensions:
       - health_check
@@ -204,6 +210,7 @@ spec:
             - k8sattributes
             - memory_limiter
             - batch
+            - resource
           receivers:
             - otlp
             - filelog
@@ -214,6 +221,8 @@ spec:
             - k8sattributes
             - memory_limiter
             - batch
+            - cumulativetodelta
+            - resource
           receivers:
             - otlp
             - prometheus
@@ -231,6 +240,7 @@ spec:
             - k8sattributes
             - memory_limiter
             - batch
+            - resource
           receivers:
             - otlp
             - jaeger
