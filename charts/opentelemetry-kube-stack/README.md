@@ -133,6 +133,8 @@ The following table lists all configurable parameters and their default values:
 | `agent.extraEnvs` | Additional environment variables | `[]` |
 | `agent.collectOtelLogs` | Collect OpenTelemetry logs | `true` |
 | `agent.collectKubernetesLogs` | Collect Kubernetes logs | `true` |
+| `agent.collectNetwork` | Collect host network metrics | `false` |
+| `agent.collectProcesses` | Collect host process metrics | `false` |
 | `agent.config` | Agent collector configuration | See values.yaml |
 | `agent.resources` | Agent-specific resource limits | `{}` (inherits from global) |
 | `agent.nodeSelector` | Agent-specific node selector | `{}` (inherits from global) |

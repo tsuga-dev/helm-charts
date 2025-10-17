@@ -50,6 +50,11 @@ spec:
           Authorization: Bearer ${TSUGA_API_KEY}
     processors:
       
+      resource:
+        attributes:
+        - key: k8s.cluster.name
+          value: 
+          action: upsert
     service:
       pipelines:
         
@@ -59,9 +64,13 @@ spec:
           - k8s_cluster
           exporters:
           - otlphttp/tsuga
+          processors:
+          - k8sattributes
+          - resource
         logs/entity_events:
           receivers:
           - k8s_cluster
           exporters:
           - otlphttp/tsuga
-      telemetry:
+          processors:
+          - resource

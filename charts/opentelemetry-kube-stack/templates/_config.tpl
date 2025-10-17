@@ -61,11 +61,11 @@ Generate OpenTelemetry Agent telemetry configuration
 {{- else }}
 metrics:
   readers:
-  - pull:
-      exporter:
-        prometheus:
-          host: ${env:MY_POD_IP}
-          port: 8888
+    - pull:
+        exporter:
+          prometheus:
+            host: ${env:MY_POD_IP}
+            port: 8888
 {{- end }}
 {{- end }}
 
@@ -81,7 +81,7 @@ Generate OpenTelemetry Agent receivers configuration
 filelog:
   exclude: []
   include:
-  - /var/log/pods/*/*/*.log
+    - /var/log/pods/*/*/*.log
 {{- if eq .Values.agent.collectOtelLogs false}}
   exclude:
   - /var/log/pods/*/otel-collector/*.log
@@ -89,9 +89,9 @@ filelog:
   include_file_name: false
   include_file_path: true
   operators:
-  - id: container-parser
-    max_log_size: 102400
-    type: container
+    - id: container-parser
+      max_log_size: 102400
+      type: container
   retry_on_failure:
     enabled: true
   start_at: end
@@ -108,6 +108,34 @@ kubeletstats:
   auth_type: serviceAccount
   collection_interval: 20s
   endpoint: ${env:K8S_NODE_NAME}:10250
+hostmetrics:
+  collection_interval: 10s
+  scrapers:
+    paging:
+      metrics:
+        system.paging.utilization:
+          enabled: true
+    cpu:
+      metrics:
+        system.cpu.utilization:
+          enabled: true
+    disk:
+    filesystem:
+      metrics:
+        system.filesystem.utilization:
+          enabled: true
+    load:
+    memory:
+    {{- if .Values.agent.collectNetwork }}
+    network:
+    {{- end }}
+    {{- if .Values.agent.collectProcesses }}
+    processes:
+    process:
+      metrics:
+        process.uptime:
+          enabled: true
+    {{- end }}
 otlp:
   protocols:
     grpc:
@@ -117,11 +145,11 @@ otlp:
 prometheus:
   config:
     scrape_configs:
-    - job_name: opentelemetry-collector
-      scrape_interval: 10s
-      static_configs:
-      - targets:
-        - ${env:MY_POD_IP}:8888
+      - job_name: opentelemetry-collector
+        scrape_interval: 10s
+        static_configs:
+          - targets:
+              - ${env:MY_POD_IP}:8888
 zipkin:
   endpoint: ${env:MY_POD_IP}:9411
 {{- if and .Values.agent.config .Values.agent.config.extraReceivers }}
@@ -199,33 +227,39 @@ batch: {}
 k8sattributes:
   extract:
     metadata:
-    - k8s.namespace.name
-    - k8s.deployment.name
-    - k8s.statefulset.name
-    - k8s.daemonset.name
-    - k8s.cronjob.name
-    - k8s.job.name
-    - k8s.node.name
-    - k8s.pod.name
-    - k8s.pod.uid
-    - k8s.pod.start_time
-    - k8s.node.name
+      - k8s.namespace.name
+      - k8s.deployment.name
+      - k8s.statefulset.name
+      - k8s.daemonset.name
+      - k8s.cronjob.name
+      - k8s.job.name
+      - k8s.node.name
+      - k8s.pod.name
+      - k8s.pod.uid
+      - k8s.pod.start_time
+      - k8s.node.name
   filter:
     node_from_env_var: K8S_NODE_NAME
   passthrough: false
   pod_association:
-  - sources:
-    - from: resource_attribute
-      name: k8s.pod.ip
-  - sources:
-    - from: resource_attribute
-      name: k8s.pod.uid
-  - sources:
-    - from: connection
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.ip
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.uid
+    - sources:
+      - from: connection
 memory_limiter:
   check_interval: 5s
   limit_percentage: 80
   spike_limit_percentage: 25
+cumulativetodelta: {}
+resource:
+  attributes:
+  - key: k8s.cluster.name
+    value: {{ .Values.clusterName }}
+    action: upsert
 {{- if and .Values.agent.config .Values.agent.config.extraProcessors }}
 {{- toYaml .Values.agent.config.extraProcessors | nindent 0 }}
 {{- end }}
@@ -241,6 +275,11 @@ Generate OpenTelemetry Cluster processors configuration
 {{- if and .Values.cluster.config .Values.cluster.config.processors }}
 {{- toYaml .Values.cluster.config.processors | nindent 0 }}
 {{- else }}
+resource:
+  attributes:
+  - key: k8s.cluster.name
+    value: {{ .Values.clusterName }}
+    action: upsert
 {{- if and .Values.cluster.config .Values.cluster.config.extraProcessors }}
 {{- toYaml .Values.cluster.config.extraProcessors | nindent 0 }}
 {{- end }}
@@ -257,98 +296,103 @@ Generate OpenTelemetry Agent service pipelines
 logs:
   exporters:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.exporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.exporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.exporters | nindent 4 }}
   {{- else }}
-  - otlphttp/tsuga
+    - otlphttp/tsuga
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraExporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.extraExporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraExporters | nindent 4 }}
   {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.processors }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.processors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.processors | nindent 4}}
   {{- else }}
-  - k8sattributes
-  - memory_limiter
-  - batch
+    - k8sattributes
+    - memory_limiter
+    - batch
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraProcessors }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.extraProcessors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraProcessors | nindent 4 }}
   {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.receivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.receivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.receivers | nindent 4 }}
   {{- else }}
-  - otlp
-  - filelog
+    - otlp
+    - filelog
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.logs .Values.agent.config.service.pipelines.logs.extraReceivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.logs.extraReceivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.logs.extraReceivers | nindent 4 }}
   {{- end }}
   {{- end }}
 metrics:
   exporters:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.exporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.exporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.exporters | nindent 4 }}
   {{- else }}
-  - otlphttp/tsuga
+    - otlphttp/tsuga
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraExporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraExporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraExporters | nindent 4 }}
   {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.processors }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.processors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.processors | nindent 4 }}
   {{- else }}
-  - k8sattributes
-  - memory_limiter
-  - batch
+    - k8sattributes
+    - memory_limiter
+    - batch
+    - cumulativetodelta
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraProcessors }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraProcessors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraProcessors | nindent 4 }}
   {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.receivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.receivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.receivers | nindent 4 }}
   {{- else }}
-  - otlp
-  - prometheus
-  - kubeletstats
-  - spanmetrics
+    - otlp
+    - prometheus
+    - kubeletstats
+    - spanmetrics
+    - hostmetrics
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.metrics .Values.agent.config.service.pipelines.metrics.extraReceivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraReceivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.metrics.extraReceivers | nindent 4 }}
   {{- end }}
   {{- end }}
 traces:
   exporters:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.exporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.exporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.exporters | nindent 4 }}
   {{- else }}
-  - otlphttp/tsuga
-  - spanmetrics
+    - otlphttp/tsuga
+    - spanmetrics
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraExporters }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.extraExporters | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraExporters | nindent 4 }}
   {{- end }}
   {{- end }}
   processors:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.processors }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.processors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.processors | nindent 4 }}
   {{- else }}
-  - k8sattributes
-  - memory_limiter
-  - batch
+    - k8sattributes
+    - memory_limiter
+    - batch
+    - resource
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraProcessors }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.extraProcessors | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraProcessors | nindent 4 }}
   {{- end }}
   {{- end }}
   receivers:
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.receivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.receivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.receivers | nindent 4 }}
   {{- else }}
-  - otlp
-  - jaeger
-  - zipkin
+    - otlp
+    - jaeger
+    - zipkin
   {{- if and .Values.agent.config .Values.agent.config.service .Values.agent.config.service.pipelines .Values.agent.config.service.pipelines.traces .Values.agent.config.service.pipelines.traces.extraReceivers }}
-  {{- toYaml .Values.agent.config.service.pipelines.traces.extraReceivers | nindent 2 }}
+  {{- toYaml .Values.agent.config.service.pipelines.traces.extraReceivers | nindent 4 }}
   {{- end }}
   {{- end }}
 {{- end }}
@@ -381,6 +425,16 @@ metrics:
   {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraExporters | nindent 2 }}
   {{- end}}
   {{- end }}
+  processors:
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.processors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.processors | nindent 2 }}
+  {{- else }}
+  - k8sattributes
+  - resource
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.metrics .Values.cluster.config.service.pipelines.metrics.extraProcessors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.metrics.extraProcessors | nindent 2 }}
+  {{- end }}
+  {{- end }}
 logs/entity_events:
   receivers:
   {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.receivers }}
@@ -400,7 +454,14 @@ logs/entity_events:
   {{- toYaml .Values.cluster.config.service.pipelines.logs.extraExporters | nindent 2 }}
   {{- end}}
   {{- end }}
+  processors:
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.processors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.processors | nindent 2 }}
+  {{- else }}
+  - resource
+  {{- if and .Values.cluster.config .Values.cluster.config.service .Values.cluster.config.service.pipelines .Values.cluster.config.service.pipelines.logs .Values.cluster.config.service.pipelines.logs.extraProcessors }}
+  {{- toYaml .Values.cluster.config.service.pipelines.logs.extraProcessors | nindent 2 }}
+  {{- end}}
+  {{- end }}
 {{- end }}
 {{- end }}
-
-

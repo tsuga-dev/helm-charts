@@ -27,6 +27,13 @@ NAMESPACE=""
 OTEL_ENDPOINT=""
 OTEL_API_KEY=""
 
+# Global variables for collection settings
+COLLECT_NETWORK=""
+COLLECT_PROCESSES=""
+
+# Global variable for cluster name
+CLUSTER_NAME=""
+
 # Function to print colored output
 print_status() {
     local color=$1
@@ -205,6 +212,96 @@ configure_tsuga_settings() {
     echo ""
 }
 
+# Function to configure collection settings
+configure_collection_settings() {
+    print_step "0.6" "Collection Settings Configuration"
+    
+    echo -e "${YELLOW}Configure what data to collect from your Kubernetes nodes.${NC}"
+    echo -e "${BLUE}These settings control additional host-level metrics collection.${NC}"
+    echo ""
+    
+    # Ask about network collection
+    echo -e "${CYAN}Network Metrics Collection:${NC}"
+    echo -e "${BLUE}Collect network interface statistics, connection counts, and network errors.${NC}"
+    echo -e "${YELLOW}This provides insights into network performance and connectivity issues.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Collect network metrics? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            COLLECT_NETWORK="true"
+            print_status $GREEN "✅ Network metrics collection enabled"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]] || [[ -z "$REPLY" ]]; then
+            COLLECT_NETWORK="false"
+            print_status $YELLOW "⚠️  Network metrics collection disabled"
+            break
+        else
+            print_status $RED "❌ Please answer with 'y' for yes or 'n' for no"
+        fi
+    done
+    
+    echo ""
+    
+    # Ask about process collection
+    echo -e "${CYAN}Process Metrics Collection:${NC}"
+    echo -e "${BLUE}Collect process-level metrics including CPU, memory, and disk usage.${NC}"
+    echo -e "${YELLOW}This provides detailed insights into running processes and resource consumption.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Collect process metrics? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            COLLECT_PROCESSES="true"
+            print_status $GREEN "✅ Process metrics collection enabled"
+            break
+        elif [[ $REPLY =~ ^[Nn]$ ]] || [[ -z "$REPLY" ]]; then
+            COLLECT_PROCESSES="false"
+            print_status $YELLOW "⚠️  Process metrics collection disabled"
+            break
+        else
+            print_status $RED "❌ Please answer with 'y' for yes or 'n' for no"
+        fi
+    done
+    
+    # Show final collection settings
+    echo -e "\n${BLUE}Final Collection Settings:${NC}"
+    echo -e "  Network Metrics: ${CYAN}${COLLECT_NETWORK}${NC}"
+    echo -e "  Process Metrics: ${CYAN}${COLLECT_PROCESSES}${NC}"
+    echo ""
+}
+
+# Function to get cluster name from user
+get_cluster_name() {
+    print_step "0.7" "Cluster Name Configuration"
+    
+    echo -e "${YELLOW}Please specify the name of your Kubernetes cluster.${NC}"
+    echo -e "${BLUE}This will be used as a resource attribute in your telemetry data.${NC}"
+    echo -e "${CYAN}This helps identify which cluster the data is coming from.${NC}"
+    echo ""
+    
+    while true; do
+        read -p "Enter cluster name: " -r input_cluster_name
+        if [[ -n "$input_cluster_name" ]]; then
+            # Validate cluster name format (alphanumeric, hyphens, underscores)
+            if [[ "$input_cluster_name" =~ ^[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?$ ]]; then
+                CLUSTER_NAME="$input_cluster_name"
+                break
+            else
+                print_status $RED "❌ Invalid cluster name format. Use alphanumeric characters, hyphens, and underscores only."
+                echo -e "${YELLOW}Valid format: letters, numbers, hyphens, and underscores (not starting/ending with hyphen or underscore)${NC}"
+            fi
+        else
+            print_status $RED "❌ Cluster name cannot be empty"
+        fi
+    done
+    
+    print_status $GREEN "✅ Using cluster name: $CLUSTER_NAME"
+    echo ""
+}
+
 # Function to check and display current Kubernetes context
 check_kubectl_context() {
     print_step "1" "Checking Kubernetes Context"
@@ -343,6 +440,20 @@ deploy_helm_chart() {
         helm_args="$helm_args --set secret.create=true"
     fi
     
+    # Add collection settings if configured
+    if [[ -n "$COLLECT_NETWORK" ]]; then
+        helm_args="$helm_args --set agent.collectNetwork=$COLLECT_NETWORK"
+    fi
+    
+    if [[ -n "$COLLECT_PROCESSES" ]]; then
+        helm_args="$helm_args --set agent.collectProcesses=$COLLECT_PROCESSES"
+    fi
+    
+    # Add cluster name if provided
+    if [[ -n "$CLUSTER_NAME" ]]; then
+        helm_args="$helm_args --set clusterName=\"$CLUSTER_NAME\""
+    fi
+    
     # Check if release already exists
     if helm list -n "$NAMESPACE" | grep -q "$RELEASE_NAME"; then
         print_status $YELLOW "⚠️  Release '$RELEASE_NAME' already exists in namespace '$NAMESPACE'"
@@ -363,13 +474,27 @@ deploy_helm_chart() {
     
     # Show the command being executed
     if [[ -n "$helm_args" ]]; then
-        print_status $BLUE "Using Tsuga configuration from user input"
+        print_status $BLUE "Using configuration from user input"
         # Mask API key in displayed command
         local masked_cmd="$helm_cmd"
         if [[ -n "$OTEL_API_KEY" ]]; then
             masked_cmd=$(echo "$helm_cmd" | sed "s/--set tsuga\.apiKey=\"[^\"]*\"/--set tsuga.apiKey=\"[MASKED]\"/")
         fi
         echo -e "${CYAN}Helm command: $masked_cmd${NC}"
+        
+        # Show collection settings summary
+        if [[ -n "$COLLECT_NETWORK" ]] || [[ -n "$COLLECT_PROCESSES" ]] || [[ -n "$CLUSTER_NAME" ]]; then
+            echo -e "\n${BLUE}Configuration Summary:${NC}"
+            if [[ -n "$CLUSTER_NAME" ]]; then
+                echo -e "  Cluster Name: ${CYAN}${CLUSTER_NAME}${NC}"
+            fi
+            if [[ -n "$COLLECT_NETWORK" ]]; then
+                echo -e "  Network Metrics: ${CYAN}${COLLECT_NETWORK}${NC}"
+            fi
+            if [[ -n "$COLLECT_PROCESSES" ]]; then
+                echo -e "  Process Metrics: ${CYAN}${COLLECT_PROCESSES}${NC}"
+            fi
+        fi
     fi
     
     # Execute the Helm command
@@ -425,6 +550,12 @@ main() {
     
     # Configure OpenTelemetry settings
     configure_tsuga_settings
+    
+    # Configure collection settings
+    configure_collection_settings
+    
+    # Get cluster name
+    get_cluster_name
     
     # Check prerequisites
     check_kubectl

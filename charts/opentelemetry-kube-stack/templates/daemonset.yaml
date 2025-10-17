@@ -42,7 +42,7 @@ spec:
     - name: varlibdockercontainers
       mountPath: /var/lib/docker/containers
       readOnly: true
-  volumes:    
+  volumes:
     - name: varlogpods
       hostPath:
         path: /var/log/pods
@@ -86,5 +86,5 @@ spec:
       pipelines:
         {{- include "opentelemetry-kube-stack.agentServicePipelines" . | nindent 8 }}
       telemetry:
-        {{- include "opentelemetry-kube-stack.telemetryConfig" . | nindent 6 }}
+        {{- include "opentelemetry-kube-stack.telemetryConfig" . | nindent 8 }}
 {{- end }}

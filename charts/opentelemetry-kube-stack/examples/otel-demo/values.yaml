@@ -1,11 +1,12 @@
 agent:
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
   config:
     extraReceivers:
       nginx:
         collection_interval: 10s
-        endpoint: http://image-provider:8081/status
+        endpoint: http://image-provider.default:8081/status
       postgresql:
-        endpoint: postgresql:5432
+        endpoint: postgresql.default:5432
         metrics:
           postgresql.blks_hit:
             enabled: true
@@ -29,7 +30,7 @@ agent:
         username: root
       redis:
         collection_interval: 10s
-        endpoint: valkey-cart:6379
+        endpoint: valkey-cart.default:6379
         username: valkey
     service:
       pipelines:
@@ -37,3 +38,4 @@ agent:
           extraReceivers:
             - postgresql
             - redis
+            - nginx
