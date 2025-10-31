@@ -40,6 +40,9 @@ Generate OpenTelemetry Agent extensions
 {{- define "opentelemetry-kube-stack.agentExtensions" -}}
 health_check:
   endpoint: ${env:MY_POD_IP}:13133
+{{- if and .Values.agent.config .Values.agent.config.extraExtensions }}
+{{- toYaml .Values.agent.config.extraExtensions | nindent 0 }}
+{{- end }}
 {{- if and .Values.agent.config .Values.agent.config.extensions }}
 {{- toYaml .Values.agent.config.extensions | nindent 0 }}
 {{- end }}
@@ -50,6 +53,9 @@ Generate OpenTelemetry Agent service extensions
 */}}
 {{- define "opentelemetry-kube-stack.serviceExtensions" -}}
 - health_check
+{{- if and .Values.agent.config .Values.agent.config.service.extraExtensions }}
+{{- toYaml .Values.agent.config.service.extraExtensions | nindent 0 }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -78,6 +84,7 @@ Generate OpenTelemetry Agent receivers configuration
 {{- toYaml .Values.agent.config.receivers | nindent 0 }}
 {{- else }}
 # Agent receivers
+{{- if .Values.agent.collectLogs }}
 filelog:
   exclude: []
   include:
@@ -95,6 +102,7 @@ filelog:
   retry_on_failure:
     enabled: true
   start_at: end
+{{- end }}
 jaeger:
   protocols:
     grpc:
@@ -238,6 +246,22 @@ k8sattributes:
       - k8s.pod.uid
       - k8s.pod.start_time
       - k8s.node.name
+    labels:
+    - tag_name: service.name 
+      key: resource.opentelemetry.io/service.name
+      from: pod
+    - tag_name: service.version 
+      key: resource.opentelemetry.io/service.version
+      from: pod
+    - tag_name: env 
+      key: resource.opentelemetry.io/env
+      from: pod
+    - tag_name: team 
+      key: resource.opentelemetry.io/team
+      from: pod
+{{- if .Values.labelMapping }}
+{{- toYaml .Values.labelMapping | nindent 4 }}
+{{- end }}
   filter:
     node_from_env_var: K8S_NODE_NAME
   passthrough: false
@@ -275,6 +299,46 @@ Generate OpenTelemetry Cluster processors configuration
 {{- if and .Values.cluster.config .Values.cluster.config.processors }}
 {{- toYaml .Values.cluster.config.processors | nindent 0 }}
 {{- else }}
+k8sattributes:
+  extract:
+    metadata:
+      - k8s.namespace.name
+      - k8s.deployment.name
+      - k8s.statefulset.name
+      - k8s.daemonset.name
+      - k8s.cronjob.name
+      - k8s.job.name
+      - k8s.node.name
+      - k8s.pod.name
+      - k8s.pod.uid
+      - k8s.pod.start_time
+      - k8s.node.name
+    labels:
+    - tag_name: service.name 
+      key: resource.opentelemetry.io/service.name
+      from: pod
+    - tag_name: service.version 
+      key: resource.opentelemetry.io/service.version
+      from: pod
+    - tag_name: env 
+      key: resource.opentelemetry.io/env
+      from: pod
+    - tag_name: team 
+      key: resource.opentelemetry.io/team
+      from: pod
+{{- if .Values.labelMapping }}
+{{- toYaml .Values.labelMapping | nindent 4 }}
+{{- end }}
+  passthrough: false
+  pod_association:
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.ip
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.uid
+    - sources:
+      - from: connection
 resource:
   attributes:
   - key: k8s.cluster.name
