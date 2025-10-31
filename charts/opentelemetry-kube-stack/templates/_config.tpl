@@ -244,9 +244,7 @@ k8sattributes:
       - k8s.node.name
       - k8s.pod.name
       - k8s.pod.uid
-      - k8s.pod.start_time
-      - k8s.node.name
-    labels:
+      - k8s.pod.start_time    labels:
     - tag_name: service.name 
       key: resource.opentelemetry.io/service.name
       from: pod
@@ -312,7 +310,6 @@ k8sattributes:
       - k8s.pod.name
       - k8s.pod.uid
       - k8s.pod.start_time
-      - k8s.node.name
     labels:
     - tag_name: service.name 
       key: resource.opentelemetry.io/service.name
