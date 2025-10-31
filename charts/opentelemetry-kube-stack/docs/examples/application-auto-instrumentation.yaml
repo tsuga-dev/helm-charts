@@ -1,0 +1,101 @@
+# Application Auto-Instrumentation Example
+# Demonstrates how to use OpenTelemetry Operator's auto-instrumentation
+#
+# Step 1: Install the Helm chart
+#   helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+#     --namespace observability \
+#     --create-namespace \
+#     -f application-auto-instrumentation.yaml
+#
+# Step 2: Create the Instrumentation resource (see below)
+# Step 3: Annotate your application deployment
+
+---
+# Example: Instrumentation resource for auto-instrumentation
+apiVersion: opentelemetry.io/v1beta1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  namespace: default  # Adjust to your application namespace
+spec:
+  exporter:
+    endpoint: http://my-otel-stack-agent.observability.svc.cluster.local:4318
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1.0"  # 100% sampling (adjust for production)
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+  dotnet:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest
+
+---
+# Example: Annotated application deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: default
+spec:
+  replicas: 3
+  template:
+    metadata:
+      annotations:
+        # Enable auto-instrumentation for Java
+        instrumentation.opentelemetry.io/inject-java: "true"
+        # OR specify custom instrumentation resource
+        # instrumentation.opentelemetry.io/inject-java: "my-instrumentation"
+        
+        # Enable for Node.js
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+        
+        # Enable for Python
+        instrumentation.opentelemetry.io/inject-python: "true"
+        
+        # Enable for .NET
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:latest
+        # The operator will inject the instrumentation sidecar automatically
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: "my-app"
+        - name: OTEL_SERVICE_VERSION
+          value: "1.0.0"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=my-app,service.version=1.0.0,resource.opentelemetry.io/env=production,resource.opentelemetry.io/team=platform"
+
+---
+# Helm values for the OpenTelemetry chart
+tsuga:
+  otlpEndpoint: "https://your-tsuga-endpoint.com/v1/otlp"
+  apiKey: "your-api-key"
+
+secret:
+  create: true
+
+clusterName: "production"
+
+agent:
+  enabled: true
+  hostNetwork: true  # Allows localhost access from apps
+
+cluster:
+  enabled: true
+
+# Notes:
+# - Replace 'my-otel-stack' with your Helm release name
+# - Replace 'observability' with your namespace where the chart is installed
+# - The Instrumentation resource should be in the same namespace as your apps
+# - Adjust sampler settings for production (lower sampling rate)
+

@@ -1,0 +1,71 @@
+# Custom Label Mapping Example
+# Demonstrates how to extract Kubernetes labels and map them to Tsuga attributes
+#
+# Usage:
+#   helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+#     --namespace observability \
+#     --create-namespace \
+#     -f custom-label-mapping.yaml
+#
+# This configuration extracts pod labels and adds them as resource attributes
+# that will be available in Tsuga for filtering and grouping
+
+tsuga:
+  otlpEndpoint: "https://your-tsuga-endpoint.com/v1/otlp"
+  apiKey: "your-api-key"
+
+secret:
+  create: true
+
+clusterName: "production"
+
+# Custom label mapping extracts Kubernetes pod labels and maps them
+# to Tsuga context attributes
+labelMapping:
+  # Extract app.kubernetes.io/owner label from pods
+  - tag_name: owner
+    key: app.kubernetes.io/owner
+    from: pod
+  
+  # Extract app.kubernetes.io/tier label from pods
+  - tag_name: tier
+    key: app.kubernetes.io/tier
+    from: pod
+  
+  # Extract app.kubernetes.io/component label from pods
+  - tag_name: component
+    key: app.kubernetes.io/component
+    from: pod
+  
+  # Extract app.kubernetes.io/instance label from pods
+  - tag_name: instance
+    key: app.kubernetes.io/instance
+    from: pod
+  
+  # Extract custom business label
+  - tag_name: cost-center
+    key: cost-center
+    from: pod
+  
+  # Extract environment label
+  - tag_name: environment
+    key: environment
+    from: pod
+
+agent:
+  enabled: true
+  collectLogs: true
+
+cluster:
+  enabled: true
+
+# Example: Your application pods should have these labels for the mapping to work:
+# metadata:
+#   labels:
+#     app.kubernetes.io/owner: "platform-team"
+#     app.kubernetes.io/tier: "backend"
+#     app.kubernetes.io/component: "api-server"
+#     app.kubernetes.io/instance: "api-v1"
+#     cost-center: "engineering"
+#     environment: "production"
+
