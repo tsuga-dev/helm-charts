@@ -115,11 +115,11 @@ agent:
   # Extra environment variables for agent (in addition to automatic secret env vars)
   extraEnvs: []
   
+  # Collect Logs
+  collectLogs: true
+
   # Collect OpenTelemetry logs
   collectOtelLogs: true
-
-  # Collect Kubernetes logs
-  collectKubernetesLogs: true
 
   # Collect Host Network
   collectNetwork: false
