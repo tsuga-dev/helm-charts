@@ -132,7 +132,7 @@ By default, both the agent and the Cluster Receiver are configured to map the fo
 | version | resource.opentelemetry.io/service.version | context.service.version |
 
 
-The `labelMapping` parametter adds extra label-to-attribute mappings for `k8sattributes` processor. These entries are appended under the `labels:` list.
+The `labelMapping` parameter adds extra label-to-attribute mappings for `k8sattributes` processor. These entries are appended under the `labels:` list.
 
 Example for `labelMapping` (adds pod labels as resource attributes):
 
