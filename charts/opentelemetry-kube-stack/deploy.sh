@@ -286,7 +286,7 @@ get_cluster_name() {
         read -p "Enter cluster name: " -r input_cluster_name
         if [[ -n "$input_cluster_name" ]]; then
             # Validate cluster name format (alphanumeric, hyphens, underscores)
-            if [[ "$input_cluster_name" =~ ^[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?$ ]]; then
+            if [[ "$input_cluster_name" =~ ^[a-zA-Z0-9]([a-zA-Z0-9_\-]*[a-zA-Z0-9])?$ ]]; then
                 CLUSTER_NAME="$input_cluster_name"
                 break
             else
