@@ -1,0 +1,69 @@
+opentelemetry-demo:
+  enabled: true
+
+
+  default:
+    envOverrides:
+      - name: OTEL_COLLECTOR_NAME
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: status.hostIP
+  opentelemetry-collector:
+    enabled: false
+  jaeger:
+    enabled: false
+  opensearch:
+    enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+opentelemetry-collector:
+  enabled: true
+  agent:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+    config:
+      labelMapping:
+        - tag_name: test
+          key: resource.opentelemetry.io/test
+          from: pod
+      extraReceivers:
+        nginx:
+          collection_interval: 10s
+          endpoint: http://image-provider.default:8081/status
+        postgresql:
+          endpoint: postgresql.default:5432
+          metrics:
+            postgresql.blks_hit:
+              enabled: true
+            postgresql.blks_read:
+              enabled: true
+            postgresql.deadlocks:
+              enabled: true
+            postgresql.tup_deleted:
+              enabled: true
+            postgresql.tup_fetched:
+              enabled: true
+            postgresql.tup_inserted:
+              enabled: true
+            postgresql.tup_returned:
+              enabled: true
+            postgresql.tup_updated:
+              enabled: true
+          password: otel
+          tls:
+            insecure: true
+          username: root
+        redis:
+          collection_interval: 10s
+          endpoint: valkey-cart.default:6379
+          username: valkey
+      service:
+        pipelines:
+          metrics:
+            extraReceivers:
+              - postgresql
+              - redis
+              - nginx
