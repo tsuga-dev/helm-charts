@@ -261,6 +261,22 @@ k8sattributes:
 {{- if .Values.labelMapping }}
 {{- toYaml .Values.labelMapping | nindent 4 }}
 {{- end }}
+    annotations:
+    - tag_name: service.name 
+      key: resource.opentelemetry.io/service.name
+      from: pod
+    - tag_name: service.version 
+      key: resource.opentelemetry.io/service.version
+      from: pod
+    - tag_name: env 
+      key: resource.opentelemetry.io/env
+      from: pod
+    - tag_name: team 
+      key: resource.opentelemetry.io/team
+      from: pod
+{{- if .Values.annotationsMapping }}
+{{- toYaml .Values.annotationsMapping | nindent 4 }}
+{{- end }}
   filter:
     node_from_env_var: K8S_NODE_NAME
   passthrough: false
