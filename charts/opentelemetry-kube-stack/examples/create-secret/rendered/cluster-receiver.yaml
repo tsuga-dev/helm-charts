@@ -97,10 +97,10 @@ spec:
           key: k8s.cluster.name
           value: null
     exporters:
-      endpoint: ${TSUGA_OTLP_ENDPOINT}
-      headers:
-        Authorization: Bearer ${TSUGA_API_KEY}
-      otlphttp/tsuga: null
+      otlphttp/tsuga:
+        endpoint: ${TSUGA_OTLP_ENDPOINT}
+        headers:
+          Authorization: Bearer ${TSUGA_API_KEY}
     service:
       extensions: {}
       pipelines:

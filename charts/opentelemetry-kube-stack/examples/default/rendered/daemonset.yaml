@@ -178,13 +178,15 @@ spec:
           key: k8s.cluster.name
           value: null
     exporters:
-      endpoint: ${TSUGA_OTLP_ENDPOINT}
-      headers:
-        Authorization: Bearer ${TSUGA_API_KEY}
-      otlphttp/tsuga: null
+      otlphttp/tsuga:
+        endpoint: ${TSUGA_OTLP_ENDPOINT}
+        headers:
+          Authorization: Bearer ${TSUGA_API_KEY}
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
+    connectors:
+      spanmetrics: {}
     service:
       extensions:
       - health_check
