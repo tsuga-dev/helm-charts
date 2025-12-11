@@ -1,4 +1,4 @@
-CHARTS ?= opentelemetry-kube-stack
+CHARTS ?= opentelemetry-kube-stack opentelemetry-demo
 TMP_DIRECTORY = ./tmp
 
 .PHONY: generate-examples
