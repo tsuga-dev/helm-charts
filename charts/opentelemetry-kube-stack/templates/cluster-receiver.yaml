@@ -1,11 +1,4 @@
 {{- if .Values.cluster.enabled }}
-
-{{- /*
-     First, render the default config and parse it into a map,
-     then build a new context that includes it as .defaultConfig
-*/ -}}
-{{- $default := include "tsuga-otel.cluster-receiver.config.default" . | fromYaml }}
-{{- $ctx := merge (dict "defaultConfig" $default) .Values.cluster.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
@@ -16,37 +9,21 @@ metadata:
 spec:
   mode: deployment
   image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
-  {{- if or .Values.cluster.resources .Values.resources }}
+  {{- if .Values.resources }}
   resources:
-    {{- if .Values.cluster.resources }}
-    {{- toYaml .Values.cluster.resources | nindent 4 }}
-    {{- else }}
     {{- toYaml .Values.resources | nindent 4 }}
-    {{- end }}
   {{- end }}
-  {{- if or .Values.cluster.nodeSelector .Values.nodeSelector }}
+  {{- if .Values.nodeSelector }}
   nodeSelector:
-    {{- if .Values.cluster.nodeSelector }}
-    {{- toYaml .Values.cluster.nodeSelector | nindent 4 }}
-    {{- else }}
     {{- toYaml .Values.nodeSelector | nindent 4 }}
-    {{- end }}
   {{- end }}
-  {{- if or .Values.cluster.tolerations .Values.tolerations }}
+  {{- if .Values.tolerations }}
   tolerations:
-    {{- if .Values.cluster.tolerations }}
-    {{- toYaml .Values.cluster.tolerations | nindent 4 }}
-    {{- else }}
     {{- toYaml .Values.tolerations | nindent 4 }}
-    {{- end }}
   {{- end }}
-  {{- if or .Values.cluster.affinity .Values.affinity }}
+  {{- if .Values.affinity }}
   affinity:
-    {{- if .Values.cluster.affinity }}
-    {{- toYaml .Values.cluster.affinity | nindent 4 }}
-    {{- else }}
     {{- toYaml .Values.affinity | nindent 4 }}
-    {{- end }}
   {{- end }}
   {{- if .Values.serviceAccount.create }}
   serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
@@ -57,5 +34,17 @@ spec:
     {{- toYaml .Values.cluster.extraEnvs | nindent 4 }}
     {{- end }}
   config:
-    {{- include "opentelemetry-kube-stack.otelConfig" $ctx | trim | nindent 4 }}
+    receivers:
+      {{- include "opentelemetry-kube-stack.clusterReceivers" . | nindent 6 }}
+    exporters:
+      {{- include "opentelemetry-kube-stack.clusterExporters" . | nindent 6 }}
+    processors:
+      {{- include "opentelemetry-kube-stack.clusterProcessors" . | nindent 6 }}
+    service:
+      pipelines:
+        {{- include "opentelemetry-kube-stack.clusterServicePipelines" . | nindent 8 }}
+      {{- if and .Values.cluster.config .Values.cluster.config.telemetry }}
+      telemetry:
+        {{- toYaml .Values.cluster.config.telemetry | nindent 8 }}
+      {{- end }}
 {{- end }}

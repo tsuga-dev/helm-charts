@@ -126,10 +126,4 @@ app.kubernetes.io/component: {{ .component | default "otel-collector" }}
 app.kubernetes.io/part-of: {{ include "opentelemetry-kube-stack.name" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
-{{- define "debug.dump" -}}
-{{- $obj := . -}}
-# DEBUG DUMP:
-{{- range $line := splitList "\n" (toYaml $obj) }}
-# {{ $line }}
-{{- end }}
-{{- end }}
+
