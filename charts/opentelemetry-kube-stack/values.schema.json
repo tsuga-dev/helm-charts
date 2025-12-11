@@ -1,0 +1,375 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "type": "object"
+        },
+        "agent": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "collectLogs": {
+                    "type": "boolean"
+                },
+                "collectNetwork": {
+                    "type": "boolean"
+                },
+                "collectOtelLogs": {
+                    "type": "boolean"
+                },
+                "collectProcesses": {
+                    "type": "boolean"
+                },
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
+                        "extraExporters": {
+                            "type": "object"
+                        },
+                        "extraExtensions": {
+                            "type": "object"
+                        },
+                        "extraProcessors": {
+                            "type": "object"
+                        },
+                        "extraReceivers": {
+                            "type": "object"
+                        },
+                        "extraTelemetry": {
+                            "type": "object"
+                        },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "extraExtensions": {
+                                    "type": "object"
+                                },
+                                "pipelines": {
+                                    "type": "object",
+                                    "properties": {
+                                        "logs": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
+                                        "metrics": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
+                                        "traces": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "customConfig": {
+                    "type": "object"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "extraAnnotationsMapping": {
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "type": "array"
+                },
+                "extraLabelMapping": {
+                    "type": "array"
+                },
+                "hostNetwork": {
+                    "type": "boolean"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "object"
+                }
+            }
+        },
+        "cluster": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
+                        "extraExporters": {
+                            "type": "object"
+                        },
+                        "extraProcessors": {
+                            "type": "object"
+                        },
+                        "extraReceivers": {
+                            "type": "object"
+                        },
+                        "extraTelemetry": {
+                            "type": "object"
+                        },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "extraExtensions": {
+                                    "type": "object"
+                                },
+                                "pipelines": {
+                                    "type": "object",
+                                    "properties": {
+                                        "logs": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
+                                        "metrics": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
+                                        "traces": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "customConfig": {
+                    "type": "object"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "extraAnnotationsMapping": {
+                    "type": "array"
+                },
+                "extraEnvs": {
+                    "type": "array"
+                },
+                "extraLabelMapping": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "object"
+                }
+            }
+        },
+        "clusterName": {
+            "type": "string"
+        },
+        "fullnameOverride": {
+            "type": "string"
+        },
+        "image": {
+            "type": "string"
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "nodeSelector": {
+            "type": "object"
+        },
+        "rbac": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "type": "string"
+                        },
+                        "memory": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "secret": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean"
+                },
+                "keyMapping": {
+                    "type": "object",
+                    "properties": {
+                        "TSUGA_API_KEY": {
+                            "type": "string"
+                        },
+                        "TSUGA_OTLP_ENDPOINT": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "validation": {
+                    "type": "object",
+                    "properties": {
+                        "mandatoryKeys": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "requireMandatoryKeys": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "type": "object"
+                },
+                "create": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "tolerations": {
+            "type": "array"
+        },
+        "tsuga": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "type": "string"
+                },
+                "otlpEndpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "validation": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "enforceNamingConventions": {
+                    "type": "boolean"
+                },
+                "maxNameLength": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

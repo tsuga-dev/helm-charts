@@ -21,6 +21,20 @@ spec:
     requests:
       cpu: 100m
       memory: 128Mi
+  volumeMounts:
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+  volumes:
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
   serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
@@ -39,33 +53,38 @@ spec:
           name: otel-secret
           key: TSUGA_API_KEY
   config:
-    connectors:
-      spanmetrics: {}
-    extensions:
-      health_check:
-        endpoint: ${env:MY_POD_IP}:13133
-    exporters:
-      
-      otlphttp/tsuga:
-        endpoint: ${TSUGA_OTLP_ENDPOINT}
-        headers:
-          Authorization: Bearer ${TSUGA_API_KEY}
     receivers:
-      
-      # Agent receivers
       filelog:
         exclude: []
         include:
-          - /var/log/pods/*/*/*.log
+        - /var/log/pods/*/*/*.log
         include_file_name: false
         include_file_path: true
         operators:
-          - id: container-parser
-            max_log_size: 102400
-            type: container
+        - id: container-parser
+          max_log_size: 102400
+          type: container
         retry_on_failure:
           enabled: true
         start_at: end
+      hostmetrics:
+        collection_interval: 10s
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          disk: null
+          filesystem:
+            metrics:
+              system.filesystem.utilization:
+                enabled: true
+          load: null
+          memory: null
+          paging:
+            metrics:
+              system.paging.utilization:
+                enabled: true
       jaeger:
         protocols:
           grpc:
@@ -75,47 +94,19 @@ spec:
           thrift_http:
             endpoint: ${env:MY_POD_IP}:14268
       kubeletstats:
-        insecure_skip_verify: true
         auth_type: serviceAccount
         collection_interval: 20s
         endpoint: ${env:K8S_NODE_NAME}:10250
-      hostmetrics:
+        insecure_skip_verify: true
+      nginx:
         collection_interval: 10s
-        scrapers:
-          paging:
-            metrics:
-              system.paging.utilization:
-                enabled: true
-          cpu:
-            metrics:
-              system.cpu.utilization:
-                enabled: true
-          disk:
-          filesystem:
-            metrics:
-              system.filesystem.utilization:
-                enabled: true
-          load:
-          memory:
+        endpoint: http://image-provider.default:8081/status
       otlp:
         protocols:
           grpc:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 10s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
-      nginx:
-        collection_interval: 10s
-        endpoint: http://image-provider.default:8081/status
       postgresql:
         endpoint: postgresql.default:5432
         metrics:
@@ -139,117 +130,147 @@ spec:
         tls:
           insecure: true
         username: root
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 10s
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
       redis:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
         username: valkey
+      zipkin:
+        endpoint: ${env:MY_POD_IP}:9411
     processors:
-      
-      # Agent processors
       batch: {}
+      cumulativetodelta: {}
       k8sattributes:
         extract:
-          metadata:
-            - k8s.namespace.name
-            - k8s.deployment.name
-            - k8s.statefulset.name
-            - k8s.daemonset.name
-            - k8s.cronjob.name
-            - k8s.job.name
-            - k8s.node.name
-            - k8s.pod.name
-            - k8s.pod.uid
-            - k8s.pod.start_time
-            - k8s.node.name
-          labels:
-          - tag_name: service.name 
+          annotations:
+          - from: pod
             key: resource.opentelemetry.io/service.name
-            from: pod
-          - tag_name: service.version 
+            tag_name: service.name
+          - from: pod
             key: resource.opentelemetry.io/service.version
-            from: pod
-          - tag_name: env 
+            tag_name: service.version
+          - from: pod
             key: resource.opentelemetry.io/env
-            from: pod
-          - tag_name: team 
+            tag_name: env
+          - from: pod
             key: resource.opentelemetry.io/team
-            from: pod
+            tag_name: team
+          labels:
+          - from: pod
+            key: resource.opentelemetry.io/service.name
+            tag_name: service.name
+          - from: pod
+            key: resource.opentelemetry.io/service.version
+            tag_name: service.version
+          - from: pod
+            key: resource.opentelemetry.io/env
+            tag_name: env
+          - from: pod
+            key: resource.opentelemetry.io/team
+            tag_name: team
+          - from: pod
+            key: resource.opentelemetry.io/test
+            tag_name: test
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+          - k8s.pod.uid
+          - k8s.pod.start_time
         filter:
           node_from_env_var: K8S_NODE_NAME
         passthrough: false
         pod_association:
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.ip
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.uid
-          - sources:
-            - from: connection
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      cumulativetodelta: {}
       resource:
         attributes:
-        - key: k8s.cluster.name
-          value: 
-          action: upsert
+        - action: upsert
+          key: k8s.cluster.name
+          value: null
+    exporters:
+      otlphttp/tsuga:
+        endpoint: ${TSUGA_OTLP_ENDPOINT}
+        headers:
+          Authorization: Bearer ${TSUGA_API_KEY}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    connectors:
+      spanmetrics: {}
     service:
       extensions:
       - health_check
       pipelines:
-        
-        # Agent pipelines
         logs:
           exporters:
-            - otlphttp/tsuga
+          - otlphttp/tsuga
           processors:
-            - k8sattributes
-            - memory_limiter
-            - batch
-            - resource
+          - k8sattributes
+          - memory_limiter
+          - batch
+          - resource
           receivers:
-            - otlp
-            - filelog
+          - otlp
+          - filelog
         metrics:
           exporters:
-            - otlphttp/tsuga
+          - otlphttp/tsuga
           processors:
-            - k8sattributes
-            - memory_limiter
-            - batch
-            - cumulativetodelta
-            - resource
+          - k8sattributes
+          - memory_limiter
+          - batch
+          - cumulativetodelta
+          - resource
           receivers:
-            - otlp
-            - prometheus
-            - kubeletstats
-            - spanmetrics
-            - hostmetrics
-            - postgresql
-            - redis
-            - nginx
+          - otlp
+          - prometheus
+          - kubeletstats
+          - spanmetrics
+          - hostmetrics
+          - postgresql
+          - redis
+          - nginx
         traces:
           exporters:
-            - otlphttp/tsuga
-            - spanmetrics
+          - otlphttp/tsuga
+          - spanmetrics
           processors:
-            - k8sattributes
-            - memory_limiter
-            - batch
-            - resource
+          - k8sattributes
+          - memory_limiter
+          - batch
+          - resource
           receivers:
-            - otlp
-            - jaeger
-            - zipkin
+          - otlp
+          - jaeger
+          - zipkin
       telemetry:
-        
         metrics:
           readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
