@@ -201,6 +201,10 @@ cluster:
     # These are merged with default exporters (otlphttp/tsuga)
     # @default -- {}
     extraExporters: {}
+    # -- Additional connectors to merge into the collector configuration
+    # These are merged with default connectors
+    # @default -- {}
+    extraConnectors: {}
     # -- Service configuration
     service:
       # -- Additional extensions to add to the service configuration
@@ -363,6 +367,10 @@ agent:
     # These are merged with default extensions (health_check)
     # @default -- {}
     extraExtensions: {}
+    # -- Additional connectors to merge into the collector configuration
+    # These are merged with default connectors
+    # @default -- {}
+    extraConnectors: {}
     # -- Service configuration
     service:
       # -- Additional extensions to add to the service configuration

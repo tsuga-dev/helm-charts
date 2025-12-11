@@ -26,6 +26,9 @@
                 "config": {
                     "type": "object",
                     "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
                         "extraExporters": {
                             "type": "object"
                         },
@@ -139,6 +142,9 @@
                 "config": {
                     "type": "object",
                     "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
                         "extraExporters": {
                             "type": "object"
                         },
