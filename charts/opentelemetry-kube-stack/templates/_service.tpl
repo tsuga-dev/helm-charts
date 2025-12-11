@@ -19,7 +19,7 @@ Behavior:
 {{- $service := dict }}
 
 {{/* 1. EXTENSIONS */}}
-{{- $extensions := default (dict) (index $default "extensions") }}
+{{- $extensions := default (list) (index $default "extensions") }}
 {{- if $user.extraExtensions }}
   {{- $extensions = merge $extensions $user.extraExtensions }}
 {{- end }}

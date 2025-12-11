@@ -102,7 +102,7 @@ spec:
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
     service:
-      extensions: {}
+      extensions: []
       pipelines:
         logs:
           exporters:
