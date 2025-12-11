@@ -1,0 +1,30 @@
+# Minimal Deployment Example
+# This is the simplest configuration for getting started
+# 
+# Usage:
+#   helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+#     --namespace observability \
+#     --create-namespace \
+#     -f minimal-deployment.yaml
+#
+# Note: Replace placeholder values with your actual Tsuga credentials
+
+tsuga:
+  otlpEndpoint: "https://your-tsuga-endpoint.com/v1/otlp"
+  apiKey: "your-api-key-here"
+
+secret:
+  create: true
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+
+agent:
+  enabled: true
+
+cluster:
+  enabled: true
+

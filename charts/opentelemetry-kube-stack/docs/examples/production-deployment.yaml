@@ -1,0 +1,75 @@
+# Production Deployment Example
+# Configuration optimized for production environments with:
+# - Higher resource limits
+# - Node affinity and tolerations
+# - Security annotations
+# - Production-grade settings
+#
+# Usage:
+#   helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+#     --namespace observability \
+#     --create-namespace \
+#     -f production-deployment.yaml
+#
+# Note: Replace placeholder values and adjust resource limits based on your cluster size
+
+tsuga:
+  otlpEndpoint: "https://prod-tsuga-endpoint.com/v1/otlp"
+  apiKey: "prod-api-key"  # In production, use external secret management
+
+secret:
+  create: true
+
+# Unique cluster identifier for multi-cluster setups
+clusterName: "production-cluster"
+
+serviceAccount:
+  create: true
+  # Example: AWS IAM Role for Service Account (IRSA)
+  # annotations:
+  #   eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/otel-role"
+
+rbac:
+  create: true
+
+agent:
+  enabled: true
+  hostNetwork: true
+  collectLogs: true
+  collectOtelLogs: true
+  collectNetwork: false  # Enable if you need network metrics
+  collectProcesses: false  # Enable if you need process metrics
+
+cluster:
+  enabled: true
+
+# Production-grade resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Ensure pods only run on Linux nodes
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Allow running on control plane nodes if needed
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+# Distribute pods across nodes for high availability
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+          - linux
+

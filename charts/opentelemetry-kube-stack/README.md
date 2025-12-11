@@ -2,6 +2,17 @@
 
 A comprehensive Helm chart for deploying OpenTelemetry collectors with the Kubernetes operator, providing complete observability for Kubernetes environments with intelligent defaults and production-ready configurations.
 
+## 📚 Comprehensive Documentation
+
+For detailed, step-by-step guides on instrumenting Kubernetes clusters and applications with OpenTelemetry and Tsuga, see the [**Instrumentation Guide**](docs/README.md). The guide includes:
+
+- Getting started with OpenTelemetry and Tsuga
+- Complete cluster setup instructions
+- Application instrumentation examples
+- Configuration examples for various scenarios
+- Troubleshooting common issues
+- Advanced topics and optimization
+
 ## Table of Contents
 
 - [Features](#features)
