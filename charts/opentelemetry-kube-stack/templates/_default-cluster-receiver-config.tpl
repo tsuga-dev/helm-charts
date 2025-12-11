@@ -64,7 +64,7 @@ processors:
         value: {{ .Values.clusterName }}
         action: upsert
 exporters: 
-  {{include "opentelemetry-kube-stack.tsugaExporters" .}}
+  {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 service:
   pipelines:
     logs:
