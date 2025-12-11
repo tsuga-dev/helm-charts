@@ -1,6 +1,6 @@
 # OpenTelemetry Helm Chart Makefile
 
-.PHONY: help lint unittest integration security clean install test-all docs
+.PHONY: help lint unittest integration security clean install test-all
 
 # Default target
 help:
@@ -12,7 +12,6 @@ help:
 	@echo "  test-all      - Run all tests"
 	@echo "  clean         - Clean up test resources"
 	@echo "  install       - Install chart with test values"
-	@echo "  docs          - Generate documentation using helm-docs"
 
 # Lint the Helm chart
 lint:
@@ -110,14 +109,3 @@ test-existing-secret:
 
 test-production:
 	helm template otel-test . -f tests/values/production.yaml
-
-# Generate documentation using helm-docs
-docs:
-	@echo "Generating documentation..."
-	@if ! command -v helm-docs &> /dev/null; then \
-		echo "helm-docs not found. Installing..."; \
-		echo "Install via: brew install norwoodj/tap/helm-docs"; \
-		echo "Or download from: https://github.com/norwoodj/helm-docs/releases"; \
-		exit 1; \
-	fi
-	helm-docs
