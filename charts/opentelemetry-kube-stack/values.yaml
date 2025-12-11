@@ -1,7 +1,8 @@
+# yaml-language-server: $schema=./values.schema.json
 # =============================================================================
 # SECURITY NOTICE: This values.yaml file has been sanitized for security
 # =============================================================================
-# 
+#
 # IMPORTANT SECURITY GUIDELINES:
 # 1. Never commit sensitive credentials (API keys, passwords, tokens) to version control
 # 2. Use --set flags to provide sensitive values at deployment time
@@ -10,7 +11,7 @@
 # 5. Rotate credentials regularly and use least-privilege access
 #
 # SECRET MANAGEMENT OPTIONS:
-# 
+#
 # Option 1: Generate new secret (default)
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
 #   --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
@@ -18,10 +19,10 @@
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set secret.existing.enabled=true \
-#   --set secret.existing.name="my-existing-secret" \
-#   --set secret.existing.keyMapping.TSUGA_API_KEY="api-key" \
-#   --set secret.existing.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
+#   --set secret.create=false \
+#   --set secret.name="my-existing-secret" \
+#   --set secret.keyMapping.TSUGA_API_KEY="api-key" \
+#   --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
 #
 # Option 3: External secret management (recommended for production)
 # - Use Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
@@ -29,271 +30,502 @@
 # - Use HashiCorp Vault with External Secrets Operator
 #
 # =============================================================================
+# CONFIGURATION ARCHITECTURE
+# =============================================================================
+#
+# This chart uses a flexible configuration system with two approaches:
+#
+# 1. MERGE-BASED (Recommended): Uses default configs + your overrides
+#    - Default configs are defined in _default-deamonset-config.tpl and
+#      _default-cluster-receiver-config.tpl
+#    - Use extraReceivers, extraProcessors, extraExporters to add to defaults
+#    - Example: agent.config.extraReceivers adds to default receivers
+#
+# 2. FULL CUSTOM: Provide complete OpenTelemetry config
+#    - Set customConfig with your complete YAML configuration
+#    - This completely replaces the default configuration
+#    - Example: agent.customConfig: |-
+#        receivers:
+#          otlp:
+#            protocols:
+#              grpc:
+#                endpoint: 0.0.0.0:4317
+#
+# =============================================================================
 
-# Cluster name
-# The name of the cluster to be used in the resource attributes
+# =============================================================================
+# GLOBAL CONFIGURATION
+# =============================================================================
+
+# -- The name of the cluster to be used in the resource attributes
+# This value is added to all telemetry data as k8s.cluster.name
+# @default -- ""
 clusterName: ""
 
-# Tsuga configuration
+# -- Override the chart name used in resource naming
+# @default -- ""
+nameOverride: ""
+
+# -- Override the full name used in resource naming
+# @default -- ""
+fullnameOverride: ""
+
+# -- Default OpenTelemetry Collector image
+# Used as fallback when cluster.image or agent.image are not set
+# Format: registry/repository:tag
+# @default -- ""
+image: ""
+
+# =============================================================================
+# TSUGA CONFIGURATION
+# =============================================================================
 # SECURITY WARNING: Never commit sensitive credentials to version control
 # Provide these values via --set flags or external secrets management
 tsuga:
-  # Tsuga OTLP endpoint for telemetry data
+  # -- Tsuga OTLP endpoint for telemetry data
   # Set via: --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com"
+  # @default -- ""
   otlpEndpoint: ""
-  # Tsuga API key for authentication
+  # -- Tsuga API key for authentication
   # Set via: --set tsuga.apiKey="your-api-key-here"
   # Or use external secrets: --set tsuga.apiKey=""
+  # @default -- ""
   apiKey: ""
 
-# Secret configuration
+# =============================================================================
+# SECRET CONFIGURATION
+# =============================================================================
 secret:
-  # Create a secret for OpenTelemetry configuration
-  # If true: create secret with values from command line
-  # If false: don't create secret, use existing secret with default name and keyMapping
+  # -- Create a Kubernetes secret for OpenTelemetry configuration
+  # If true: creates a secret with values from tsuga configuration
+  # If false: uses an existing secret (must be created separately)
+  # @default -- false
   create: false
-  # Name of the secret (used when create=true or as fallback when create=false)
+  # -- Name of the secret
+  # Used when create=true (name of secret to create)
+  # Used when create=false (name of existing secret to use)
+  # @default -- "otel-secret"
   name: "otel-secret"
-  # Key mapping for existing secret (used when create=false)
+  # -- Key mapping for existing secret (used when create=false)
   # Maps chart expected keys to keys in the existing secret
+  # Example: If your secret uses "api-key" instead of "TSUGA_API_KEY", set:
+  #   keyMapping:
+  #     TSUGA_API_KEY: "api-key"
   keyMapping:
+    # -- Key name in the secret for Tsuga API key
+    # @default -- "TSUGA_API_KEY"
     TSUGA_API_KEY: "TSUGA_API_KEY"
+    # -- Key name in the secret for Tsuga OTLP endpoint
+    # @default -- "TSUGA_OTLP_ENDPOINT"
     TSUGA_OTLP_ENDPOINT: "TSUGA_OTLP_ENDPOINT"
-  # Validation settings
+  # -- Validation settings
   validation:
-    # Require all mandatory keys to be present
+    # -- Require all mandatory keys to be present in the secret
+    # When true, chart will fail if required keys are missing
+    # @default -- true
     requireMandatoryKeys: true
-    # Mandatory keys that must be present in the secret
+    # -- Mandatory keys that must be present in the secret
+    # @default -- ["TSUGA_API_KEY", "TSUGA_OTLP_ENDPOINT"]
     mandatoryKeys:
       - "TSUGA_API_KEY"
       - "TSUGA_OTLP_ENDPOINT"
 
-# OpenTelemetry Collector configuration
-# Recommended pattern: Deploy both agent (DaemonSet) and Kubernetes Cluster Receiver (Deployment)
+# =============================================================================
+# CLUSTER RECEIVER (GATEWAY) CONFIGURATION
+# =============================================================================
+# The cluster receiver runs as a Deployment and collects Kubernetes cluster-level
+# metrics and events.
+# Recommended: Deploy both agent (DaemonSet) and cluster receiver (Deployment)
 cluster:
-  # Enable gateway deployment
+  # -- Enable cluster receiver (gateway) deployment
+  # @default -- true
   enabled: true
-  # OpenTelemetry Collector image (defaults to contrib distribution)
+  # -- OpenTelemetry Collector image for cluster receiver
+  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # @default -- ""
   image: ""
-  # Extra environment variables for gateway (in addition to automatic secret env vars)
+  # -- Extra environment variables for cluster receiver
+  # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
+  # Example:
+  #   extraEnvs:
+  #     - name: CUSTOM_VAR
+  #       value: "custom-value"
+  # @default -- []
   extraEnvs: []
-  # Note: All secret.data and secret.stringData entries are automatically added as environment variables
-  # Gateway collector configuration
+
+  # -- Replace default config with complete custom configuration
+  # When set, this completely replaces the default collector configuration
+  # Use this for full control over the OpenTelemetry Collector config
+  # Example:
+  #   customConfig: |-
+  #     receivers:
+  #       k8s_cluster:
+  #         collection_interval: 30s
+  #     processors:
+  #       batch: {}
+  #     exporters:
+  #       otlphttp/tsuga:
+  #         endpoint: ${TSUGA_OTLP_ENDPOINT}
+  #     service:
+  #       pipelines:
+  #         metrics:
+  #           receivers: [k8s_cluster]
+  #           processors: [batch]
+  #           exporters: [otlphttp/tsuga]
+  # @default -- {}
+  customConfig: {}
+
+  # -- Gateway collector configuration (merge-based approach)
+  # Use this to extend the default configuration
+  # Default config includes: k8s_cluster receiver, k8sattributes processor, resource processor
   config:
-    # receivers:
-    #   k8s_cluster:
-    #     collection_interval: 10s
-    # exporters:
-    #   debug: {}
-    #   otlphttp/tsuga:
-    #     endpoint: ${TSUGA_OTLP_ENDPOINT}
-    #     headers:
-    #       Authorization: Bearer ${TSUGA_API_KEY}
-    # processors:
-    # service:
-    #   pipelines:
-    #     metrics:
-    #       receivers:
-    #       - k8s_cluster
-    #       exporters:
-    #       - otlphttp/tsuga
-    #     logs/entity_events:
-    #       receivers:
-    #       - k8s_cluster
-    #       exporters:
-    #       - otlphttp/tsuga
-    #   telemetry:
-    
-# Agent (DaemonSet) configuration
+    # -- Additional telemetry to merge into the collector configuration
+    # Merges with default telemetry
+    # @default -- {}
+    extraTelemetry: {}
+    # -- Additional receivers to merge into the collector configuration
+    # These are merged with default receivers (k8s_cluster)
+    # Example:
+    #   extraReceivers:
+    #     prometheus:
+    #       config:
+    #         scrape_configs:
+    #           - job_name: 'my-service'
+    # @default -- {}
+    extraReceivers: {}
+    # -- Additional processors to merge into the collector configuration
+    # These are merged with default processors (k8sattributes, resource)
+    # @default -- {}
+    extraProcessors: {}
+    # -- Additional exporters to merge into the collector configuration
+    # These are merged with default exporters (otlphttp/tsuga)
+    # @default -- {}
+    extraExporters: {}
+    # -- Service configuration
+    service:
+      # -- Additional extensions to add to the service configuration
+      # Added to default extensions
+      # @default -- {}
+      extraExtensions: {}
+      # -- Pipeline configuration
+      pipelines:
+        # -- Logs pipeline configuration
+        logs:
+          # -- Additional exporters to add to the logs pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the logs pipeline
+          # Added to default processors (resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the logs pipeline
+          # Added to default receiver (k8s_cluster)
+          # @default -- []
+          extraReceivers: []
+        # -- Metrics pipeline configuration
+        metrics:
+          # -- Additional exporters to add to the metrics pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the metrics pipeline
+          # Added to default processors (resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the metrics pipeline
+          # Added to default receiver (k8s_cluster)
+          # @default -- []
+          extraReceivers: []
+        # -- Traces pipeline configuration
+        traces:
+          # -- Additional exporters to add to the traces pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the traces pipeline
+          # Added to default processors (resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the traces pipeline
+          # Added to default receiver (k8s_cluster)
+          # @default -- []
+          extraReceivers: []
+
+  # -- Label mapping configuration for cluster receiver
+  # Maps Kubernetes pod labels to OpenTelemetry resource attributes
+  # These are appended to default label mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # Example:
+  #   extraLabelMapping:
+  #     - tag_name: "app.version"
+  #       key: "app.version"
+  #       from: "pod"
+  # @default -- []
+  extraLabelMapping: []
+  # -- Annotations mapping configuration for cluster receiver
+  # Maps Kubernetes pod annotations to OpenTelemetry resource attributes
+  # These are appended to default annotation mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # @default -- []
+  extraAnnotationsMapping: []
+
+   # -- Cluster-specific resource limits and requests
+  # If not set, inherits from global resources configuration
+  # @default -- {}
+  resources: {}
+  # -- Cluster-specific node selector
+  # If not set, inherits from global nodeSelector configuration
+  # @default -- {}
+  nodeSelector: {}
+  # -- Cluster-specific tolerations
+  # If not set, inherits from global tolerations configuration
+  # @default -- {}
+  tolerations: {}
+  # -- Cluster-specific affinity rules
+  # If not set, inherits from global affinity configuration
+  # @default -- {}
+  affinity: {}
+
+# =============================================================================
+# AGENT (DAEMONSET) CONFIGURATION
+# =============================================================================
+# The agent runs as a DaemonSet (one pod per node) and collects host metrics,
+# Kubernetes objects, and application telemetry from each node.
 agent:
-  # Enable agent daemonset
+  # -- Enable agent daemonset deployment
+  # @default -- true
   enabled: true
-  # Enable host network for agent
+  # -- Enable host network for agent (recommended for optimal performance)
+  # When true, agent uses host networking for better performance
+  # @default -- true
   hostNetwork: true
-  # OpenTelemetry Collector image (defaults to contrib distribution)
+  # -- OpenTelemetry Collector image for agent
+  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # @default -- ""
   image: ""
-  # Extra environment variables for agent (in addition to automatic secret env vars)
+  # -- Extra environment variables for agent
+  # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
+  # @default -- []
   extraEnvs: []
-  
-  # Collect Logs
+
+  # -- Collect logs from the host and containers
+  # When true, enables filelog receiver to collect logs from /var/log/pods
+  # Also mounts required volumes for log collection
+  # @default -- true
   collectLogs: true
 
-  # Collect OpenTelemetry logs
+  # -- Collect OpenTelemetry collector logs
+  # When false, excludes OpenTelemetry collector logs from collection
+  # Useful to avoid log loops
+  # @default -- true
   collectOtelLogs: true
 
-  # Collect Host Network
+  # -- Collect host network metrics
+  # When true, enables network scraper in hostmetrics receiver
+  # @default -- false
   collectNetwork: false
 
-  # Collect Host Processes
+  # -- Collect host processes metrics
+  # When true, enables processes and process scrapers in hostmetrics receiver
+  # @default -- false
   collectProcesses: false
-  
-  # Agent collector configuration
-  config:
-    # connectors:
-    #   spanmetrics: {}
-    # extensions:
-    #   health_check:
-    #     endpoint: ${env:MY_POD_IP}:13133
-    # exporters:
-    #   otlphttp/tsuga:
-    #     endpoint: ${TSUGA_OTLP_ENDPOINT}
-    #     headers:
-    #       Authorization: Bearer ${TSUGA_API_KEY}
-    # receivers:
-    #   filelog:
-    #     include:
-    #     - /var/log/pods/*/*/*.log
-    #     include_file_name: false
-    #     include_file_path: true
-    #     operators:
-    #     - id: container-parser
-    #       max_log_size: 102400
-    #       type: container
-    #     retry_on_failure:
-    #       enabled: true
-    #     start_at: end
-    #   jaeger:
-    #     protocols:
-    #       grpc:
-    #         endpoint: ${env:MY_POD_IP}:14250
-    #       thrift_compact:
-    #         endpoint: ${env:MY_POD_IP}:6831
-    #       thrift_http:
-    #         endpoint: ${env:MY_POD_IP}:14268
-    #   kubeletstats:
-    #     insecure_skip_verify: true
-    #     auth_type: serviceAccount
-    #     collection_interval: 20s
-    #     endpoint: ${env:K8S_NODE_NAME}:10250
-    #   otlp:
-    #     protocols:
-    #       grpc:
-    #         endpoint: ${env:MY_POD_IP}:4317
-    #       http:
-    #         endpoint: ${env:MY_POD_IP}:4318
-    #   prometheus:
-    #     config:
-    #       scrape_configs:
-    #       - job_name: opentelemetry-collector
-    #         scrape_interval: 10s
-    #         static_configs:
-    #         - targets:
-    #           - ${env:MY_POD_IP}:8888
-    #   zipkin:
-    #     endpoint: ${env:MY_POD_IP}:9411
-    # processors:
-    #   batch: {}
-    #   k8sattributes:
-    #     extract:
-    #       metadata:
-    #       - k8s.namespace.name
-    #       - k8s.deployment.name
-    #       - k8s.statefulset.name
-    #       - k8s.daemonset.name
-    #       - k8s.cronjob.name
-    #       - k8s.job.name
-    #       - k8s.node.name
-    #       - k8s.pod.name
-    #       - k8s.pod.uid
-    #       - k8s.pod.start_time
-    #       - k8s.node.name
-    #     filter:
-    #       node_from_env_var: K8S_NODE_NAME
-    #     passthrough: false
-    #     pod_association:
-    #     - sources:
-    #       - from: resource_attribute
-    #         name: k8s.pod.ip
-    #     - sources:
-    #       - from: resource_attribute
-    #         name: k8s.pod.uid
-    #     - sources:
-    #       - from: connection
-    #   memory_limiter:
-    #     check_interval: 5s
-    #     limit_percentage: 80
-    #     spike_limit_percentage: 25
-    # service:
-    #   extensions:
-    #   - health_check
-    #   pipelines:
-    #     logs:
-    #       exporters:
-    #       - otlphttp/tsuga
-    #       processors:
-    #       - k8sattributes
-    #       - memory_limiter
-    #       - batch
-    #       receivers:
-    #       - otlp
-    #       - filelog
-    #     metrics:
-    #       exporters:
-    #       - otlphttp/tsuga
-    #       processors:
-    #       - k8sattributes
-    #       - memory_limiter
-    #       - batch
-    #       receivers:
-    #       - otlp
-    #       - prometheus
-    #       - kubeletstats
-    #       - spanmetrics
-    #     traces:
-    #       exporters:
-    #       - otlphttp/tsuga
-    #       - spanmetrics
-    #       processors:
-    #       - k8sattributes
-    #       - memory_limiter
-    #       - batch
-    #       receivers:
-    #       - otlp
-    #       - jaeger
-    #       - zipkin
-    #   telemetry:
-    #     metrics:
-    #       readers:
-    #       - pull:
-    #           exporter:
-    #             prometheus:
-    #               host: ${env:MY_POD_IP}
-    #               port: 8888
-    
 
-# Resource limits and requests
+  # -- Replace default config with complete custom configuration
+  # When set, this completely replaces the default collector configuration
+  # Use this for full control over the OpenTelemetry Collector config
+  # See cluster.customConfig for example format
+  # @default -- {}
+  customConfig: {}
+
+  # -- Agent collector configuration (merge-based approach)
+  # Use this to extend the default configuration
+  # Default config includes: filelog, jaeger, kubeletstats, hostmetrics, otlp, prometheus, zipkin receivers
+  # Default processors: k8sattributes, memory_limiter, batch, cumulativetodelta, resource
+  config:
+    # -- Additional telemetry to merge into the collector configuration
+    # Merges with default telemetry (Prometheus metrics on port 8888)
+    # @default -- {}
+    extraTelemetry: {}
+    # -- Additional receivers to merge into the collector configuration
+    # These are merged with default receivers
+    # @default -- {}
+    extraReceivers: {}
+    # -- Additional processors to merge into the collector configuration
+    # These are merged with default processors
+    # @default -- {}
+    extraProcessors: {}
+    # -- Additional exporters to merge into the collector configuration
+    # These are merged with default exporters (otlphttp/tsuga)
+    # @default -- {}
+    extraExporters: {}
+    # -- Additional extensions to merge into the collector configuration
+    # These are merged with default extensions (health_check)
+    # @default -- {}
+    extraExtensions: {}
+    # -- Service configuration
+    service:
+      # -- Additional extensions to add to the service configuration
+      # Added to default extensions (health_check)
+      # @default -- {}
+      extraExtensions: {}
+      # -- Pipeline configuration
+      pipelines:
+        # -- Logs pipeline configuration
+        logs:
+          # -- Additional exporters to add to the logs pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the logs pipeline
+          # Added to default processors (k8sattributes, memory_limiter, batch, resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the logs pipeline
+          # Added to default receivers (otlp, filelog)
+          # @default -- []
+          extraReceivers: []
+        # -- Metrics pipeline configuration
+        metrics:
+          # -- Additional exporters to add to the metrics pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the metrics pipeline
+          # Added to default processors (k8sattributes, memory_limiter, batch, cumulativetodelta, resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the metrics pipeline
+          # Added to default receivers (otlp, prometheus, kubeletstats, spanmetrics, hostmetrics)
+          # @default -- []
+          extraReceivers: []
+        # -- Traces pipeline configuration
+        traces:
+          # -- Additional exporters to add to the traces pipeline
+          # Added to default exporters (otlphttp/tsuga, spanmetrics)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the traces pipeline
+          # Added to default processors (k8sattributes, memory_limiter, batch, resource)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the traces pipeline
+          # Added to default receivers (otlp, jaeger, zipkin)
+          # @default -- []
+          extraReceivers: []
+
+  # -- Label mapping configuration for agent
+  # Maps Kubernetes pod labels to OpenTelemetry resource attributes
+  # These are appended to default label mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # Example:
+  #   extraLabelMapping:
+  #     - tag_name: "app.version"
+  #       key: "app.version"
+  #       from: "pod"
+  # @default -- []
+  extraLabelMapping: []
+  # -- Annotations mapping configuration for agent
+  # Maps Kubernetes pod annotations to OpenTelemetry resource attributes
+  # These are appended to default annotation mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # @default -- []
+  extraAnnotationsMapping: []
+
+  # -- Agent-specific resource limits and requests
+  # If not set, inherits from global resources configuration
+  # @default -- {}
+  resources: {}
+  # -- Agent-specific node selector
+  # If not set, inherits from global nodeSelector configuration
+  # @default -- {}
+  nodeSelector: {}
+  # -- Agent-specific tolerations
+  # If not set, inherits from global tolerations configuration
+  # @default -- {}
+  tolerations: {}
+  # -- Agent-specific affinity rules
+  # If not set, inherits from global affinity configuration
+  # @default -- {}
+  affinity: {}
+
+# =============================================================================
+# RESOURCE CONFIGURATION
+# =============================================================================
+# Resource limits and requests for both agent and cluster receiver
+# These are used as defaults when agent.resources or cluster-specific resources are not set
 resources:
+  # -- Resource limits
   limits:
+    # -- CPU limit
+    # @default -- "500m"
     cpu: 500m
+    # -- Memory limit
+    # @default -- "512Mi"
     memory: 512Mi
+  # -- Resource requests
   requests:
+    # -- CPU request
+    # @default -- "100m"
     cpu: 100m
+    # -- Memory request
+    # @default -- "128Mi"
     memory: 128Mi
 
-# Node selector for daemonset mode
+# -- Node selector for daemonset mode (agent)
+# Used as default when agent.nodeSelector is not set
+# @default -- {}
 nodeSelector: {}
 
-# Tolerations for daemonset mode
+# -- Tolerations for daemonset mode (agent)
+# Used as default when agent.tolerations is not set
+# @default -- []
 tolerations: []
 
-# Affinity rules
+# -- Affinity rules for pod scheduling
+# Used as default when agent.affinity is not set
+# @default -- {}
 affinity: {}
 
-# Service account configuration
+# =============================================================================
+# SERVICE ACCOUNT & RBAC CONFIGURATION
+# =============================================================================
+
+# -- Service account configuration
 serviceAccount:
+  # -- Create a service account for the OpenTelemetry collectors
+  # @default -- true
   create: true
+  # -- Name of the service account
+  # If not set, will be auto-generated based on release name
+  # @default -- ""
   name: ""
+  # -- Annotations to add to the service account
+  # Useful for IRSA (IAM Roles for Service Accounts) or workload identity
+  # @default -- {}
   annotations: {}
 
-# RBAC configuration
+# -- RBAC configuration
 rbac:
+  # -- Create RBAC resources (ClusterRole and ClusterRoleBinding)
+  # Required for collecting Kubernetes cluster metrics and metadata
+  # @default -- true
   create: true
 
-# Resource naming validation
+# =============================================================================
+# VALIDATION CONFIGURATION
+# =============================================================================
+
+# -- Resource naming validation
 validation:
-  # Enable resource name validation
+  # -- Enable resource name validation
+  # When enabled, validates resource names meet Kubernetes requirements
+  # @default -- true
   enabled: true
-  # Maximum length for resource names (Kubernetes limit is 63)
+  # -- Maximum length for resource names (Kubernetes limit is 63 characters)
+  # @default -- 63
   maxNameLength: 63
-  # Validate naming conventions
+  # -- Validate naming conventions
+  # Enforces Kubernetes naming conventions (lowercase alphanumeric and hyphens)
+  # @default -- true
   enforceNamingConventions: true
