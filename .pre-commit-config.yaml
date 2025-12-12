@@ -1,0 +1,15 @@
+---
+repos:
+  - repo: https://github.com/norwoodj/helm-docs
+    rev:  "v1.14.2"
+    hooks:
+      - id: helm-docs
+        args:
+          # Make the tool search for charts only under the `charts` directory
+          - --chart-search-root=charts
+
+  - repo: https://github.com/losisin/helm-values-schema-json
+    rev: v2.3.1
+    hooks:
+      - id: helm-schema
+        args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]

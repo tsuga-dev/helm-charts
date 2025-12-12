@@ -1,6 +1,6 @@
 # OpenTelemetry Helm Chart Makefile
 
-.PHONY: help lint unittest integration security clean install test-all
+.PHONY: help lint unittest integration security clean install test-all docs
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  test-all      - Run all tests"
 	@echo "  clean         - Clean up test resources"
 	@echo "  install       - Install chart with test values"
+	@echo "  docs          - Generate documentation using helm-docs"
 
 # Lint the Helm chart
 lint:
