@@ -1,4 +1,10 @@
 {{- if .Values.agent.enabled }}
+{{- /*
+     First, render the default config and parse it into a map,
+     then build a new context that includes it as .defaultConfig
+*/ -}}
+{{- $default := include "tsuga-otel.deamonset.config.default" . | fromYaml }}
+{{- $ctx := merge (dict "defaultConfig" $default) .Values.agent.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
@@ -34,7 +40,7 @@ spec:
     {{- toYaml .Values.tolerations | nindent 4 }}
     {{- end }}
   {{- end }}
-  {{- if .Values.agent.collectKubernetesLogs }}
+  {{- if .Values.agent.collectLogs }}
   volumeMounts:
     - name: varlogpods
       mountPath: /var/log/pods
@@ -67,24 +73,5 @@ spec:
     {{- toYaml .Values.agent.extraEnvs | nindent 4 }}
     {{- end }}
   config:
-    connectors:
-      spanmetrics: {}
-      {{- if and .Values.agent.config .Values.agent.config.connectors }}
-      {{- toYaml .Values.agent.config.connectors | nindent 6 }}
-      {{- end }}
-    extensions:
-      {{- include "opentelemetry-kube-stack.agentExtensions" . | nindent 6 }}
-    exporters:
-      {{- include "opentelemetry-kube-stack.agentExporters" . | nindent 6 }}
-    receivers:
-      {{- include "opentelemetry-kube-stack.agentReceivers" . | nindent 6 }}
-    processors:
-      {{- include "opentelemetry-kube-stack.agentProcessors" . | nindent 6 }}
-    service:
-      extensions:
-      {{- include "opentelemetry-kube-stack.serviceExtensions" . | nindent 6 }}
-      pipelines:
-        {{- include "opentelemetry-kube-stack.agentServicePipelines" . | nindent 8 }}
-      telemetry:
-        {{- include "opentelemetry-kube-stack.telemetryConfig" . | nindent 8 }}
+    {{- include "opentelemetry-kube-stack.otelConfig" $ctx | trim | nindent 4 }}
 {{- end }}
