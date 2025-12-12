@@ -9,6 +9,70 @@ opentelemetry-demo:
           fieldRef:
             apiVersion: v1
             fieldPath: status.hostIP
+
+  components:
+    accounting:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    ad:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    cart:
+      podAnnotations:
+        resource.opentelemetry.io/team: app
+    checkout:
+      podAnnotations:
+        resource.opentelemetry.io/team: app
+    currency:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    email:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    fraud-detection:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    frontend:
+      podAnnotations:
+        resource.opentelemetry.io/team: app
+    frontend-proxy:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    image-provider:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    load-generator:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    payment:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    product-catalog:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    quote:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    recommendation:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    shipping:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+    flagd:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    kafka:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    postgresql:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    valkey-cart:
+      podAnnotations:
+        resource.opentelemetry.io/team: platform
+    
+
   opentelemetry-collector:
     enabled: false
   jaeger:
@@ -20,15 +84,11 @@ opentelemetry-demo:
   grafana:
     enabled: false
 
-opentelemetry-collector:
+opentelemetry-kube-stack:
   enabled: true
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     config:
-      labelMapping:
-        - tag_name: test
-          key: resource.opentelemetry.io/test
-          from: pod
       extraReceivers:
         nginx:
           collection_interval: 10s

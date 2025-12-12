@@ -8,6 +8,7 @@ on:
       - main
     paths:
       - 'README.md'
+      - 'charts/**/README.md'
 
 jobs:
   sync:
@@ -19,19 +20,41 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
-      - name: Copy README to temp
-        run: cp -f README.md ${{ runner.temp }}/README.md
+      - name: Copy READMEs to temp
+        run: |
+          mkdir -p ${{ runner.temp }}/readmes
+          # Copy root README
+          if [ -f README.md ]; then
+            cp -f README.md ${{ runner.temp }}/readmes/README.md
+          fi
+          # Copy all chart READMEs maintaining directory structure
+          find charts -name "README.md" -type f | while read readme; do
+            mkdir -p "${{ runner.temp }}/readmes/$(dirname "$readme")"
+            cp -f "$readme" "${{ runner.temp }}/readmes/$readme"
+          done
 
       - name: Checkout gh-pages
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: gh-pages
 
-      - name: Sync README and push
+      - name: Sync READMEs and push
         run: |
-          cp -f ${{ runner.temp }}/README.md .
+          # Copy root README if it exists
+          if [ -f ${{ runner.temp }}/readmes/README.md ]; then
+            cp -f ${{ runner.temp }}/readmes/README.md .
+            git add README.md
+          fi
+          # Copy chart READMEs maintaining directory structure
+          if [ -d ${{ runner.temp }}/readmes/charts ]; then
+            find ${{ runner.temp }}/readmes/charts -name "README.md" -type f | while read readme; do
+              rel_path="${readme#${{ runner.temp }}/readmes/}"
+              mkdir -p "$(dirname "$rel_path")"
+              cp -f "$readme" "$rel_path"
+              git add "$rel_path"
+            done
+          fi
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git add README.md
-          git commit --signoff -m "Sync README from main" || exit 0
+          git commit --signoff -m "Sync READMEs from main" || exit 0
           git push
