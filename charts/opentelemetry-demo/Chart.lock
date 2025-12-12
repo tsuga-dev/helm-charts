@@ -1,9 +1,9 @@
 dependencies:
 - name: opentelemetry-kube-stack
   repository: https://tsuga-dev.github.io/helm-charts
-  version: 0.2.5
+  version: 0.2.6
 - name: opentelemetry-demo
   repository: https://open-telemetry.github.io/opentelemetry-helm-charts
   version: 0.38.6
-digest: sha256:1d8f22342d3da02f1fc00d1201f152f22242a39608b9f72585ef3685ecd50ba3
-generated: "2025-12-08T11:25:11.424352+01:00"
+digest: sha256:7bb765fcf8d25ab4919257109f143956b14ad5f348715bbae8d5610f230c22d2
+generated: "2025-12-12T11:36:15.742999+01:00"

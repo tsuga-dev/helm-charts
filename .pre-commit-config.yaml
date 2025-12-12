@@ -13,3 +13,26 @@ repos:
     hooks:
       - id: helm-schema
         args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]
+  
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.23
+    hooks:
+      - id: helmlint
+
+  - repo: local
+    hooks:
+      - id: helm-deps
+        name: Helm Dependency Update
+        entry: bash -c 'find . -name Chart.yaml | xargs -I% bash -c "dirname %" | xargs -t -I% helm dep up %'
+        language: system
+        pass_filenames: false
+      - id: helm-lint
+        name: Helm Lint
+        entry: bash -c 'find . -name Chart.yaml | xargs -I% bash -c "dirname %" | xargs -t -I% helm lint %'
+        language: system
+        pass_filenames: false
+      - id: helm-example
+        name: Generate Helm examples
+        entry: bash -c 'make generate-examples'
+        language: system
+        pass_filenames: false
