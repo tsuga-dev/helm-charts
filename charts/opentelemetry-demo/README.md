@@ -9,7 +9,7 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.38.6 |
-| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.6 |
+| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.7 |
 
 ## Values
 
