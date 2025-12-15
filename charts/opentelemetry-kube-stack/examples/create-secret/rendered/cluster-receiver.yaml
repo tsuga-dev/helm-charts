@@ -10,6 +10,9 @@ metadata:
     app.kubernetes.io/component: cluster-receiver
     app.kubernetes.io/part-of: opentelemetry-kube-stack
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
 spec:
   mode: deployment
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s

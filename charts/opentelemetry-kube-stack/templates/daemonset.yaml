@@ -12,6 +12,9 @@ metadata:
   name: {{ include "opentelemetry-kube-stack.fullname" . }}-agent
   labels:
     {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "agent" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
   mode: daemonset
   hostNetwork: {{ .Values.agent.hostNetwork }}
