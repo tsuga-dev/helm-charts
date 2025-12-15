@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.38.6](https://img.shields.io/badge/AppVersion-0.38.6-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.38.6](https://img.shields.io/badge/AppVersion-0.38.6-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -9,7 +9,7 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.38.6 |
-| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.6 |
+| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.7 |
 
 ## Values
 
