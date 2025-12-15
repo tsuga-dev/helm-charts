@@ -13,6 +13,9 @@ metadata:
   name: {{ include "opentelemetry-kube-stack.fullname" . }}-cluster-receiver
   labels:
     {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "cluster-receiver" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
   mode: deployment
   image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}

@@ -6,6 +6,9 @@ metadata:
   name: {{ include "opentelemetry-kube-stack.fullname" . }}
   labels:
     {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "rbac" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 rules:
 # Core Kubernetes resources for agent collection
 - apiGroups: [""]
@@ -60,6 +63,9 @@ metadata:
   name: {{ include "opentelemetry-kube-stack.fullname" . }}
   labels:
     {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "rbac" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
