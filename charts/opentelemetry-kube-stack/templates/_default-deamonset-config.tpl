@@ -159,7 +159,9 @@ service:
     logs:
       receivers:
         - otlp
+{{- if .Values.agent.collectLogs }}
         - filelog
+{{- end }}
       processors: 
         - k8sattributes
         - memory_limiter
