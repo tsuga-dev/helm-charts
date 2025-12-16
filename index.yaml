@@ -3,6 +3,26 @@ entries:
   opentelemetry-demo:
   - apiVersion: v2
     appVersion: 0.38.6
+    created: "2025-12-16T12:32:35.372022034Z"
+    dependencies:
+    - condition: opentelemetry-kube-stack.enabled
+      name: opentelemetry-kube-stack
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.2.8
+    - alias: opentelemetry-demo
+      condition: opentelemetry-demo.enabled
+      name: opentelemetry-demo
+      repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+      version: 0.38.6
+    description: A Helm chart for Tsuga Observability Demo
+    digest: 1c644346a55dea093e679c1b1e76c0c8b44dcda14dc7a5767c0d8250e9125e8a
+    name: opentelemetry-demo
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-demo-0.1.3/opentelemetry-demo-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v2
+    appVersion: 0.38.6
     created: "2025-12-15T08:53:12.113563594Z"
     dependencies:
     - condition: opentelemetry-kube-stack.enabled
@@ -304,4 +324,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.2.0/opentelemetry-kube-stack-0.2.0.tgz
     version: 0.2.0
-generated: "2025-12-16T11:56:32.338326584Z"
+generated: "2025-12-16T12:32:35.372064844Z"
