@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.38.6](https://img.shields.io/badge/AppVersion-0.38.6-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.38.6](https://img.shields.io/badge/AppVersion-0.38.6-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -9,7 +9,7 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.38.6 |
-| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.7 |
+| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.8 |
 
 ## Values
 
@@ -44,6 +44,7 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.opensearch.enabled | bool | `false` |  |
 | opentelemetry-demo.opentelemetry-collector.enabled | bool | `false` |  |
 | opentelemetry-demo.prometheus.enabled | bool | `false` |  |
+| opentelemetry-kube-stack.agent.collectLogs | bool | `false` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.nginx.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.nginx.endpoint | string | `"http://image-provider.default:8081/status"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.endpoint | string | `"postgresql.default:5432"` |  |
