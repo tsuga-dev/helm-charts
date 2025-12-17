@@ -24,6 +24,15 @@ spec:
     requests:
       cpu: 100m
       memory: 128Mi
+  volumeMounts:
+    - name: hostfs
+      mountPath: /hostfs
+      readOnly: true
+      mountPropagation: HostToContainer
+  volumes:
+    - name: hostfs
+      hostPath:
+        path: /
   serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
@@ -45,6 +54,7 @@ spec:
     receivers:
       hostmetrics:
         collection_interval: 10s
+        root_path: /hostfs
         scrapers:
           cpu:
             metrics:
