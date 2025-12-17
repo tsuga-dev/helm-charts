@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../values.schema.json
 agent:
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  collectLogs: false
   extraLabelMapping:
     - tag_name: test
       key: resource.opentelemetry.io/test

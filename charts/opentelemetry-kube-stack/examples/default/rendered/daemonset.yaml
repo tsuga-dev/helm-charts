@@ -25,6 +25,10 @@ spec:
       cpu: 100m
       memory: 128Mi
   volumeMounts:
+    - name: hostfs
+      mountPath: /hostfs
+      readOnly: true
+      mountPropagation: HostToContainer
     - name: varlogpods
       mountPath: /var/log/pods
       readOnly: true
@@ -32,6 +36,9 @@ spec:
       mountPath: /var/lib/docker/containers
       readOnly: true
   volumes:
+    - name: hostfs
+      hostPath:
+        path: /
     - name: varlogpods
       hostPath:
         path: /var/log/pods
@@ -72,6 +79,7 @@ spec:
         start_at: end
       hostmetrics:
         collection_interval: 10s
+        root_path: /hostfs
         scrapers:
           cpu:
             metrics:

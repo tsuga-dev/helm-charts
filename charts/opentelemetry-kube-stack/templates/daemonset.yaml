@@ -43,15 +43,24 @@ spec:
     {{- toYaml .Values.tolerations | nindent 4 }}
     {{- end }}
   {{- end }}
-  {{- if .Values.agent.collectLogs }}
   volumeMounts:
+    - name: hostfs
+      mountPath: /hostfs
+      readOnly: true
+      mountPropagation: HostToContainer
+  {{- if .Values.agent.collectLogs }}
     - name: varlogpods
       mountPath: /var/log/pods
       readOnly: true
     - name: varlibdockercontainers
       mountPath: /var/lib/docker/containers
       readOnly: true
+  {{- end}}
   volumes:
+    - name: hostfs
+      hostPath:
+        path: /
+  {{- if .Values.agent.collectLogs }}
     - name: varlogpods
       hostPath:
         path: /var/log/pods
