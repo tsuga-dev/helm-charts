@@ -85,6 +85,33 @@ entries:
   opentelemetry-kube-stack:
   - apiVersion: v2
     appVersion: v1
+    created: "2025-12-17T14:51:02.242614674Z"
+    description: A comprehensive Helm chart for OpenTelemetry Kubernetes operator
+      with Tsuga integration, featuring dual deployment pattern (agent DaemonSet +
+      cluster receiver), secure credential management, and production-ready configurations
+      for telemetry collection to Tsuga platform.
+    digest: eada51cd645138f2e9c6558f451a6c70d1edbc30dd9ebb0f2433267523b989c8
+    home: https://tsuga-dev.github.io/helm-charts/
+    keywords:
+    - opentelemetry
+    - observability
+    - monitoring
+    - tracing
+    - metrics
+    - kubernetes
+    - operator
+    maintainers:
+    - email: antonin@tsuga.com
+      name: OpenTelemetry Team
+    name: opentelemetry-kube-stack
+    sources:
+    - https://github.com/tsuga-dev/helm-charts
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.2.9/opentelemetry-kube-stack-0.2.9.tgz
+    version: 0.2.9
+  - apiVersion: v2
+    appVersion: v1
     created: "2025-12-16T11:56:32.33828653Z"
     description: A comprehensive Helm chart for OpenTelemetry Kubernetes operator
       with Tsuga integration, featuring dual deployment pattern (agent DaemonSet +
@@ -324,4 +351,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.2.0/opentelemetry-kube-stack-0.2.0.tgz
     version: 0.2.0
-generated: "2025-12-16T12:32:35.372064844Z"
+generated: "2025-12-17T14:51:02.242663595Z"
