@@ -21,6 +21,11 @@ Generate environment variables for OpenTelemetry Collector
     secretKeyRef:
       name: {{ include "opentelemetry-kube-stack.secretName" . }}
       key: {{ include "opentelemetry-kube-stack.secretKey" (dict "keyName" "TSUGA_API_KEY" "Values" .Values) }}
+- name: NODE_IP
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: status.hostIP
 {{- end }}
 
 {{/*

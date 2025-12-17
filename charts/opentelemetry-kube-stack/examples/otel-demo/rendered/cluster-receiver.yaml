@@ -40,6 +40,11 @@ spec:
         secretKeyRef:
           name: otel-secret
           key: TSUGA_API_KEY
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
   config:
     receivers:
       k8s_cluster:
