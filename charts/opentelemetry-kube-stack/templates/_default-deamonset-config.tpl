@@ -34,7 +34,7 @@ receivers:
     insecure_skip_verify: true
     auth_type: serviceAccount
     collection_interval: 20s
-    endpoint: ${env:K8S_NODE_NAME}:10250
+    endpoint: ${env:NODE_IP}:10250
   hostmetrics:
     root_path: /hostfs
     collection_interval: 10s
