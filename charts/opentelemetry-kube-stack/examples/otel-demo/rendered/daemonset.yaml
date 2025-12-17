@@ -25,19 +25,14 @@ spec:
       cpu: 100m
       memory: 128Mi
   volumeMounts:
-    - name: varlogpods
-      mountPath: /var/log/pods
+    - name: hostfs
+      mountPath: /hostfs
       readOnly: true
-    - name: varlibdockercontainers
-      mountPath: /var/lib/docker/containers
-      readOnly: true
+      mountPropagation: HostToContainer
   volumes:
-    - name: varlogpods
+    - name: hostfs
       hostPath:
-        path: /var/log/pods
-    - name: varlibdockercontainers
-      hostPath:
-        path: /var/lib/docker/containers
+        path: /
   serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
@@ -57,21 +52,9 @@ spec:
           key: TSUGA_API_KEY
   config:
     receivers:
-      filelog:
-        exclude: []
-        include:
-        - /var/log/pods/*/*/*.log
-        include_file_name: false
-        include_file_path: true
-        operators:
-        - id: container-parser
-          max_log_size: 102400
-          type: container
-        retry_on_failure:
-          enabled: true
-        start_at: end
       hostmetrics:
         collection_interval: 10s
+        root_path: /hostfs
         scrapers:
           cpu:
             metrics:
@@ -237,7 +220,6 @@ spec:
           - resource
           receivers:
           - otlp
-          - filelog
         metrics:
           exporters:
           - otlphttp/tsuga

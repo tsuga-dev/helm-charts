@@ -36,6 +36,7 @@ receivers:
     collection_interval: 20s
     endpoint: ${env:K8S_NODE_NAME}:10250
   hostmetrics:
+    root_path: /hostfs
     collection_interval: 10s
     scrapers:
       paging:
