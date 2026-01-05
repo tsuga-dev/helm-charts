@@ -210,8 +210,6 @@ spec:
         - default: GET
           name: http.method
         - name: http.status_code
-        exclude_dimensions:
-        - status.code
     service:
       extensions:
       - health_check
