@@ -152,7 +152,15 @@ processors:
 exporters: 
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 connectors:
-  spanmetrics: {}
+  spanmetrics:
+    dimensions:
+      - name: http.method
+        default: GET
+      - name: http.status_code
+    calls_dimensions:
+      - name: http.url
+        default: /ping
+    exclude_dimensions: ["status.code"]
 service:
   extensions:
     - health_check

@@ -202,7 +202,16 @@ spec:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
     connectors:
-      spanmetrics: {}
+      spanmetrics:
+        calls_dimensions:
+        - default: /ping
+          name: http.url
+        dimensions:
+        - default: GET
+          name: http.method
+        - name: http.status_code
+        exclude_dimensions:
+        - status.code
     service:
       extensions:
       - health_check
