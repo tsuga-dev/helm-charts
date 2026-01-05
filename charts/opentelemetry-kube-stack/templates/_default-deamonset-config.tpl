@@ -160,7 +160,6 @@ connectors:
     calls_dimensions:
       - name: http.url
         default: /ping
-    exclude_dimensions: ["status.code"]
 service:
   extensions:
     - health_check
