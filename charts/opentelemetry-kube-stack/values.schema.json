@@ -48,7 +48,7 @@
                             "type": "object",
                             "properties": {
                                 "extraExtensions": {
-                                    "type": "object"
+                                    "type": "array"
                                 },
                                 "pipelines": {
                                     "type": "object",
@@ -161,7 +161,7 @@
                             "type": "object",
                             "properties": {
                                 "extraExtensions": {
-                                    "type": "object"
+                                    "type": "array"
                                 },
                                 "pipelines": {
                                     "type": "object",
