@@ -4,7 +4,7 @@
      then build a new context that includes it as .defaultConfig
 */ -}}
 {{- $default := include "tsuga-otel.deamonset.config.default" . | fromYaml }}
-{{- $ctx := merge (dict "defaultConfig" $default) .Values.agent.config }}
+{{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.agent.customConfig) .Values.agent.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
