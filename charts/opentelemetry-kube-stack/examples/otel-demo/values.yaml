@@ -7,6 +7,14 @@ agent:
       key: resource.opentelemetry.io/test
       from: pod
   config:
+    extraExtensions:
+      k8s_observer:
+        auth_type: serviceAccount
+        node: ${env:K8S_NODE_NAME}
+        observe_pods: true
+        observe_nodes: true
+        observe_services: true
+        observe_ingresses: true
     extraReceivers:
       nginx:
         collection_interval: 10s
@@ -38,10 +46,20 @@ agent:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
         username: valkey
+      receiver_creator/logs:
+        watch_observers: [ k8s_observer ]
+        discovery:
+          enabled: true
+        receivers:
     service:
+      extraExtensions:
+        - k8s_observer
       pipelines:
         metrics:
           extraReceivers:
             - postgresql
             - redis
             - nginx
+        logs:
+          extraReceivers:
+            - receiver_creator/logs

@@ -21,7 +21,7 @@ Behavior:
 {{/* 1. EXTENSIONS */}}
 {{- $extensions := default (list) (index $default "extensions") }}
 {{- if $user.extraExtensions }}
-  {{- $extensions = merge $extensions $user.extraExtensions }}
+  {{- $extensions = concat $extensions $user.extraExtensions }}
 {{- end }}
 {{- $_ := set $service "extensions" $extensions }}
 
