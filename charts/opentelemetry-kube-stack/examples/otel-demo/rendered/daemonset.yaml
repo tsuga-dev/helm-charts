@@ -129,6 +129,12 @@ spec:
             static_configs:
             - targets:
               - ${env:MY_POD_IP}:8888
+      receiver_creator/logs:
+        discovery:
+          enabled: true
+        receivers: null
+        watch_observers:
+        - k8s_observer
       redis:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
@@ -209,6 +215,13 @@ spec:
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
+      k8s_observer:
+        auth_type: serviceAccount
+        node: ${env:K8S_NODE_NAME}
+        observe_ingresses: true
+        observe_nodes: true
+        observe_pods: true
+        observe_services: true
     connectors:
       spanmetrics:
         calls_dimensions:
@@ -221,6 +234,7 @@ spec:
     service:
       extensions:
       - health_check
+      - k8s_observer
       pipelines:
         logs:
           exporters:
@@ -232,6 +246,7 @@ spec:
           - resource
           receivers:
           - otlp
+          - receiver_creator/logs
         metrics:
           exporters:
           - otlphttp/tsuga
