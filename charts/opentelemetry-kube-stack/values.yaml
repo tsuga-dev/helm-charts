@@ -209,8 +209,8 @@ cluster:
     service:
       # -- Additional extensions to add to the service configuration
       # Added to default extensions
-      # @default -- {}
-      extraExtensions: {}
+      # @default -- []
+      extraExtensions: []
       # -- Pipeline configuration
       pipelines:
         # -- Logs pipeline configuration
@@ -375,8 +375,8 @@ agent:
     service:
       # -- Additional extensions to add to the service configuration
       # Added to default extensions (health_check)
-      # @default -- {}
-      extraExtensions: {}
+      # @default -- []
+      extraExtensions: []
       # -- Pipeline configuration
       pipelines:
         # -- Logs pipeline configuration
