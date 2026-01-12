@@ -1,2 +1,3 @@
 .vscode/
 charts/**/charts
+charts/**/values_test.yaml

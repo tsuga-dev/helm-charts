@@ -1,7 +1,7 @@
 {{- define "opentelemetry-kube-stack.otelConfig" -}}
 {{/* CASE 1 — User provides full config: use exactly that */}}
 {{- if .customConfig }}
-{{- tpl .customConfig . | nindent 0 }}
+{{- toYaml .customConfig | nindent 0 }}
 {{- else }}
 {{/* CASE 2 — No full config: merge default + extra sections */}}
 {{- $base := .defaultConfig }}

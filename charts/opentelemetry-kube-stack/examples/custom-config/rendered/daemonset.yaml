@@ -1,0 +1,82 @@
+---
+# Source: opentelemetry-kube-stack/templates/daemonset.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: example-opentelemetry-kube-stack-agent
+  labels:
+    app.kubernetes.io/name: opentelemetry-kube-stack
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: opentelemetry-kube-stack
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+spec:
+  mode: daemonset
+  hostNetwork: true
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  volumeMounts:
+    - name: hostfs
+      mountPath: /hostfs
+      readOnly: true
+      mountPropagation: HostToContainer
+  volumes:
+    - name: hostfs
+      hostPath:
+        path: /
+  serviceAccount: example-opentelemetry-kube-stack
+  env:
+    - name: TSUGA_OTLP_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_OTLP_ENDPOINT
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: TSUGA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_API_KEY
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+  config:
+    connectors:
+      custom-connector: {}
+    exporters:
+      custom-exporter: {}
+    extensions:
+      custom-extension: {}
+    processors:
+      custom-processor: {}
+    receivers:
+      custom-receiver: {}
+    service:
+      pipelines:
+        logs:
+          exporters:
+          - custom-exporter
+          processors:
+          - custom-processor
+          receivers:
+          - custom-receiver
+        metrics:
+          processors:
+          - custom-processor
+          receivers:
+          - custom-receiver
