@@ -66,8 +66,11 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
     postgresql:
+      command: ["docker-entrypoint.sh", "-c", "log_statement=all", "-c", "log_destination=stderr"]
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        resource.opentelemetry.io/service.name: postgresql
+        io.opentelemetry.discovery.logs/enabled: "true"
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -88,9 +91,18 @@ opentelemetry-kube-stack:
   enabled: true
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
-    collectLogs: false
+    collectLogs: true
     config:
+      extraExtensions:
+        k8s_observer:
+          observe_nodes: true
+          observe_services: true
+          observe_ingresses: true  
       extraReceivers:
+        receiver_creator/logs:
+          watch_observers: [ k8s_observer ]
+          discovery:
+            enabled: true 
         nginx:
           collection_interval: 10s
           endpoint: http://image-provider.default:8081/status
@@ -122,9 +134,14 @@ opentelemetry-kube-stack:
           endpoint: valkey-cart.default:6379
           username: valkey
       service:
+        extraExtensions:
+          - k8s_observer
         pipelines:
           metrics:
             extraReceivers:
               - postgresql
               - redis
               - nginx
+          logs:
+            extraReceivers:
+              - receiver_creator/logs
