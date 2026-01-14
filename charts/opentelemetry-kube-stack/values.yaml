@@ -325,6 +325,12 @@ agent:
   # @default -- true
   collectOtelLogs: true
 
+  # -- Add logs volumes to the agent
+  # When true, adds volumes for log collection
+  # Even if collectLogs is false, the volumes are added
+  # @default -- true
+  addLogsVolumes: true
+
   # -- Collect host network metrics
   # When true, enables network scraper in hostmetrics receiver
   # @default -- false
