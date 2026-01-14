@@ -50,6 +50,12 @@ opentelemetry-demo:
     product-catalog:
       podAnnotations:
         resource.opentelemetry.io/team: services
+    product-reviews:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+      imageOverride:
+        repository: "014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"
+        tag: "2.2.0-product-reviews"
     quote:
       podAnnotations:
         resource.opentelemetry.io/team: services
@@ -66,8 +72,26 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
     postgresql:
+      command: ["docker-entrypoint.sh", "-c", "log_statement=all", "-c", "log_destination=stderr"]
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        resource.opentelemetry.io/service.name: postgresql
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+
+            # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)
+            - type: recombine
+              id: postgres-multiline
+              combine_field: body
+              is_first_entry: body matches "^\\d{4}-\\d{2}-\\d{2} "
+              source_identifier: attributes["log.file.path"]
+              force_flush_period: 2s
+              max_log_size: 2MiB
+              preserve_leading_whitespaces: true
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -88,9 +112,19 @@ opentelemetry-kube-stack:
   enabled: true
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+    addLogsVolumes: true
     collectLogs: false
     config:
+      extraExtensions:
+        k8s_observer:
+          observe_nodes: true
+          observe_services: true
+          observe_ingresses: true  
       extraReceivers:
+        receiver_creator/logs:
+          watch_observers: [ k8s_observer ]
+          discovery:
+            enabled: true 
         nginx:
           collection_interval: 10s
           endpoint: http://image-provider.default:8081/status
@@ -122,9 +156,14 @@ opentelemetry-kube-stack:
           endpoint: valkey-cart.default:6379
           username: valkey
       service:
+        extraExtensions:
+          - k8s_observer
         pipelines:
           metrics:
             extraReceivers:
               - postgresql
               - redis
               - nginx
+          logs:
+            extraReceivers:
+              - receiver_creator/logs

@@ -29,10 +29,22 @@ spec:
       mountPath: /hostfs
       readOnly: true
       mountPropagation: HostToContainer
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
   volumes:
     - name: hostfs
       hostPath:
         path: /
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
   serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
@@ -129,6 +141,11 @@ spec:
             static_configs:
             - targets:
               - ${env:MY_POD_IP}:8888
+      receiver_creator/logs:
+        discovery:
+          enabled: true
+        watch_observers:
+        - k8s_observer
       redis:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
@@ -206,6 +223,10 @@ spec:
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
+      k8s_observer:
+        observe_ingresses: true
+        observe_nodes: true
+        observe_services: true
     connectors:
       spanmetrics:
         calls_dimensions:
@@ -218,6 +239,7 @@ spec:
     service:
       extensions:
       - health_check
+      - k8s_observer
       pipelines:
         logs:
           exporters:
@@ -229,6 +251,7 @@ spec:
           - resource
           receivers:
           - otlp
+          - receiver_creator/logs
         metrics:
           exporters:
           - otlphttp/tsuga
