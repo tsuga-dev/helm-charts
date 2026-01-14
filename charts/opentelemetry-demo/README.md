@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.1](https://img.shields.io/badge/Version-0.6.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -31,10 +31,12 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.payment.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.postgresql.command[0] | string | `"docker-entrypoint.sh"` |  |
 | opentelemetry-demo.components.postgresql.command[1] | string | `"-c"` |  |
-| opentelemetry-demo.components.postgresql.command[2] | string | `"log_statement=all"` |  |
+| opentelemetry-demo.components.postgresql.command[2] | string | `"log_destination=stderr"` |  |
 | opentelemetry-demo.components.postgresql.command[3] | string | `"-c"` |  |
-| opentelemetry-demo.components.postgresql.command[4] | string | `"log_destination=stderr"` |  |
-| opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)\n  - type: recombine\n    id: postgres-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} \"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
+| opentelemetry-demo.components.postgresql.command[4] | string | `"log_min_duration_statement=0"` |  |
+| opentelemetry-demo.components.postgresql.command[5] | string | `"-c"` |  |
+| opentelemetry-demo.components.postgresql.command[6] | string | `"log_line_prefix=%m [%p] %u@%d %"` |  |
+| opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Drop Postgres DETAIL logs\n  - type: filter\n    id: drop-postgres-detail\n    expr: 'body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} .*\\\\bDETAIL:\"'\n\n  # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)\n  - type: recombine\n    id: postgres-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} \"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/service.name" | string | `"postgresql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
