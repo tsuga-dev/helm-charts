@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.39.0](https://img.shields.io/badge/AppVersion-0.39.0-informational?style=flat-square)
+![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -8,7 +8,7 @@ A Helm chart for Tsuga Observability Demo
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.39.0 |
+| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
 | https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.14 |
 
 ## Values
@@ -34,10 +34,14 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.postgresql.command[2] | string | `"log_statement=all"` |  |
 | opentelemetry-demo.components.postgresql.command[3] | string | `"-c"` |  |
 | opentelemetry-demo.components.postgresql.command[4] | string | `"log_destination=stderr"` |  |
+| opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)\n  - type: recombine\n    id: postgres-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} \"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/service.name" | string | `"postgresql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
+| opentelemetry-demo.components.product-reviews.imageOverride.repository | string | `"014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"` |  |
+| opentelemetry-demo.components.product-reviews.imageOverride.tag | string | `"2.2.0-product-reviews"` |  |
+| opentelemetry-demo.components.product-reviews.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.quote.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.recommendation.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.shipping.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |

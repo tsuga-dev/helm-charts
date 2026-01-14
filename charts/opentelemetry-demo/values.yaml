@@ -50,6 +50,12 @@ opentelemetry-demo:
     product-catalog:
       podAnnotations:
         resource.opentelemetry.io/team: services
+    product-reviews:
+      podAnnotations:
+        resource.opentelemetry.io/team: services
+      imageOverride:
+        repository: "014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"
+        tag: "2.2.0-product-reviews"
     quote:
       podAnnotations:
         resource.opentelemetry.io/team: services
@@ -71,6 +77,21 @@ opentelemetry-demo:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
         io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+
+            # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)
+            - type: recombine
+              id: postgres-multiline
+              combine_field: body
+              is_first_entry: body matches "^\\d{4}-\\d{2}-\\d{2} "
+              source_identifier: attributes["log.file.path"]
+              force_flush_period: 2s
+              max_log_size: 2MiB
+              preserve_leading_whitespaces: true
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
