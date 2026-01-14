@@ -72,7 +72,14 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
     postgresql:
-      command: ["docker-entrypoint.sh", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+      command: 
+       - docker-entrypoint.sh
+       - -c
+       - log_destination=stderr
+       - -c
+       - log_min_duration_statement=0
+       - -c
+       - log_line_prefix=%m [%p] %u@%d %
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
@@ -82,6 +89,11 @@ opentelemetry-demo:
           operators:
             - type: container
               id: container-parser
+
+            # Drop Postgres DETAIL logs
+            - type: filter
+              id: drop-postgres-detail
+              expr: 'body matches "^\\d{4}-\\d{2}-\\d{2} .*\\bDETAIL:"'
 
             # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)
             - type: recombine
