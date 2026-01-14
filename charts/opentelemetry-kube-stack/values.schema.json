@@ -8,6 +8,9 @@
         "agent": {
             "type": "object",
             "properties": {
+                "addLogsVolumes": {
+                    "type": "boolean"
+                },
                 "affinity": {
                     "type": "object"
                 },

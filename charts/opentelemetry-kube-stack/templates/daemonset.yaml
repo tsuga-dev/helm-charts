@@ -48,7 +48,7 @@ spec:
       mountPath: /hostfs
       readOnly: true
       mountPropagation: HostToContainer
-  {{- if .Values.agent.collectLogs }}
+  {{- if or .Values.agent.collectLogs .Values.agent.addLogsVolumes }}
     - name: varlogpods
       mountPath: /var/log/pods
       readOnly: true
@@ -60,7 +60,7 @@ spec:
     - name: hostfs
       hostPath:
         path: /
-  {{- if .Values.agent.collectLogs }}
+  {{- if or .Values.agent.collectLogs .Values.agent.addLogsVolumes }}
     - name: varlogpods
       hostPath:
         path: /var/log/pods
