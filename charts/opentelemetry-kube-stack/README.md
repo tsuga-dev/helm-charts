@@ -150,6 +150,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | {} | Affinity rules for pod scheduling Used as default when agent.affinity is not set |
+| agent.addLogsVolumes | bool | true | Add logs volumes to the agent When true, adds volumes for log collection Even if collectLogs is false, the volumes are added |
 | agent.affinity | object | {} | Agent-specific affinity rules If not set, inherits from global affinity configuration |
 | agent.collectLogs | bool | true | Collect logs from the host and containers When true, enables filelog receiver to collect logs from /var/log/pods Also mounts required volumes for log collection |
 | agent.collectNetwork | bool | false | Collect host network metrics When true, enables network scraper in hostmetrics receiver |
