@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -9,7 +9,7 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
-| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.14 |
+| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.15 |
 
 ## Values
 
@@ -55,7 +55,8 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.opensearch.enabled | bool | `false` |  |
 | opentelemetry-demo.opentelemetry-collector.enabled | bool | `false` |  |
 | opentelemetry-demo.prometheus.enabled | bool | `false` |  |
-| opentelemetry-kube-stack.agent.collectLogs | bool | `true` |  |
+| opentelemetry-kube-stack.agent.addLogsVolumes | bool | `true` |  |
+| opentelemetry-kube-stack.agent.collectLogs | bool | `false` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_ingresses | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_nodes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_services | bool | `true` |  |

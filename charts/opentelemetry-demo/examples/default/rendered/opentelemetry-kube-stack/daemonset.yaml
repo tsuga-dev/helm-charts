@@ -69,19 +69,6 @@ spec:
           fieldPath: status.hostIP
   config:
     receivers:
-      filelog:
-        exclude: []
-        include:
-        - /var/log/pods/*/*/*.log
-        include_file_name: false
-        include_file_path: true
-        operators:
-        - id: container-parser
-          max_log_size: 102400
-          type: container
-        retry_on_failure:
-          enabled: true
-        start_at: end
       hostmetrics:
         collection_interval: 10s
         root_path: /hostfs
@@ -264,7 +251,6 @@ spec:
           - resource
           receivers:
           - otlp
-          - filelog
           - receiver_creator/logs
         metrics:
           exporters:
