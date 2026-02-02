@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.2.16](https://img.shields.io/badge/Version-0.2.16-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -101,6 +101,55 @@ First, install the OpenTelemetry Operator in your cluster:
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
+## Auto-instrumentation (APM)
+
+This chart can optionally create an OpenTelemetry Operator `Instrumentation` resource via `autoInstrumentation`.
+
+### Prerequisites
+
+- The **OpenTelemetry Operator** must be installed in the cluster (see Installation above).
+- Your workloads must opt-in via **pod annotations** (examples below).
+
+### Enable and configure
+
+Create an `Instrumentation` CR with your desired configuration:
+
+```yaml
+autoInstrumentation:
+  enabled: true
+  # apiVersion depends on your operator version
+  apiVersion: opentelemetry.io/v1alpha1
+  spec:
+    exporter:
+      endpoint: http://otel-collector:4318
+    propagators: [tracecontext, baggage]
+    sampler:
+      type: parentbased_traceidratio
+      argument: "1.0"
+    # Configure the language(s) you plan to inject
+    java:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.10.0
+```
+
+### Inject into workloads
+
+Annotate your workload pods to enable injection:
+
+```yaml
+spec:
+  template:
+    metadata:
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+```
+
+Supported annotation keys depend on language (examples):
+
+- `instrumentation.opentelemetry.io/inject-java`
+- `instrumentation.opentelemetry.io/inject-python`
+- `instrumentation.opentelemetry.io/inject-nodejs`
+- `instrumentation.opentelemetry.io/inject-dotnet`
+
 ### Install the Chart
 
 #### Option 1: Using Chart Repository (Recommended)
@@ -188,6 +237,12 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
 | agent.tolerations | object | {} | Agent-specific tolerations If not set, inherits from global tolerations configuration |
+| autoInstrumentation.annotations | object | {} | Extra annotations to add to the Instrumentation resource |
+| autoInstrumentation.apiVersion | string | "opentelemetry.io/v1alpha1" | apiVersion for the Instrumentation CR (depends on operator version) Common values: "opentelemetry.io/v1alpha1" |
+| autoInstrumentation.enabled | bool | false | Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR) Requires the OpenTelemetry Operator to be installed in the cluster. |
+| autoInstrumentation.labels | object | {} | Extra labels to add to the Instrumentation resource |
+| autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
+| autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: k8s_cluster receiver, k8sattributes processor, resource processor |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
