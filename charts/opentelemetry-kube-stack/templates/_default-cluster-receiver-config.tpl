@@ -3,6 +3,12 @@ receivers:
   k8s_cluster:
     collection_interval: 10s
 processors:
+  batch:
+    # Trigger a send when the batch reaches 1000 items.
+    send_batch_size: 5000
+    # Enforce a hard limit of 5000 items per batch. This prevents the
+    # timeout from creating a massive batch that would be rejected.
+    send_batch_max_size: 5000
   k8sattributes:
     extract:
       metadata:
@@ -63,22 +69,24 @@ processors:
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
-exporters: 
+exporters:
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 service:
   pipelines:
     logs:
       receivers:
         - k8s_cluster
-      processors: 
+      processors:
         - resource
-      exporters: 
+        - batch
+      exporters:
         - otlphttp/tsuga
     metrics:
       receivers:
         - k8s_cluster
-      processors: 
+      processors:
         - resource
-      exporters: 
+        - batch
+      exporters:
         - otlphttp/tsuga
 {{- end}}

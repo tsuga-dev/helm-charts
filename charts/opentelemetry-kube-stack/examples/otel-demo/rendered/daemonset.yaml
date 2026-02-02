@@ -154,7 +154,9 @@ spec:
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
     processors:
-      batch: {}
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
       cumulativetodelta: {}
       k8sattributes:
         extract:
