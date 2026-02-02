@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-java-app
+  template:
+    metadata:
+      labels:
+        app: my-java-app
+      annotations:
+        # Opt-in to OpenTelemetry Operator auto-instrumentation
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - name: app
+          # Example image placeholder. Use a real Java workload image.
+          image: ghcr.io/open-telemetry/demo:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          ports:
+            - containerPort: 8080

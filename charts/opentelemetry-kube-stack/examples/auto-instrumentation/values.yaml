@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../values.schema.json
+tsuga:
+  otlpEndpoint: "https://test-endpoint.com"
+  apiKey: "test-api-key"
+
+secret:
+  create: true
+
+autoInstrumentation:
+  enabled: true
+  apiVersion: opentelemetry.io/v1alpha1
+  spec:
+    exporter:
+      # In real deployments, point this at your collector ingress/service.
+      # This is an example only.
+      endpoint: http://otel-collector:4318
+    propagators:
+      - tracecontext
+      - baggage
+    sampler:
+      type: parentbased_traceidratio
+      argument: "1.0"
+    java:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.10.0

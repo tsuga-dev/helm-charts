@@ -136,6 +136,29 @@
                 }
             }
         },
+        "autoInstrumentation": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "type": "object"
+                },
+                "apiVersion": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "labels": {
+                    "type": "object"
+                },
+                "nameOverride": {
+                    "type": "string"
+                },
+                "spec": {
+                    "type": "object"
+                }
+            }
+        },
         "cluster": {
             "type": "object",
             "properties": {
