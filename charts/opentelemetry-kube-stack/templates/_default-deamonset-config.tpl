@@ -81,7 +81,12 @@ receivers:
   zipkin:
     endpoint: ${env:MY_POD_IP}:9411
 processors:
-  batch: {}
+  batch:
+    # Trigger a send when the batch reaches 1000 items.
+    send_batch_size: 5000
+    # Enforce a hard limit of 5000 items per batch. This prevents the
+    # timeout from creating a massive batch that would be rejected.
+    send_batch_max_size: 5000
   k8sattributes:
     extract:
       metadata:
@@ -149,7 +154,7 @@ processors:
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
-exporters: 
+exporters:
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 connectors:
   spanmetrics:
@@ -170,12 +175,12 @@ service:
 {{- if .Values.agent.collectLogs }}
         - filelog
 {{- end }}
-      processors: 
+      processors:
         - k8sattributes
         - memory_limiter
         - batch
         - resource
-      exporters: 
+      exporters:
         - otlphttp/tsuga
     metrics:
       receivers:
@@ -184,13 +189,13 @@ service:
         - kubeletstats
         - spanmetrics
         - hostmetrics
-      processors: 
+      processors:
         - k8sattributes
         - memory_limiter
         - batch
         - cumulativetodelta
         - resource
-      exporters: 
+      exporters:
         - otlphttp/tsuga
     traces:
       exporters:
