@@ -77,6 +77,49 @@ fullnameOverride: ""
 image: ""
 
 # =============================================================================
+# AUTO-INSTRUMENTATION (APM) CONFIGURATION
+# =============================================================================
+#
+# This creates an OpenTelemetry Operator `Instrumentation` resource.
+# Workloads can then opt-in via pod annotations like:
+#   instrumentation.opentelemetry.io/inject-java: "true"
+#   instrumentation.opentelemetry.io/inject-python: "true"
+#   instrumentation.opentelemetry.io/inject-nodejs: "true"
+#   instrumentation.opentelemetry.io/inject-dotnet: "true"
+#
+autoInstrumentation:
+  # -- Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR)
+  # Requires the OpenTelemetry Operator to be installed in the cluster.
+  # @default -- false
+  enabled: false
+
+  # -- apiVersion for the Instrumentation CR (depends on operator version)
+  # Common values: "opentelemetry.io/v1alpha1"
+  # @default -- "opentelemetry.io/v1alpha1"
+  apiVersion: "opentelemetry.io/v1alpha1"
+
+  # -- Override the name of the Instrumentation resource
+  # If empty, defaults to "<release-fullname>-instrumentation"
+  # @default -- ""
+  nameOverride: ""
+
+  # -- Extra labels to add to the Instrumentation resource
+  # @default -- {}
+  labels: {}
+
+  # -- Extra annotations to add to the Instrumentation resource
+  # @default -- {}
+  annotations: {}
+
+  # -- Instrumentation spec (full passthrough)
+  # This is passed directly to the Instrumentation Custom Resource spec.
+  # It can include (non-exhaustive): exporter, propagators, sampler, env, resource,
+  # and language blocks like java, nodejs, python, dotnet, go, apacheHttpd.
+  # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation
+  # @default -- {}
+  spec: {}
+
+# =============================================================================
 # TSUGA CONFIGURATION
 # =============================================================================
 # SECURITY WARNING: Never commit sensitive credentials to version control

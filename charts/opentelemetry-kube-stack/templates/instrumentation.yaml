@@ -1,0 +1,22 @@
+{{- if and .Values.autoInstrumentation .Values.autoInstrumentation.enabled }}
+{{- $defaultName := printf "%s-instrumentation" (include "opentelemetry-kube-stack.fullname" .) -}}
+{{- $name := default $defaultName .Values.autoInstrumentation.nameOverride -}}
+{{- $spec := default (dict) .Values.autoInstrumentation.spec -}}
+apiVersion: {{ .Values.autoInstrumentation.apiVersion | default "opentelemetry.io/v1alpha1" }}
+kind: Instrumentation
+metadata:
+  name: {{ $name | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "instrumentation" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+    {{- with .Values.autoInstrumentation.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+    {{- with .Values.autoInstrumentation.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- toYaml $spec | nindent 2 }}
+{{- end }}
