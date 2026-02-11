@@ -1,0 +1,121 @@
+# Test values file for auto-instrumentation feature
+# This file configures the chart to enable OpenTelemetry auto-instrumentation
+# Use with: helm install my-release . -f tests/values/auto-instrumentation.yaml
+
+# Enable auto-instrumentation
+autoInstrumentation:
+  enabled: true
+  
+  # Use the standard apiVersion
+  apiVersion: "opentelemetry.io/v1alpha1"
+  
+  # Add descriptive labels
+  labels:
+    environment: "test"
+    component: "auto-instrumentation"
+  
+  # Add descriptive annotations
+  annotations:
+    description: "Auto-instrumentation configuration for testing"
+  
+  # Full spec configuration for all supported languages
+  spec:
+    # Exporter configuration - where to send telemetry
+    exporter:
+      endpoint: "http://opentelemetry-kube-stack-agent:4317"
+    
+    # Propagators for distributed tracing
+    propagators:
+      - tracecontext
+      - baggage
+      - b3
+    
+    # Sampling configuration
+    sampler:
+      type: "parentbased_traceidratio"
+      argument: "1.0"  # 100% sampling for testing
+    
+    # Resource attributes added to all telemetry
+    resource:
+      addK8sUIDAttributes: true
+      resourceAttributes:
+        "deployment.environment": "test"
+        "service.namespace": "default"
+    
+    # Java auto-instrumentation
+    java:
+      image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest"
+      env:
+        - name: OTEL_JAVAAGENT_DEBUG
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_KAFKA_ENABLED
+          value: "true"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+    
+    # Node.js auto-instrumentation
+    nodejs:
+      image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest"
+      env:
+        - name: OTEL_NODEJS_DEBUG
+          value: "false"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+    
+    # Python auto-instrumentation
+    python:
+      image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest"
+      env:
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: "true"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+    
+    # .NET auto-instrumentation
+    dotnet:
+      image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest"
+      env:
+        - name: OTEL_DOTNET_AUTO_LOG_DIRECTORY
+          value: "/var/log/opentelemetry/dotnet"
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+    
+    # Go auto-instrumentation (if supported by your operator version)
+    # go:
+    #   image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest"
+    
+    # Global environment variables for all languages
+    env:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_TIMEOUT
+        value: "10000"
+      - name: OTEL_SERVICE_NAME
+        value: "my-service"
+
+# Enable both agent and cluster receiver
+agent:
+  enabled: true
+  collectLogs: true
+  collectOtelLogs: true
+
+cluster:
+  enabled: true
+
+# Service account for collectors
+serviceAccount:
+  create: true
+
+# RBAC for cluster metrics collection
+rbac:
+  create: true

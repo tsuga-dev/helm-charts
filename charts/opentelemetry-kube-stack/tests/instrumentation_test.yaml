@@ -1,0 +1,271 @@
+suite: auto-instrumentation tests
+templates:
+  - instrumentation.yaml
+tests:
+  - it: should not create instrumentation resource when disabled
+    set:
+      autoInstrumentation.enabled: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create instrumentation resource when enabled with minimal config
+    set:
+      autoInstrumentation.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+      namespace: "test-namespace"
+    asserts:
+      - isKind:
+          of: Instrumentation
+      - equal:
+          path: apiVersion
+          value: "opentelemetry.io/v1alpha1"
+      - equal:
+          path: metadata.name
+          value: "test-release-opentelemetry-kube-stack-instrumentation"
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: metadata.annotations["meta.helm.sh/release-name"]
+          value: "test-release"
+      - equal:
+          path: metadata.annotations["meta.helm.sh/release-namespace"]
+          value: "test-namespace"
+
+  - it: should use custom apiVersion when specified
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.apiVersion: "opentelemetry.io/v1beta1"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: apiVersion
+          value: "opentelemetry.io/v1beta1"
+
+  - it: should use custom name when nameOverride is set
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.nameOverride: "my-custom-instrumentation"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "my-custom-instrumentation"
+
+  - it: should include custom labels
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.labels:
+        environment: "production"
+        team: "observability"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: metadata.labels.environment
+          value: "production"
+      - equal:
+          path: metadata.labels.team
+          value: "observability"
+
+  - it: should include custom annotations
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.annotations:
+        description: "Auto-instrumentation for production cluster"
+        contact: "ops-team@example.com"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: metadata.annotations.description
+          value: "Auto-instrumentation for production cluster"
+      - equal:
+          path: metadata.annotations.contact
+          value: "ops-team@example.com"
+
+  - it: should pass through spec configuration for Java
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.spec:
+        exporter:
+          endpoint: "http://opentelemetry-collector:4317"
+        propagators:
+          - tracecontext
+          - baggage
+        java:
+          image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest"
+          env:
+            - name: OTEL_JAVAAGENT_DEBUG
+              value: "true"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.exporter.endpoint
+          value: "http://opentelemetry-collector:4317"
+      - contains:
+          path: spec.propagators
+          content: "tracecontext"
+      - contains:
+          path: spec.propagators
+          content: "baggage"
+      - equal:
+          path: spec.java.image
+          value: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest"
+      - contains:
+          path: spec.java.env
+          content:
+            name: OTEL_JAVAAGENT_DEBUG
+            value: "true"
+
+  - it: should pass through spec configuration for multiple languages
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.spec:
+        exporter:
+          endpoint: "http://opentelemetry-collector:4317"
+        propagators:
+          - tracecontext
+          - baggage
+        sampler:
+          type: "parentbased_traceidratio"
+          argument: "0.25"
+        java:
+          image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest"
+        nodejs:
+          image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest"
+        python:
+          image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest"
+        dotnet:
+          image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.exporter.endpoint
+          value: "http://opentelemetry-collector:4317"
+      - equal:
+          path: spec.sampler.type
+          value: "parentbased_traceidratio"
+      - equal:
+          path: spec.sampler.argument
+          value: "0.25"
+      - isNotEmpty:
+          path: spec.java
+      - isNotEmpty:
+          path: spec.nodejs
+      - isNotEmpty:
+          path: spec.python
+      - isNotEmpty:
+          path: spec.dotnet
+
+  - it: should include component labels
+    set:
+      autoInstrumentation.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    chart:
+      name: "opentelemetry-kube-stack"
+      version: "1.0.0"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "instrumentation"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: "Helm"
+
+  - it: should truncate name to 63 characters for long release names
+    set:
+      autoInstrumentation.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "very-long-release-name-test"
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+      - matchRegex:
+          path: metadata.name
+          pattern: "^.{1,63}$"
+
+  - it: should pass through resource attributes
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.spec:
+        resource:
+          addK8sUIDAttributes: true
+          resourceAttributes:
+            "service.name": "my-service"
+            "deployment.environment": "production"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.resource.addK8sUIDAttributes
+          value: true
+      - equal:
+          path: spec.resource.resourceAttributes["service.name"]
+          value: "my-service"
+      - equal:
+          path: spec.resource.resourceAttributes["deployment.environment"]
+          value: "production"
+
+  - it: should work with custom environment variables in spec
+    set:
+      autoInstrumentation.enabled: true
+      autoInstrumentation.spec:
+        env:
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector:4317"
+          - name: OTEL_TRACES_SAMPLER
+            value: "always_on"
+          - name: OTEL_METRICS_EXPORTER
+            value: "otlp"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector:4317"
+      - contains:
+          path: spec.env
+          content:
+            name: OTEL_TRACES_SAMPLER
+            value: "always_on"
+      - contains:
+          path: spec.env
+          content:
+            name: OTEL_METRICS_EXPORTER
+            value: "otlp"
