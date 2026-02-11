@@ -13,6 +13,7 @@ Located in `tests/` directory, these tests validate individual template renderin
 - **rbac_test.yaml** - Tests RBAC resources and permissions
 - **daemonset_test.yaml** - Tests agent daemonset configuration
 - **cluster-receiver_test.yaml** - Tests cluster receiver deployment
+- **instrumentation_test.yaml** - Tests auto-instrumentation resource creation and configuration
 
 #### Running Unit Tests
 
@@ -32,6 +33,7 @@ helm unittest charts/opentelemetry-kube-stack -f tests/secret_test.yaml
 Located in `tests/integration/`, these tests validate end-to-end deployment scenarios:
 
 - **test-deployment.sh** - Tests chart installation, upgrade, rollback, and cleanup
+- **test-auto-instrumentation.sh** - Tests auto-instrumentation functionality with the OpenTelemetry Operator
 
 #### Running Integration Tests
 
@@ -69,6 +71,7 @@ Located in `tests/values/`, these files provide different configuration scenario
 - **cluster-only.yaml** - Cluster receiver only
 - **existing-secret.yaml** - Using existing Kubernetes secret
 - **production.yaml** - Production-ready configuration
+- **auto-instrumentation.yaml** - Auto-instrumentation with all language support enabled
 
 #### Using Test Values
 
@@ -140,13 +143,26 @@ helm unittest .
 # 2. Integration tests (requires kubectl access)
 ./tests/integration/test-deployment.sh
 
-# 3. Security scans
+# 3. Auto-instrumentation tests (requires OpenTelemetry Operator)
+./tests/integration/test-auto-instrumentation.sh
+
+# 4. Security scans
 ./tests/security/security-scan.sh
 
-# 4. Manual chart testing
+# 5. Manual chart testing
 helm lint .
 helm template . --set tsuga.otlpEndpoint="https://test.com" --set tsuga.apiKey="test-key"
 ```
+
+## Auto-Instrumentation Testing
+
+For detailed information about testing the auto-instrumentation feature, see [AUTO_INSTRUMENTATION_TESTING.md](AUTO_INSTRUMENTATION_TESTING.md).
+
+This includes:
+- Comprehensive unit tests for the Instrumentation resource
+- Integration tests that validate auto-instrumentation injection
+- Example applications demonstrating usage
+- Troubleshooting guides
 
 ## Troubleshooting
 
@@ -187,3 +203,10 @@ When adding new tests:
 - Implement proper secret management in CI/CD
 - Regularly update security scanning tools
 - Review and address security scan results
+
+## References
+
+- [OpenTelemetry Operator Documentation](https://github.com/open-telemetry/opentelemetry-operator)
+- [Instrumentation API Reference](https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation)
+- [Auto-Instrumentation Annotations](https://github.com/open-telemetry/opentelemetry-operator#opentelemetry-auto-instrumentation-injection)
+- [Helm Unittest Plugin](https://github.com/quintush/helm-unittest)

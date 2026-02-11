@@ -1,0 +1,324 @@
+# Example applications demonstrating OpenTelemetry auto-instrumentation
+# These deployments show how to use the auto-instrumentation annotations
+# to automatically instrument applications without code changes.
+#
+# Prerequisites:
+# 1. OpenTelemetry Operator must be installed in the cluster
+# 2. opentelemetry-kube-stack chart must be installed with autoInstrumentation.enabled=true
+#
+# Usage:
+#   kubectl apply -f examples/auto-instrumentation-app.yaml
+#
+# After deployment, check the pods to verify auto-instrumentation was injected:
+#   kubectl get pods -l example=auto-instrumentation
+#   kubectl describe pod <pod-name>
+#
+# Look for:
+# - Init container: opentelemetry-auto-instrumentation
+# - Environment variables starting with OTEL_
+# - Volume mounts for OpenTelemetry libraries
+
+---
+# Java Application Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app-auto-instrumented
+  labels:
+    app: java-app
+    example: auto-instrumentation
+    language: java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-app
+  template:
+    metadata:
+      labels:
+        app: java-app
+        example: auto-instrumentation
+      annotations:
+        # This annotation triggers Java auto-instrumentation
+        # Use "true" for default namespace or "namespace/instrumentation-name" for specific instrumentation
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+      - name: java-app
+        image: openjdk:11-jre-slim
+        command: 
+          - "sh"
+          - "-c"
+          - |
+            echo "Java application starting..."
+            echo "OpenTelemetry auto-instrumentation should be injected"
+            while true; do
+              echo "Running Java workload... $(date)"
+              sleep 30
+            done
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          # Application-specific environment variables
+          - name: APP_NAME
+            value: "java-example-app"
+          - name: APP_VERSION
+            value: "1.0.0"
+
+---
+# Node.js Application Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app-auto-instrumented
+  labels:
+    app: nodejs-app
+    example: auto-instrumentation
+    language: nodejs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs-app
+  template:
+    metadata:
+      labels:
+        app: nodejs-app
+        example: auto-instrumentation
+      annotations:
+        # This annotation triggers Node.js auto-instrumentation
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+    spec:
+      containers:
+      - name: nodejs-app
+        image: node:18-alpine
+        command: 
+          - "sh"
+          - "-c"
+          - |
+            echo "Node.js application starting..."
+            echo "OpenTelemetry auto-instrumentation should be injected"
+            while true; do
+              echo "Running Node.js workload... $(date)"
+              sleep 30
+            done
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: APP_NAME
+            value: "nodejs-example-app"
+          - name: APP_VERSION
+            value: "1.0.0"
+
+---
+# Python Application Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-app-auto-instrumented
+  labels:
+    app: python-app
+    example: auto-instrumentation
+    language: python
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-app
+  template:
+    metadata:
+      labels:
+        app: python-app
+        example: auto-instrumentation
+      annotations:
+        # This annotation triggers Python auto-instrumentation
+        instrumentation.opentelemetry.io/inject-python: "true"
+    spec:
+      containers:
+      - name: python-app
+        image: python:3.11-slim
+        command: 
+          - "sh"
+          - "-c"
+          - |
+            echo "Python application starting..."
+            echo "OpenTelemetry auto-instrumentation should be injected"
+            while true; do
+              echo "Running Python workload... $(date)"
+              sleep 30
+            done
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: APP_NAME
+            value: "python-example-app"
+          - name: APP_VERSION
+            value: "1.0.0"
+
+---
+# .NET Application Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-app-auto-instrumented
+  labels:
+    app: dotnet-app
+    example: auto-instrumentation
+    language: dotnet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnet-app
+  template:
+    metadata:
+      labels:
+        app: dotnet-app
+        example: auto-instrumentation
+      annotations:
+        # This annotation triggers .NET auto-instrumentation
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
+    spec:
+      containers:
+      - name: dotnet-app
+        image: mcr.microsoft.com/dotnet/runtime:7.0
+        command: 
+          - "sh"
+          - "-c"
+          - |
+            echo ".NET application starting..."
+            echo "OpenTelemetry auto-instrumentation should be injected"
+            while true; do
+              echo "Running .NET workload... $(date)"
+              sleep 30
+            done
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: APP_NAME
+            value: "dotnet-example-app"
+          - name: APP_VERSION
+            value: "1.0.0"
+
+---
+# Multi-language application (multiple containers in one pod)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-lang-app-auto-instrumented
+  labels:
+    app: multi-lang-app
+    example: auto-instrumentation
+    language: multi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multi-lang-app
+  template:
+    metadata:
+      labels:
+        app: multi-lang-app
+        example: auto-instrumentation
+      annotations:
+        # You can inject multiple languages in the same pod
+        # Each container with matching runtime will be instrumented
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        # Optional: Override specific configuration per container
+        instrumentation.opentelemetry.io/container-names: "java-sidecar,python-sidecar"
+    spec:
+      containers:
+      - name: java-sidecar
+        image: openjdk:11-jre-slim
+        command: ["sh", "-c", "while true; do echo 'Java sidecar running...'; sleep 60; done"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      - name: python-sidecar
+        image: python:3.11-slim
+        command: ["sh", "-c", "while true; do echo 'Python sidecar running...'; sleep 60; done"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+---
+# Service to expose the applications (optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: auto-instrumentation-examples
+  labels:
+    example: auto-instrumentation
+spec:
+  selector:
+    example: auto-instrumentation
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+
+---
+# Example with namespace-specific Instrumentation resource reference
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app-specific-instrumentation
+  labels:
+    app: java-app-specific
+    example: auto-instrumentation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-app-specific
+  template:
+    metadata:
+      labels:
+        app: java-app-specific
+        example: auto-instrumentation
+      annotations:
+        # Reference a specific Instrumentation resource by namespace/name
+        # Replace with your actual Instrumentation resource name
+        instrumentation.opentelemetry.io/inject-java: "default/my-release-opentelemetry-kube-stack-instrumentation"
+    spec:
+      containers:
+      - name: java-app
+        image: openjdk:11-jre-slim
+        command: ["sh", "-c", "while true; do echo 'Java app with specific instrumentation...'; sleep 30; done"]
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
