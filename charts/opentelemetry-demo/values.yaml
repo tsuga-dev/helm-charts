@@ -14,9 +14,33 @@ opentelemetry-demo:
     accounting:
       podAnnotations:
         resource.opentelemetry.io/team: services
+      env:
+        # .NET auto-instrumentation: enable additional metric sources
+        - name: OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
+          value: "System.Runtime,Microsoft.AspNetCore.Hosting"
     ad:
       podAnnotations:
         resource.opentelemetry.io/team: services
+      env:
+        # Enable JVM metrics (heap, GC, threads, classes)
+        - name: OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_EMIT_EXPERIMENTAL_TELEMETRY
+          value: "true"
+        # Enable JMX metrics
+        - name: OTEL_INSTRUMENTATION_JMX_ENABLED
+          value: "true"
+        # Enable detailed HTTP metrics
+        - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_CLIENT_REQUEST
+          value: "content-type,user-agent"
+        - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST
+          value: "content-type,user-agent,accept"
+        # Enable gRPC detailed metrics
+        - name: OTEL_INSTRUMENTATION_GRPC_ENABLED
+          value: "true"
+        # Enable Log4j appender for application logs
+        - name: OTEL_INSTRUMENTATION_LOG4J_APPENDER_ENABLED
+          value: "true"
     cart:
       podAnnotations:
         resource.opentelemetry.io/team: app
@@ -32,6 +56,23 @@ opentelemetry-demo:
     fraud-detection:
       podAnnotations:
         resource.opentelemetry.io/team: services
+      env:
+        # Enable JVM runtime metrics (heap, GC, threads, classes)
+        - name: OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_EMIT_EXPERIMENTAL_TELEMETRY
+          value: "true"
+        # Enable JMX metrics
+        - name: OTEL_INSTRUMENTATION_JMX_ENABLED
+          value: "true"
+        # Enable Kafka consumer/producer instrumentation
+        - name: OTEL_INSTRUMENTATION_KAFKA_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_KAFKA_METRIC_REPORTER_ENABLED
+          value: "true"
+        # Enable Log4j appender (fraud-detection uses Log4j, not Logback)
+        - name: OTEL_INSTRUMENTATION_LOG4J_APPENDER_ENABLED
+          value: "true"
     frontend:
       podAnnotations:
         resource.opentelemetry.io/team: app
@@ -62,6 +103,10 @@ opentelemetry-demo:
     recommendation:
       podAnnotations:
         resource.opentelemetry.io/team: services
+      env:
+        # Enable Python runtime metrics (GC, threads, memory)
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: "true"
     shipping:
       podAnnotations:
         resource.opentelemetry.io/team: services
@@ -136,7 +181,7 @@ opentelemetry-kube-stack:
         receiver_creator/logs:
           watch_observers: [ k8s_observer ]
           discovery:
-            enabled: true 
+            enabled: true
         # Nginx/Image Provider metrics
         nginx:
           endpoint: http://image-provider.default:8081/status
@@ -153,6 +198,21 @@ opentelemetry-kube-stack:
           collection_interval: 10s
           topic_match: "^[^_].*$"  # Exclude internal topics (starting with _)
           group_match: ".*"         # Include all consumer groups
+          metrics:
+            # Enable additional partition-level metrics
+            kafka.partition.current_offset:
+              enabled: true
+            kafka.partition.oldest_offset:
+              enabled: true
+            kafka.partition.replicas:
+              enabled: true
+            kafka.partition.replicas_in_sync:
+              enabled: true
+            # Enable consumer lag metrics
+            kafka.consumer_group.lag:
+              enabled: true
+            kafka.consumer_group.offset:
+              enabled: true
         # PostgreSQL metrics
         postgresql:
           endpoint: postgresql.default:5432
@@ -195,6 +255,24 @@ opentelemetry-kube-stack:
               enabled: true
             postgresql.temp_files:
               enabled: true
+            # Connection pool metrics
+            postgresql.connection.max:
+              enabled: true
+            # Table-level metrics
+            postgresql.table.count:
+              enabled: true
+            postgresql.table.size:
+              enabled: true
+            postgresql.table.vacuum.count:
+              enabled: true
+            # Index metrics
+            postgresql.index.scans:
+              enabled: true
+            postgresql.index.size:
+              enabled: true
+            # Replication metrics
+            postgresql.replication.data_delay:
+              enabled: true
         # Redis/Valkey metrics
         redis:
           endpoint: valkey-cart.default:6379
@@ -208,6 +286,35 @@ opentelemetry-kube-stack:
               enabled: true
             # Memory metrics
             redis.maxmemory:
+              enabled: true
+            redis.memory.used:
+              enabled: true
+            redis.memory.peak:
+              enabled: true
+            redis.memory.rss:
+              enabled: true
+            redis.memory.lua:
+              enabled: true
+            # Connection metrics
+            redis.clients.connected:
+              enabled: true
+            redis.clients.blocked:
+              enabled: true
+            # Key metrics
+            redis.keys.evicted:
+              enabled: true
+            redis.keys.expired:
+              enabled: true
+            # Network metrics
+            redis.net.input:
+              enabled: true
+            redis.net.output:
+              enabled: true
+            # Replication metrics
+            redis.replication.offset:
+              enabled: true
+            # CPU metrics
+            redis.cpu.time:
               enabled: true
         # Prometheus scraper for Envoy stats
         prometheus:
@@ -228,6 +335,8 @@ opentelemetry-kube-stack:
               - postgresql
               - redis
               - nginx
+              - kafkametrics
+              - prometheus
           logs:
             extraReceivers:
               - receiver_creator/logs

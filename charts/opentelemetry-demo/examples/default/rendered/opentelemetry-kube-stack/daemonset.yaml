@@ -101,6 +101,19 @@ spec:
         - kafka:9092
         collection_interval: 10s
         group_match: .*
+        metrics:
+          kafka.consumer_group.lag:
+            enabled: true
+          kafka.consumer_group.offset:
+            enabled: true
+          kafka.partition.current_offset:
+            enabled: true
+          kafka.partition.oldest_offset:
+            enabled: true
+          kafka.partition.replicas:
+            enabled: true
+          kafka.partition.replicas_in_sync:
+            enabled: true
         protocol_version: 2.0.0
         scrapers:
         - brokers
@@ -133,13 +146,27 @@ spec:
             enabled: true
           postgresql.commits:
             enabled: true
+          postgresql.connection.max:
+            enabled: true
           postgresql.database.locks:
             enabled: true
           postgresql.deadlocks:
             enabled: true
+          postgresql.index.scans:
+            enabled: true
+          postgresql.index.size:
+            enabled: true
+          postgresql.replication.data_delay:
+            enabled: true
           postgresql.rollbacks:
             enabled: true
           postgresql.sequential_scans:
+            enabled: true
+          postgresql.table.count:
+            enabled: true
+          postgresql.table.size:
+            enabled: true
+          postgresql.table.vacuum.count:
             enabled: true
           postgresql.temp_files:
             enabled: true
@@ -174,11 +201,35 @@ spec:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
         metrics:
+          redis.clients.blocked:
+            enabled: true
+          redis.clients.connected:
+            enabled: true
           redis.cmd.calls:
             enabled: true
           redis.cmd.latency:
             enabled: true
+          redis.cpu.time:
+            enabled: true
+          redis.keys.evicted:
+            enabled: true
+          redis.keys.expired:
+            enabled: true
           redis.maxmemory:
+            enabled: true
+          redis.memory.lua:
+            enabled: true
+          redis.memory.peak:
+            enabled: true
+          redis.memory.rss:
+            enabled: true
+          redis.memory.used:
+            enabled: true
+          redis.net.input:
+            enabled: true
+          redis.net.output:
+            enabled: true
+          redis.replication.offset:
             enabled: true
         username: valkey
       zipkin:
@@ -301,6 +352,8 @@ spec:
           - postgresql
           - redis
           - nginx
+          - kafkametrics
+          - prometheus
         traces:
           exporters:
           - otlphttp/tsuga

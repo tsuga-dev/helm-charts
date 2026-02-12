@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.2](https://img.shields.io/badge/Version-0.6.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.3](https://img.shields.io/badge/Version-0.6.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -15,13 +15,41 @@ A Helm chart for Tsuga Observability Demo
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| opentelemetry-demo.components.accounting.env[0].name | string | `"OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES"` |  |
+| opentelemetry-demo.components.accounting.env[0].value | string | `"System.Runtime,Microsoft.AspNetCore.Hosting"` |  |
 | opentelemetry-demo.components.accounting.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
+| opentelemetry-demo.components.ad.env[0].name | string | `"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED"` |  |
+| opentelemetry-demo.components.ad.env[0].value | string | `"true"` |  |
+| opentelemetry-demo.components.ad.env[1].name | string | `"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_EMIT_EXPERIMENTAL_TELEMETRY"` |  |
+| opentelemetry-demo.components.ad.env[1].value | string | `"true"` |  |
+| opentelemetry-demo.components.ad.env[2].name | string | `"OTEL_INSTRUMENTATION_JMX_ENABLED"` |  |
+| opentelemetry-demo.components.ad.env[2].value | string | `"true"` |  |
+| opentelemetry-demo.components.ad.env[3].name | string | `"OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_CLIENT_REQUEST"` |  |
+| opentelemetry-demo.components.ad.env[3].value | string | `"content-type,user-agent"` |  |
+| opentelemetry-demo.components.ad.env[4].name | string | `"OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST"` |  |
+| opentelemetry-demo.components.ad.env[4].value | string | `"content-type,user-agent,accept"` |  |
+| opentelemetry-demo.components.ad.env[5].name | string | `"OTEL_INSTRUMENTATION_GRPC_ENABLED"` |  |
+| opentelemetry-demo.components.ad.env[5].value | string | `"true"` |  |
+| opentelemetry-demo.components.ad.env[6].name | string | `"OTEL_INSTRUMENTATION_LOG4J_APPENDER_ENABLED"` |  |
+| opentelemetry-demo.components.ad.env[6].value | string | `"true"` |  |
 | opentelemetry-demo.components.ad.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.cart.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
 | opentelemetry-demo.components.checkout.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
 | opentelemetry-demo.components.currency.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.email.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.flagd.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
+| opentelemetry-demo.components.fraud-detection.env[0].name | string | `"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_ENABLED"` |  |
+| opentelemetry-demo.components.fraud-detection.env[0].value | string | `"true"` |  |
+| opentelemetry-demo.components.fraud-detection.env[1].name | string | `"OTEL_INSTRUMENTATION_RUNTIME_TELEMETRY_EMIT_EXPERIMENTAL_TELEMETRY"` |  |
+| opentelemetry-demo.components.fraud-detection.env[1].value | string | `"true"` |  |
+| opentelemetry-demo.components.fraud-detection.env[2].name | string | `"OTEL_INSTRUMENTATION_JMX_ENABLED"` |  |
+| opentelemetry-demo.components.fraud-detection.env[2].value | string | `"true"` |  |
+| opentelemetry-demo.components.fraud-detection.env[3].name | string | `"OTEL_INSTRUMENTATION_KAFKA_ENABLED"` |  |
+| opentelemetry-demo.components.fraud-detection.env[3].value | string | `"true"` |  |
+| opentelemetry-demo.components.fraud-detection.env[4].name | string | `"OTEL_INSTRUMENTATION_KAFKA_METRIC_REPORTER_ENABLED"` |  |
+| opentelemetry-demo.components.fraud-detection.env[4].value | string | `"true"` |  |
+| opentelemetry-demo.components.fraud-detection.env[5].name | string | `"OTEL_INSTRUMENTATION_LOG4J_APPENDER_ENABLED"` |  |
+| opentelemetry-demo.components.fraud-detection.env[5].value | string | `"true"` |  |
 | opentelemetry-demo.components.fraud-detection.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.frontend-proxy.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.frontend.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
@@ -45,6 +73,8 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.product-reviews.imageOverride.tag | string | `"2.2.0-product-reviews"` |  |
 | opentelemetry-demo.components.product-reviews.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.quote.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
+| opentelemetry-demo.components.recommendation.env[0].name | string | `"OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED"` |  |
+| opentelemetry-demo.components.recommendation.env[0].value | string | `"true"` |  |
 | opentelemetry-demo.components.recommendation.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.shipping.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.valkey-cart.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
@@ -65,6 +95,12 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.brokers[0] | string | `"kafka:9092"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.group_match | string | `".*"` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.consumer_group.lag".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.consumer_group.offset".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.partition.current_offset".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.partition.oldest_offset".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.partition.replicas".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.metrics."kafka.partition.replicas_in_sync".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.protocol_version | string | `"2.0.0"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.scrapers[0] | string | `"brokers"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.scrapers[1] | string | `"topics"` |  |
@@ -78,10 +114,17 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_hit".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_read".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.commits".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.connection.max".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.database.locks".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.deadlocks".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.index.scans".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.index.size".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.replication.data_delay".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.rollbacks".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.sequential_scans".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.table.count".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.table.size".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.table.vacuum.count".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.temp_files".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_deleted".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_fetched".enabled | bool | `true` |  |
@@ -99,15 +142,29 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.watch_observers[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.endpoint | string | `"valkey-cart.default:6379"` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.clients.blocked".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.clients.connected".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.cmd.calls".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.cmd.latency".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.cpu.time".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.keys.evicted".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.keys.expired".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.maxmemory".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.memory.lua".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.memory.peak".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.memory.rss".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.memory.used".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.net.input".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.net.output".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.replication.offset".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.username | string | `"valkey"` |  |
 | opentelemetry-kube-stack.agent.config.service.extraExtensions[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.logs.extraReceivers[0] | string | `"receiver_creator/logs"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[0] | string | `"postgresql"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[1] | string | `"redis"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[2] | string | `"nginx"` |  |
+| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[3] | string | `"kafkametrics"` |  |
+| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[4] | string | `"prometheus"` |  |
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 
