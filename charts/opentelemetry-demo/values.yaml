@@ -137,18 +137,49 @@ opentelemetry-kube-stack:
           watch_observers: [ k8s_observer ]
           discovery:
             enabled: true 
+        # Nginx/Image Provider metrics
         nginx:
-          collection_interval: 10s
           endpoint: http://image-provider.default:8081/status
+          collection_interval: 10s
+        # Kafka metrics
+        kafkametrics:
+          brokers:
+            - kafka:9092
+          protocol_version: "2.0.0"
+          scrapers:
+            - brokers
+            - topics
+            - consumers
+          collection_interval: 10s
+          topic_match: "^[^_].*$"  # Exclude internal topics (starting with _)
+          group_match: ".*"         # Include all consumer groups
+        # PostgreSQL metrics
         postgresql:
           endpoint: postgresql.default:5432
+          username: root
+          password: otel
+          collection_interval: 10s
+          tls:
+            insecure: true
           metrics:
+            # Block I/O metrics
             postgresql.blks_hit:
               enabled: true
             postgresql.blks_read:
               enabled: true
+            # Transaction metrics
+            postgresql.commits:
+              enabled: true
+            postgresql.rollbacks:
+              enabled: true
+            # Concurrency metrics
+            postgresql.backends:
+              enabled: true
             postgresql.deadlocks:
               enabled: true
+            postgresql.database.locks:
+              enabled: true
+            # Tuple operation metrics
             postgresql.tup_deleted:
               enabled: true
             postgresql.tup_fetched:
@@ -159,14 +190,35 @@ opentelemetry-kube-stack:
               enabled: true
             postgresql.tup_updated:
               enabled: true
-          password: otel
-          tls:
-            insecure: true
-          username: root
+            # Performance indicators
+            postgresql.sequential_scans:
+              enabled: true
+            postgresql.temp_files:
+              enabled: true
+        # Redis/Valkey metrics
         redis:
-          collection_interval: 10s
           endpoint: valkey-cart.default:6379
           username: valkey
+          collection_interval: 10s
+          metrics:
+            # Command-level metrics
+            redis.cmd.calls:
+              enabled: true
+            redis.cmd.latency:
+              enabled: true
+            # Memory metrics
+            redis.maxmemory:
+              enabled: true
+        # Prometheus scraper for Envoy stats
+        prometheus:
+          config:
+            scrape_configs:
+              - job_name: envoy
+                scrape_interval: 30s
+                metrics_path: /stats/prometheus
+                static_configs:
+                  - targets:
+                      - frontend-proxy:10000
       service:
         extraExtensions:
           - k8s_observer
