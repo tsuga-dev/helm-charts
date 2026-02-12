@@ -128,25 +128,41 @@ opentelemetry-demo:
             - brokers
             - topics
             - consumers
-          collection_interval: 30s
+          collection_interval: 10s
         # Redis/Valkey metrics
         redis:
-          endpoint: valkey-cart:6379
-          collection_interval: 30s
+          endpoint: valkey-cart.default:6379
+          username: valkey
+          collection_interval: 10s
         # PostgreSQL metrics
         postgresql:
-          endpoint: postgres:5432
-          username: postgres
-          password: postgres
-          databases:
-            - postgres
-          collection_interval: 30s
+          endpoint: postgresql.default:5432
+          username: root
+          password: otel
+          collection_interval: 10s
           tls:
             insecure: true
+          metrics:
+            postgresql.blks_hit:
+              enabled: true
+            postgresql.blks_read:
+              enabled: true
+            postgresql.deadlocks:
+              enabled: true
+            postgresql.tup_deleted:
+              enabled: true
+            postgresql.tup_fetched:
+              enabled: true
+            postgresql.tup_inserted:
+              enabled: true
+            postgresql.tup_returned:
+              enabled: true
+            postgresql.tup_updated:
+              enabled: true
         # Nginx/Image Provider metrics
         nginx:
-          endpoint: "http://image-provider:8081/status"
-          collection_interval: 30s
+          endpoint: http://image-provider.default:8081/status
+          collection_interval: 10s
         # Prometheus scraper for Envoy stats
         prometheus:
           config:
