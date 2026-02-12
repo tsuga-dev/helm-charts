@@ -129,11 +129,22 @@ opentelemetry-demo:
             - topics
             - consumers
           collection_interval: 10s
+          topic_match: "^[^_].*$"  # Exclude internal topics (starting with _)
+          group_match: ".*"         # Include all consumer groups
         # Redis/Valkey metrics
         redis:
           endpoint: valkey-cart.default:6379
           username: valkey
           collection_interval: 10s
+          metrics:
+            # Command-level metrics
+            redis.cmd.calls:
+              enabled: true
+            redis.cmd.latency:
+              enabled: true
+            # Memory metrics
+            redis.maxmemory:
+              enabled: true
         # PostgreSQL metrics
         postgresql:
           endpoint: postgresql.default:5432
@@ -143,12 +154,24 @@ opentelemetry-demo:
           tls:
             insecure: true
           metrics:
+            # Block I/O metrics
             postgresql.blks_hit:
               enabled: true
             postgresql.blks_read:
               enabled: true
+            # Transaction metrics
+            postgresql.commits:
+              enabled: true
+            postgresql.rollbacks:
+              enabled: true
+            # Concurrency metrics
+            postgresql.backends:
+              enabled: true
             postgresql.deadlocks:
               enabled: true
+            postgresql.database.locks:
+              enabled: true
+            # Tuple operation metrics
             postgresql.tup_deleted:
               enabled: true
             postgresql.tup_fetched:
@@ -158,6 +181,11 @@ opentelemetry-demo:
             postgresql.tup_returned:
               enabled: true
             postgresql.tup_updated:
+              enabled: true
+            # Performance indicators
+            postgresql.sequential_scans:
+              enabled: true
+            postgresql.temp_files:
               enabled: true
         # Nginx/Image Provider metrics
         nginx:
