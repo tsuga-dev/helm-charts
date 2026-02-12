@@ -110,7 +110,112 @@ opentelemetry-demo:
     
 
   opentelemetry-collector:
-    enabled: false
+    enabled: true
+    config:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+        # Kafka metrics
+        kafkametrics:
+          brokers:
+            - kafka:9092
+          protocol_version: "2.0.0"
+          scrapers:
+            - brokers
+            - topics
+            - consumers
+          collection_interval: 30s
+        # Redis/Valkey metrics
+        redis:
+          endpoint: valkey-cart:6379
+          collection_interval: 30s
+        # PostgreSQL metrics
+        postgresql:
+          endpoint: postgres:5432
+          username: postgres
+          password: postgres
+          databases:
+            - postgres
+          collection_interval: 30s
+          tls:
+            insecure: true
+        # Nginx/Image Provider metrics
+        nginx:
+          endpoint: "http://image-provider:8081/status"
+          collection_interval: 30s
+        # Prometheus scraper for Envoy stats
+        prometheus:
+          config:
+            scrape_configs:
+              - job_name: envoy
+                scrape_interval: 30s
+                metrics_path: /stats/prometheus
+                static_configs:
+                  - targets:
+                      - frontend-proxy:10000
+      exporters:
+        # Single Tsuga exporter - team separation via resource.opentelemetry.io/team attribute
+        otlphttp/tsuga:
+          endpoint: YOUR_TSUGA_OTLP_ENDPOINT  # Replace with your Tsuga OTLP endpoint
+          encoding: json
+          headers:
+            Authorization: Bearer YOUR_API_KEY_HERE  # Replace with your API key
+      processors:
+        batch: {}
+        memory_limiter:
+          check_interval: 5s
+          limit_percentage: 80
+          spike_limit_percentage: 25
+      connectors:
+        spanmetrics: {}
+      service:
+        pipelines:
+          # Single logs pipeline - all logs to Tsuga
+          logs:
+            receivers:
+              - otlp
+            processors:
+              - memory_limiter
+              - batch
+            exporters:
+              - otlphttp/tsuga
+          # Single traces pipeline - generates span metrics
+          traces:
+            receivers:
+              - otlp
+            processors:
+              - memory_limiter
+              - batch
+            exporters:
+              - otlphttp/tsuga
+              - spanmetrics
+          # Metrics pipeline - includes application metrics + span metrics
+          metrics:
+            receivers:
+              - otlp
+              - spanmetrics
+            processors:
+              - memory_limiter
+              - batch
+            exporters:
+              - otlphttp/tsuga
+          # Infrastructure metrics pipeline
+          metrics/infrastructure:
+            receivers:
+              - kafkametrics
+              - redis
+              - postgresql
+              - nginx
+              - prometheus
+            processors:
+              - memory_limiter
+              - batch
+            exporters:
+              - otlphttp/tsuga
   jaeger:
     enabled: false
   opensearch:
@@ -136,46 +241,11 @@ opentelemetry-kube-stack:
         receiver_creator/logs:
           watch_observers: [ k8s_observer ]
           discovery:
-            enabled: true 
-        nginx:
-          collection_interval: 10s
-          endpoint: http://image-provider.default:8081/status
-        postgresql:
-          endpoint: postgresql.default:5432
-          metrics:
-            postgresql.blks_hit:
-              enabled: true
-            postgresql.blks_read:
-              enabled: true
-            postgresql.deadlocks:
-              enabled: true
-            postgresql.tup_deleted:
-              enabled: true
-            postgresql.tup_fetched:
-              enabled: true
-            postgresql.tup_inserted:
-              enabled: true
-            postgresql.tup_returned:
-              enabled: true
-            postgresql.tup_updated:
-              enabled: true
-          password: otel
-          tls:
-            insecure: true
-          username: root
-        redis:
-          collection_interval: 10s
-          endpoint: valkey-cart.default:6379
-          username: valkey
+            enabled: true
       service:
         extraExtensions:
           - k8s_observer
         pipelines:
-          metrics:
-            extraReceivers:
-              - postgresql
-              - redis
-              - nginx
           logs:
             extraReceivers:
               - receiver_creator/logs
