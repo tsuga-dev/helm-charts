@@ -3,6 +3,30 @@ entries:
   opentelemetry-demo:
   - apiVersion: v2
     appVersion: 0.40.0
+    created: "2026-02-13T15:57:26.255330236Z"
+    dependencies:
+    - condition: opentelemetry-kube-stack.enabled
+      name: opentelemetry-kube-stack
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.2.15
+    - condition: tsuga-spicy-gremlin.enabled
+      name: tsuga-spicy-gremlin
+      repository: file://../tsuga-spicy-gremlin
+      version: 0.1.1
+    - alias: opentelemetry-demo
+      condition: opentelemetry-demo.enabled
+      name: opentelemetry-demo
+      repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+      version: 0.40.0
+    description: A Helm chart for Tsuga Observability Demo
+    digest: 8685ba6ab8b5df804ac51e326b7e28c5fd7ba9b28da265cda21baa3ce2cf80f3
+    name: opentelemetry-demo
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-demo-0.6.4/opentelemetry-demo-0.6.4.tgz
+    version: 0.6.4
+  - apiVersion: v2
+    appVersion: 0.40.0
     created: "2026-02-12T11:06:45.452113166Z"
     dependencies:
     - condition: opentelemetry-kube-stack.enabled
@@ -727,4 +751,26 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.2.0/opentelemetry-kube-stack-0.2.0.tgz
     version: 0.2.0
-generated: "2026-02-12T11:06:45.625508946Z"
+  tsuga-spicy-gremlin:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-02-13T15:57:26.383391666Z"
+    description: A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo
+      feature flags.
+    digest: 1f2691da58b6075e30e4d62d2e25ab68ad85741c3db487e902610c2b46fcbfd5
+    keywords:
+    - opentelemetry
+    - demo
+    - feature-flags
+    - chaos
+    maintainers:
+    - email: hello@tsuga.com
+      name: Tsuga
+    name: tsuga-spicy-gremlin
+    sources:
+    - https://github.com/tsuga-dev/helm-charts
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
+    version: 0.1.1
+generated: "2026-02-13T15:57:26.383545301Z"
