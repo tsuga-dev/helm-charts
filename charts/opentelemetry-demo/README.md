@@ -63,27 +63,12 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_ingresses | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_nodes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_services | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.brokers[0] | string | `"kafka:9092"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.collection_interval | string | `"10s"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.group_match | string | `".*"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.protocol_version | string | `"2.0.0"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.scrapers[0] | string | `"brokers"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.scrapers[1] | string | `"topics"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.scrapers[2] | string | `"consumers"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.kafkametrics.topic_match | string | `"^[^_].*$"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.nginx.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.nginx.endpoint | string | `"http://image-provider.default:8081/status"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.endpoint | string | `"postgresql.default:5432"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.backends".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_hit".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_read".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.commits".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.database.locks".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.deadlocks".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.rollbacks".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.sequential_scans".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.temp_files".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_deleted".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_fetched".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_inserted".enabled | bool | `true` |  |
@@ -92,17 +77,10 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.password | string | `"otel"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.tls.insecure | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.username | string | `"root"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.prometheus.config.scrape_configs[0].job_name | string | `"envoy"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.prometheus.config.scrape_configs[0].metrics_path | string | `"/stats/prometheus"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.prometheus.config.scrape_configs[0].scrape_interval | string | `"30s"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.prometheus.config.scrape_configs[0].static_configs[0].targets[0] | string | `"frontend-proxy:10000"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.discovery.enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.watch_observers[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.collection_interval | string | `"10s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.endpoint | string | `"valkey-cart.default:6379"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.cmd.calls".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.cmd.latency".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.redis.metrics."redis.maxmemory".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.redis.username | string | `"valkey"` |  |
 | opentelemetry-kube-stack.agent.config.service.extraExtensions[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.logs.extraReceivers[0] | string | `"receiver_creator/logs"` |  |
@@ -111,7 +89,7 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[2] | string | `"nginx"` |  |
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
-| tsuga-spicy-gremlin.enabled | bool | `false` |  |
+| tsuga-spicy-gremlin.enabled | bool | `true` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)
