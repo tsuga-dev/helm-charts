@@ -1,0 +1,73 @@
+# -- Enable spicy-gremlin deployment.
+enabled: true
+
+# -- Number of replicas. Keep at 1 unless you want concurrent flag writers.
+replicaCount: 1
+
+image:
+  # -- spicy-gremlin container image repository.
+  repository: docker.io/l0k0ms/spicy-gremlin
+  # -- spicy-gremlin image tag.
+  tag: "0.1.0"
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+# -- Optional image pull secrets.
+imagePullSecrets: []
+
+# -- Override chart name.
+nameOverride: ""
+# -- Override full chart release name.
+fullnameOverride: ""
+
+# -- Extra labels to add to all resources.
+commonLabels: {}
+# -- Pod annotations.
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+env:
+  # -- Base URL of flagd-ui API exposed by the OTel demo frontend-proxy.
+  flagdApiBaseUrl: "http://frontend-proxy:8080/feature/api"
+  # -- Minimum random interval between scenario applications.
+  minIntervalSec: 120
+  # -- Maximum random interval between scenario applications.
+  maxIntervalSec: 900
+  # -- HTTP timeout for read/write API calls.
+  requestTimeoutSec: 20
+  # -- Limit number of flags in a scenario.
+  maxActiveFlags: 2
+  # -- Apply one scenario immediately after startup.
+  runOnStart: true
+  # -- Dry run mode; logs payload without writing flags.
+  dryRun: false
+  # -- Warn when unknown flags are present in OFF_DEFAULTS_JSON or SCENARIOS_JSON.
+  warnUnknownFlags: true
+  # -- Optional deterministic random seed.
+  randomSeed: ""
+  # -- flagd schema value to include in write payload.
+  flagSchema: "https://flagd.dev/schema/v0/flags.json"
+  # -- Optional JSON override for OFF defaults. Empty uses image defaults.
+  offDefaultsJson: ""
+  # -- Optional JSON override for scenarios. Empty uses image defaults.
+  scenariosJson: ""
+
+# -- Additional env vars appended to the container.
+extraEnv: []

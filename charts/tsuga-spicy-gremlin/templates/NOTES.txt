@@ -1,0 +1,7 @@
+{{- if .Values.enabled }}
+spicy-gremlin is running as deployment:
+  {{ include "tsuga-spicy-gremlin.fullname" . }}
+
+It will continuously rotate OpenTelemetry demo feature flags via:
+  {{ .Values.env.flagdApiBaseUrl }}
+{{- end }}

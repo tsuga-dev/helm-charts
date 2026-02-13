@@ -231,3 +231,8 @@ opentelemetry-kube-stack:
           logs:
             extraReceivers:
               - receiver_creator/logs
+
+# Optional subchart: vanilla spicy-gremlin for synthetic failures in the OTel demo.
+# Set enabled=true to run with image defaults (randomized scenarios and built-in OFF baseline).
+tsuga-spicy-gremlin:
+  enabled: true
