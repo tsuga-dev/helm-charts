@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.4](https://img.shields.io/badge/Version-0.6.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.5](https://img.shields.io/badge/Version-0.6.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -8,9 +8,9 @@ A Helm chart for Tsuga Observability Demo
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../tsuga-spicy-gremlin | tsuga-spicy-gremlin | 0.1.1 |
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
 | https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.15 |
+| https://tsuga-dev.github.io/helm-charts | tsuga-spicy-gremlin | 0.1.1 |
 
 ## Values
 
