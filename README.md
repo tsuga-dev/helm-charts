@@ -53,6 +53,8 @@ The script will:
 ## Available Charts
 
 - **opentelemetry-kube-stack**: A comprehensive Helm chart for OpenTelemetry Kubernetes operator with namespace and secret management
+- **opentelemetry-demo**: Demo stack wiring OpenTelemetry demo app with Tsuga-focused defaults
+- **tsuga-spicy-gremlin**: Reusable chaos-style rotator for OpenTelemetry demo feature flags
 
 ## Chart Repository
 
