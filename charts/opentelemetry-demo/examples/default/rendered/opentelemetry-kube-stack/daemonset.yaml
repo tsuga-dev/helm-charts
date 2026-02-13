@@ -96,17 +96,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:6831
           thrift_http:
             endpoint: ${env:MY_POD_IP}:14268
-      kafkametrics:
-        brokers:
-        - kafka:9092
-        collection_interval: 10s
-        group_match: .*
-        protocol_version: 2.0.0
-        scrapers:
-        - brokers
-        - topics
-        - consumers
-        topic_match: ^[^_].*$
       kubeletstats:
         auth_type: serviceAccount
         collection_interval: 20s
@@ -122,26 +111,13 @@ spec:
           http:
             endpoint: ${env:MY_POD_IP}:4318
       postgresql:
-        collection_interval: 10s
         endpoint: postgresql.default:5432
         metrics:
-          postgresql.backends:
-            enabled: true
           postgresql.blks_hit:
             enabled: true
           postgresql.blks_read:
             enabled: true
-          postgresql.commits:
-            enabled: true
-          postgresql.database.locks:
-            enabled: true
           postgresql.deadlocks:
-            enabled: true
-          postgresql.rollbacks:
-            enabled: true
-          postgresql.sequential_scans:
-            enabled: true
-          postgresql.temp_files:
             enabled: true
           postgresql.tup_deleted:
             enabled: true
@@ -173,13 +149,6 @@ spec:
       redis:
         collection_interval: 10s
         endpoint: valkey-cart.default:6379
-        metrics:
-          redis.cmd.calls:
-            enabled: true
-          redis.cmd.latency:
-            enabled: true
-          redis.maxmemory:
-            enabled: true
         username: valkey
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
