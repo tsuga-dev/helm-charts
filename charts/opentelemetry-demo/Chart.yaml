@@ -15,7 +15,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.6.4
+version: 0.6.5
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -30,7 +30,7 @@ dependencies:
     condition: opentelemetry-kube-stack.enabled
   - name: tsuga-spicy-gremlin
     version: 0.1.1
-    repository: file://../tsuga-spicy-gremlin
+    repository: https://tsuga-dev.github.io/helm-charts
     condition: tsuga-spicy-gremlin.enabled
   - name: opentelemetry-demo
     version: 0.40.0

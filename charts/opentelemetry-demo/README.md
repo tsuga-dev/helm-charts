@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.4](https://img.shields.io/badge/Version-0.6.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.5](https://img.shields.io/badge/Version-0.6.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -8,14 +8,15 @@ A Helm chart for Tsuga Observability Demo
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://../tsuga-spicy-gremlin | tsuga-spicy-gremlin | 0.1.1 |
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
 | https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.2.15 |
+| https://tsuga-dev.github.io/helm-charts | tsuga-spicy-gremlin | 0.1.1 |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| global.environment | string | `"demo"` | Shared deployment environment for telemetry tagging. |
 | opentelemetry-demo.components.accounting.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.ad.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.cart.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
@@ -90,6 +91,39 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.enabled | bool | `true` |  |
+| tsuga-spicy-gremlin.extraEnv[0].name | string | `"OTEL_EXPORTER_OTLP_PROTOCOL"` |  |
+| tsuga-spicy-gremlin.extraEnv[0].value | string | `"http/protobuf"` |  |
+| tsuga-spicy-gremlin.extraEnv[10].name | string | `"OTEL_TRACES_SAMPLER_ARG"` |  |
+| tsuga-spicy-gremlin.extraEnv[10].value | string | `"1.0"` |  |
+| tsuga-spicy-gremlin.extraEnv[11].name | string | `"OTEL_METRIC_EXPORT_INTERVAL"` |  |
+| tsuga-spicy-gremlin.extraEnv[11].value | string | `"60000"` |  |
+| tsuga-spicy-gremlin.extraEnv[1].name | string | `"OTEL_COLLECTOR_NAME"` |  |
+| tsuga-spicy-gremlin.extraEnv[1].valueFrom.fieldRef.apiVersion | string | `"v1"` |  |
+| tsuga-spicy-gremlin.extraEnv[1].valueFrom.fieldRef.fieldPath | string | `"status.hostIP"` |  |
+| tsuga-spicy-gremlin.extraEnv[2].name | string | `"OTEL_TRACES_EXPORTER"` |  |
+| tsuga-spicy-gremlin.extraEnv[2].value | string | `"otlp"` |  |
+| tsuga-spicy-gremlin.extraEnv[3].name | string | `"OTEL_METRICS_EXPORTER"` |  |
+| tsuga-spicy-gremlin.extraEnv[3].value | string | `"otlp"` |  |
+| tsuga-spicy-gremlin.extraEnv[4].name | string | `"OTEL_LOGS_EXPORTER"` |  |
+| tsuga-spicy-gremlin.extraEnv[4].value | string | `"none"` |  |
+| tsuga-spicy-gremlin.extraEnv[5].name | string | `"OTEL_SERVICE_NAME"` |  |
+| tsuga-spicy-gremlin.extraEnv[5].value | string | `"spicy-gremlin"` |  |
+| tsuga-spicy-gremlin.extraEnv[6].name | string | `"OTEL_SERVICE_VERSION"` |  |
+| tsuga-spicy-gremlin.extraEnv[6].value | string | `"0.1.3"` |  |
+| tsuga-spicy-gremlin.extraEnv[7].name | string | `"POD_NAMESPACE"` |  |
+| tsuga-spicy-gremlin.extraEnv[7].valueFrom.fieldRef.apiVersion | string | `"v1"` |  |
+| tsuga-spicy-gremlin.extraEnv[7].valueFrom.fieldRef.fieldPath | string | `"metadata.namespace"` |  |
+| tsuga-spicy-gremlin.extraEnv[8].name | string | `"OTEL_RESOURCE_ATTRIBUTES"` |  |
+| tsuga-spicy-gremlin.extraEnv[8].value | string | `"service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE),deployment.environment.name=demo"` |  |
+| tsuga-spicy-gremlin.extraEnv[9].name | string | `"OTEL_TRACES_SAMPLER"` |  |
+| tsuga-spicy-gremlin.extraEnv[9].value | string | `"parentbased_traceidratio"` |  |
+| tsuga-spicy-gremlin.image.tag | string | `"0.1.3"` |  |
+| tsuga-spicy-gremlin.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
+| tsuga-spicy-gremlin.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
+| tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/env" | string | `"demo"` |  |
+| tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/service.name" | string | `"spicy-gremlin"` |  |
+| tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/service.version" | string | `"0.1.3"` |  |
+| tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)
