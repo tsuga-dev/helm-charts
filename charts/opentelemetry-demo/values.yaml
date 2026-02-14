@@ -1,3 +1,7 @@
+global:
+  # -- Shared deployment environment for telemetry tagging.
+  environment: demo
+
 opentelemetry-demo:
   enabled: true
 
@@ -184,3 +188,20 @@ opentelemetry-kube-stack:
 # Set enabled=true to run with image defaults (randomized scenarios and built-in OFF baseline).
 tsuga-spicy-gremlin:
   enabled: true
+  image:
+    tag: "0.1.3"
+  env:
+    otelCollectorNameFromHostIP: true
+    otelServiceName: "spicy-gremlin"
+    otelTracesSampler: "parentbased_traceidratio"
+    otelTracesSamplerArg: "1.0"
+    otelLogsExporter: "none"
+  podAnnotations:
+    resource.opentelemetry.io/team: platform
+    resource.opentelemetry.io/service.name: spicy-gremlin
+    io.opentelemetry.discovery.logs/enabled: "true"
+    io.opentelemetry.discovery.logs/config: |
+      include_file_path: true
+      operators:
+        - type: container
+          id: container-parser

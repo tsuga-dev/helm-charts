@@ -1,6 +1,6 @@
 # tsuga-spicy-gremlin
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3](https://img.shields.io/badge/AppVersion-0.1.3-informational?style=flat-square)
 
 A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature flags.
 
@@ -37,7 +37,7 @@ A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature fla
 | fullnameOverride | string | `""` | Override full chart release name. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"docker.io/l0k0ms/spicy-gremlin"` | spicy-gremlin container image repository. |
-| image.tag | string | `"0.1.0"` | spicy-gremlin image tag. |
+| image.tag | string | `"0.1.3"` | spicy-gremlin image tag. |
 | imagePullSecrets | list | `[]` | Optional image pull secrets. |
 | nameOverride | string | `""` | Override chart name. |
 | nodeSelector | object | `{}` |  |

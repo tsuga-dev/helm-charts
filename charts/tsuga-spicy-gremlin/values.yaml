@@ -8,7 +8,7 @@ image:
   # -- spicy-gremlin container image repository.
   repository: docker.io/l0k0ms/spicy-gremlin
   # -- spicy-gremlin image tag.
-  tag: "0.1.0"
+  tag: "0.1.3"
   # -- Image pull policy.
   pullPolicy: IfNotPresent
 
@@ -24,6 +24,8 @@ fullnameOverride: ""
 commonLabels: {}
 # -- Pod annotations.
 podAnnotations: {}
+# -- Deployment environment name used for telemetry tags (falls back to global.environment when empty).
+environment: ""
 
 podSecurityContext:
   runAsNonRoot: true
@@ -68,6 +70,32 @@ env:
   offDefaultsJson: ""
   # -- Optional JSON override for scenarios. Empty uses image defaults.
   scenariosJson: ""
+  # -- OTLP protocol used by trace and metric exporters.
+  otelExporterOtlpProtocol: "http/protobuf"
+  # -- Optional explicit OTLP endpoint override. Leave empty to derive from OTEL_COLLECTOR_NAME.
+  otelExporterOtlpEndpoint: ""
+  # -- Optional collector host/IP used when endpoint override is empty.
+  otelCollectorName: ""
+  # -- Set OTEL_COLLECTOR_NAME from the node host IP (status.hostIP).
+  otelCollectorNameFromHostIP: false
+  # -- Traces exporter mode.
+  otelTracesExporter: "otlp"
+  # -- Metrics exporter mode.
+  otelMetricsExporter: "otlp"
+  # -- Logs exporter compatibility mode.
+  otelLogsExporter: "none"
+  # -- OpenTelemetry service.name.
+  otelServiceName: "spicy-gremlin"
+  # -- OpenTelemetry service.version (defaults to image.tag when empty).
+  otelServiceVersion: ""
+  # -- Optional OTEL_RESOURCE_ATTRIBUTES override. When empty, defaults to service.name/version/namespace plus deployment environment when available.
+  otelResourceAttributes: ""
+  # -- OpenTelemetry traces sampler.
+  otelTracesSampler: "parentbased_traceidratio"
+  # -- Argument for ratio-based samplers.
+  otelTracesSamplerArg: "1.0"
+  # -- Metric export interval in milliseconds (using integer ms avoids OTel SDK env parse warnings).
+  otelMetricExportInterval: "60000"
 
 # -- Additional env vars appended to the container.
 extraEnv: []
