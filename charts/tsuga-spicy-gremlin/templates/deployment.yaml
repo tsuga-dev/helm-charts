@@ -14,13 +14,27 @@ spec:
       app.kubernetes.io/name: {{ include "tsuga-spicy-gremlin.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
+    {{- $podAnnotations := .Values.podAnnotations | default dict }}
+    {{- $deploymentEnv := .Values.environment | default "" }}
+    {{- $serviceVersion := coalesce .Values.env.otelServiceVersion .Values.image.tag }}
     metadata:
       labels:
         app.kubernetes.io/name: {{ include "tsuga-spicy-gremlin.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-      {{- with .Values.podAnnotations }}
+      {{- if or $deploymentEnv $serviceVersion .Values.env.otelServiceName (gt (len $podAnnotations) 0) }}
       annotations:
-{{ toYaml . | indent 8 }}
+        {{- if (gt (len $podAnnotations) 0) }}
+{{ toYaml $podAnnotations | indent 8 }}
+        {{- end }}
+        {{- if not (hasKey $podAnnotations "resource.opentelemetry.io/service.name") }}
+        resource.opentelemetry.io/service.name: {{ .Values.env.otelServiceName | quote }}
+        {{- end }}
+        {{- if and $serviceVersion (not (hasKey $podAnnotations "resource.opentelemetry.io/service.version")) }}
+        resource.opentelemetry.io/service.version: {{ $serviceVersion | quote }}
+        {{- end }}
+        {{- if and $deploymentEnv (not (hasKey $podAnnotations "resource.opentelemetry.io/env")) }}
+        resource.opentelemetry.io/env: {{ $deploymentEnv | quote }}
+        {{- end }}
       {{- end }}
     spec:
       automountServiceAccountToken: false
@@ -59,6 +73,45 @@ spec:
               value: {{ .Values.env.warnUnknownFlags | quote }}
             - name: FLAG_SCHEMA
               value: {{ .Values.env.flagSchema | quote }}
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: {{ .Values.env.otelExporterOtlpProtocol | quote }}
+            {{- if .Values.env.otelExporterOtlpEndpoint }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.env.otelExporterOtlpEndpoint | quote }}
+            {{- end }}
+            {{- if .Values.env.otelCollectorNameFromHostIP }}
+            - name: OTEL_COLLECTOR_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            {{- else if .Values.env.otelCollectorName }}
+            - name: OTEL_COLLECTOR_NAME
+              value: {{ .Values.env.otelCollectorName | quote }}
+            {{- end }}
+            - name: OTEL_TRACES_EXPORTER
+              value: {{ .Values.env.otelTracesExporter | quote }}
+            - name: OTEL_METRICS_EXPORTER
+              value: {{ .Values.env.otelMetricsExporter | quote }}
+            - name: OTEL_LOGS_EXPORTER
+              value: {{ .Values.env.otelLogsExporter | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.env.otelServiceName | quote }}
+            - name: OTEL_SERVICE_VERSION
+              value: {{ $serviceVersion | quote }}
+            {{- if .Values.env.otelResourceAttributes }}
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: {{ .Values.env.otelResourceAttributes | quote }}
+            {{- else }}
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: {{ printf "service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=%s%s" .Release.Namespace (ternary (printf ",deployment.environment.name=%s" $deploymentEnv) "" (ne $deploymentEnv "")) | quote }}
+            {{- end }}
+            - name: OTEL_TRACES_SAMPLER
+              value: {{ .Values.env.otelTracesSampler | quote }}
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: {{ .Values.env.otelTracesSamplerArg | quote }}
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: {{ .Values.env.otelMetricExportInterval | quote }}
             {{- if .Values.env.randomSeed }}
             - name: RANDOM_SEED
               value: {{ .Values.env.randomSeed | quote }}
