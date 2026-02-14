@@ -16,7 +16,6 @@ A Helm chart for Tsuga Observability Demo
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| global.environment | string | `"demo"` | Shared deployment environment for telemetry tagging. |
 | opentelemetry-demo.components.accounting.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.ad.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.cart.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |

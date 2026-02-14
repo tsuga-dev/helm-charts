@@ -46,7 +46,7 @@ A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature fla
 | env.runOnStart | bool | `true` | Apply one scenario immediately after startup. |
 | env.scenariosJson | string | `""` | Optional JSON override for scenarios. Empty uses image defaults. |
 | env.warnUnknownFlags | bool | `true` | Warn when unknown flags are present in OFF_DEFAULTS_JSON or SCENARIOS_JSON. |
-| environment | string | `""` | Deployment environment name used for telemetry tags (falls back to global.environment when empty). |
+| environment | string | `""` | Deployment environment name used for telemetry tags. |
 | extraEnv | list | `[]` | Additional env vars appended to the container. |
 | fullnameOverride | string | `""` | Override full chart release name. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |

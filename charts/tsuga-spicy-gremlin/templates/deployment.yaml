@@ -15,8 +15,7 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     {{- $podAnnotations := .Values.podAnnotations | default dict }}
-    {{- $globalValues := .Values.global | default dict }}
-    {{- $deploymentEnv := coalesce .Values.environment (get $globalValues "environment") "" }}
+    {{- $deploymentEnv := .Values.environment | default "" }}
     {{- $serviceVersion := coalesce .Values.env.otelServiceVersion .Values.image.tag }}
     metadata:
       labels:

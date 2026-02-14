@@ -24,7 +24,7 @@ fullnameOverride: ""
 commonLabels: {}
 # -- Pod annotations.
 podAnnotations: {}
-# -- Deployment environment name used for telemetry tags (falls back to global.environment when empty).
+# -- Deployment environment name used for telemetry tags.
 environment: ""
 
 podSecurityContext:
