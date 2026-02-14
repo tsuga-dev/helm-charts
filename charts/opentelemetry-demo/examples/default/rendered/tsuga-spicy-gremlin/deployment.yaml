@@ -30,7 +30,6 @@ spec:
             - type: container
               id: container-parser
         io.opentelemetry.discovery.logs/enabled: "true"
-        resource.opentelemetry.io/env: demo
         resource.opentelemetry.io/service.name: spicy-gremlin
         resource.opentelemetry.io/service.version: 0.1.3
         resource.opentelemetry.io/team: platform
@@ -93,7 +92,7 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE),deployment.environment.name=demo
+              value: service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE)
             - name: OTEL_TRACES_SAMPLER
               value: parentbased_traceidratio
             - name: OTEL_TRACES_SAMPLER_ARG

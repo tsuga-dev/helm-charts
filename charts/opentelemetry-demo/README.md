@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.5](https://img.shields.io/badge/Version-0.6.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.6](https://img.shields.io/badge/Version-0.6.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -113,13 +113,12 @@ A Helm chart for Tsuga Observability Demo
 | tsuga-spicy-gremlin.extraEnv[7].valueFrom.fieldRef.apiVersion | string | `"v1"` |  |
 | tsuga-spicy-gremlin.extraEnv[7].valueFrom.fieldRef.fieldPath | string | `"metadata.namespace"` |  |
 | tsuga-spicy-gremlin.extraEnv[8].name | string | `"OTEL_RESOURCE_ATTRIBUTES"` |  |
-| tsuga-spicy-gremlin.extraEnv[8].value | string | `"service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE),deployment.environment.name=demo"` |  |
+| tsuga-spicy-gremlin.extraEnv[8].value | string | `"service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE)"` |  |
 | tsuga-spicy-gremlin.extraEnv[9].name | string | `"OTEL_TRACES_SAMPLER"` |  |
 | tsuga-spicy-gremlin.extraEnv[9].value | string | `"parentbased_traceidratio"` |  |
 | tsuga-spicy-gremlin.image.tag | string | `"0.1.3"` |  |
 | tsuga-spicy-gremlin.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | tsuga-spicy-gremlin.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
-| tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/env" | string | `"demo"` |  |
 | tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/service.name" | string | `"spicy-gremlin"` |  |
 | tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/service.version" | string | `"0.1.3"` |  |
 | tsuga-spicy-gremlin.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
