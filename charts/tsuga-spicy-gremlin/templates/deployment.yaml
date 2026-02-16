@@ -73,45 +73,6 @@ spec:
               value: {{ .Values.env.warnUnknownFlags | quote }}
             - name: FLAG_SCHEMA
               value: {{ .Values.env.flagSchema | quote }}
-            - name: OTEL_EXPORTER_OTLP_PROTOCOL
-              value: {{ .Values.env.otelExporterOtlpProtocol | quote }}
-            {{- if .Values.env.otelExporterOtlpEndpoint }}
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: {{ .Values.env.otelExporterOtlpEndpoint | quote }}
-            {{- end }}
-            {{- if .Values.env.otelCollectorNameFromHostIP }}
-            - name: OTEL_COLLECTOR_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: status.hostIP
-            {{- else if .Values.env.otelCollectorName }}
-            - name: OTEL_COLLECTOR_NAME
-              value: {{ .Values.env.otelCollectorName | quote }}
-            {{- end }}
-            - name: OTEL_TRACES_EXPORTER
-              value: {{ .Values.env.otelTracesExporter | quote }}
-            - name: OTEL_METRICS_EXPORTER
-              value: {{ .Values.env.otelMetricsExporter | quote }}
-            - name: OTEL_LOGS_EXPORTER
-              value: {{ .Values.env.otelLogsExporter | quote }}
-            - name: OTEL_SERVICE_NAME
-              value: {{ .Values.env.otelServiceName | quote }}
-            - name: OTEL_SERVICE_VERSION
-              value: {{ $serviceVersion | quote }}
-            {{- if .Values.env.otelResourceAttributes }}
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: {{ .Values.env.otelResourceAttributes | quote }}
-            {{- else }}
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: {{ printf "service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=%s%s" .Release.Namespace (ternary (printf ",deployment.environment.name=%s" $deploymentEnv) "" (ne $deploymentEnv "")) | quote }}
-            {{- end }}
-            - name: OTEL_TRACES_SAMPLER
-              value: {{ .Values.env.otelTracesSampler | quote }}
-            - name: OTEL_TRACES_SAMPLER_ARG
-              value: {{ .Values.env.otelTracesSamplerArg | quote }}
-            - name: OTEL_METRIC_EXPORT_INTERVAL
-              value: {{ .Values.env.otelMetricExportInterval | quote }}
             {{- if .Values.env.randomSeed }}
             - name: RANDOM_SEED
               value: {{ .Values.env.randomSeed | quote }}

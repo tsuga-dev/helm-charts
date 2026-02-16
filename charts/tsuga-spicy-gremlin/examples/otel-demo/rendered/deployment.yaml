@@ -1,0 +1,101 @@
+---
+# Source: tsuga-spicy-gremlin/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-tsuga-spicy-gremlin
+  labels:
+    helm.sh/chart: tsuga-spicy-gremlin-0.1.2
+    app.kubernetes.io/name: tsuga-spicy-gremlin
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "0.1.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tsuga-spicy-gremlin
+      app.kubernetes.io/instance: example
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tsuga-spicy-gremlin
+        app.kubernetes.io/instance: example
+      annotations:
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+        io.opentelemetry.discovery.logs/enabled: "true"
+        resource.opentelemetry.io/service.name: spicy-gremlin
+        resource.opentelemetry.io/service.version: 0.1.3
+        resource.opentelemetry.io/team: platform
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: spicy-gremlin
+          image: "docker.io/l0k0ms/spicy-gremlin:0.1.3"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: FLAGD_API_BASE_URL
+              value: "http://frontend-proxy:8080/feature/api"
+            - name: MIN_INTERVAL_SEC
+              value: "120"
+            - name: MAX_INTERVAL_SEC
+              value: "600"
+            - name: REQUEST_TIMEOUT_SEC
+              value: "20"
+            - name: MAX_ACTIVE_FLAGS
+              value: "2"
+            - name: RUN_ON_START
+              value: "true"
+            - name: DRY_RUN
+              value: "false"
+            - name: WARN_UNKNOWN_FLAGS
+              value: "true"
+            - name: FLAG_SCHEMA
+              value: "https://flagd.dev/schema/v0/flags.json"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_COLLECTOR_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_METRICS_EXPORTER
+              value: otlp
+            - name: OTEL_LOGS_EXPORTER
+              value: none
+            - name: OTEL_SERVICE_NAME
+              value: spicy-gremlin
+            - name: OTEL_SERVICE_VERSION
+              value: 0.1.3
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=$(OTEL_SERVICE_NAME),service.version=$(OTEL_SERVICE_VERSION),service.namespace=$(POD_NAMESPACE)
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "1.0"
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: "60000"

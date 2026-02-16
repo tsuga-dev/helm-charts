@@ -1,4 +1,4 @@
-CHARTS ?= opentelemetry-kube-stack opentelemetry-demo
+CHARTS ?= opentelemetry-kube-stack opentelemetry-demo tsuga-spicy-gremlin
 TMP_DIRECTORY = ./tmp
 
 .PHONY: generate-examples
