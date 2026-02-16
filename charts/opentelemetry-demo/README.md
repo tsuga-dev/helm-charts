@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.6.6](https://img.shields.io/badge/Version-0.6.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.6.7](https://img.shields.io/badge/Version-0.6.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -90,6 +90,8 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.enabled | bool | `true` |  |
+| tsuga-spicy-gremlin.env.maxIntervalSec | int | `600` |  |
+| tsuga-spicy-gremlin.env.minIntervalSec | int | `120` |  |
 | tsuga-spicy-gremlin.extraEnv[0].name | string | `"OTEL_EXPORTER_OTLP_PROTOCOL"` |  |
 | tsuga-spicy-gremlin.extraEnv[0].value | string | `"http/protobuf"` |  |
 | tsuga-spicy-gremlin.extraEnv[10].name | string | `"OTEL_TRACES_SAMPLER_ARG"` |  |

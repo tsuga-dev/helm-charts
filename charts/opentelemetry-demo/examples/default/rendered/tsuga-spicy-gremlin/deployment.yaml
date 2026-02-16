@@ -56,7 +56,7 @@ spec:
             - name: MIN_INTERVAL_SEC
               value: "120"
             - name: MAX_INTERVAL_SEC
-              value: "900"
+              value: "600"
             - name: REQUEST_TIMEOUT_SEC
               value: "20"
             - name: MAX_ACTIVE_FLAGS
