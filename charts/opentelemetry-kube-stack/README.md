@@ -275,7 +275,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
 | cluster.tolerations | object | {} | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
-| clusterName | string | "" | The name of the cluster to be used in the resource attributes This value is added to all telemetry data as k8s.cluster.name |
+| clusterName | string | "" | The name of the cluster to be used in the resource attributes This value is added to all telemetry data as k8s.cluster.name RECOMMENDED: Set this value to identify your cluster in telemetry data If not set, the k8s.cluster.name attribute will be omitted from telemetry |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
 | image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
 | nameOverride | string | "" | Override the chart name used in resource naming |

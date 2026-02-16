@@ -106,10 +106,7 @@ spec:
         - sources:
           - from: connection
       resource:
-        attributes:
-        - action: upsert
-          key: k8s.cluster.name
-          value: null
+        attributes: null
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
