@@ -10,6 +10,24 @@ OpenTelemetry Kubernetes Stack - Post-Installation Guide
 
 Release: {{ .Release.Name }} | Namespace: {{ .Release.Namespace }} | Version: {{ .Chart.Version }}
 
+{{- if not .Values.clusterName }}
+
+⚠️  WARNING: Cluster Name Not Set
+=============================================================================
+The 'clusterName' value is not configured. It is RECOMMENDED to set this
+value to identify your cluster in telemetry data.
+
+To update the cluster name:
+  helm upgrade {{ .Release.Name }} {{ .Chart.Name }} \
+    --set clusterName="your-cluster-name" \
+    --reuse-values
+
+Without a cluster name, the k8s.cluster.name attribute will be omitted
+from all telemetry data, which may make it difficult to distinguish
+metrics and traces from different clusters.
+
+{{- end }}
+
 =============================================================================
 📊 STATUS CHECK
 =============================================================================

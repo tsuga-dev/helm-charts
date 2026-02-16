@@ -67,9 +67,11 @@ processors:
         - from: connection
   resource:
     attributes:
+      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
+      {{- end }}
 exporters:
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 service:

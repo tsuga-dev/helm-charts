@@ -59,6 +59,8 @@
 
 # -- The name of the cluster to be used in the resource attributes
 # This value is added to all telemetry data as k8s.cluster.name
+# RECOMMENDED: Set this value to identify your cluster in telemetry data
+# If not set, the k8s.cluster.name attribute will be omitted from telemetry
 # @default -- ""
 clusterName: ""
 

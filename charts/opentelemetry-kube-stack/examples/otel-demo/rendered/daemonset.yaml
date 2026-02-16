@@ -225,10 +225,7 @@ spec:
         limit_percentage: 80
         spike_limit_percentage: 25
       resource:
-        attributes:
-        - action: upsert
-          key: k8s.cluster.name
-          value: null
+        attributes: null
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
