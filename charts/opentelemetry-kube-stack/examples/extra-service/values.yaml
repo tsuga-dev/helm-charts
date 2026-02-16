@@ -1,0 +1,10 @@
+agent:
+  config:
+    service:
+      pipelines:
+        extraPipelines:
+          metrics/extra:
+            receivers:
+              - hostmetrics
+            exporters:
+              - otlphttp/tsuga

@@ -56,6 +56,9 @@
                                 "pipelines": {
                                     "type": "object",
                                     "properties": {
+                                        "extraPipelines": {
+                                            "type": "object"
+                                        },
                                         "logs": {
                                             "type": "object",
                                             "properties": {
@@ -192,6 +195,9 @@
                                 "pipelines": {
                                     "type": "object",
                                     "properties": {
+                                        "extraPipelines": {
+                                            "type": "object"
+                                        },
                                         "logs": {
                                             "type": "object",
                                             "properties": {

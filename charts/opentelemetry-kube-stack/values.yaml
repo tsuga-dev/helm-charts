@@ -298,7 +298,16 @@ cluster:
           # Added to default receiver (k8s_cluster)
           # @default -- []
           extraReceivers: []
-
+        # -- Additional pipelines to add to the service configuration
+        # These are completely new pipelines (not extending default ones)
+        # Example:
+        #   extraPipelines:
+        #     custom-logs:
+        #       receivers: [custom-receiver]
+        #       processors: [batch]
+        #       exporters: [custom-exporter]
+        # @default -- {}
+        extraPipelines: {}
   # -- Label mapping configuration for cluster receiver
   # Maps Kubernetes pod labels to OpenTelemetry resource attributes
   # These are appended to default label mappings
@@ -317,7 +326,7 @@ cluster:
   # @default -- []
   extraAnnotationsMapping: []
 
-   # -- Cluster-specific resource limits and requests
+    # -- Cluster-specific resource limits and requests
   # If not set, inherits from global resources configuration
   # @default -- {}
   resources: {}
@@ -470,6 +479,7 @@ agent:
           # Added to default receivers (otlp, jaeger, zipkin)
           # @default -- []
           extraReceivers: []
+        extraPipelines: {}
 
   # -- Label mapping configuration for agent
   # Maps Kubernetes pod labels to OpenTelemetry resource attributes

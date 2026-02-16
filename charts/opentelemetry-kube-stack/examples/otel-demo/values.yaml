@@ -1,26 +1,40 @@
 # yaml-language-server: $schema=../../values.schema.json
 agent:
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  addLogsVolumes: true
   collectLogs: false
-  extraLabelMapping:
-    - tag_name: test
-      key: resource.opentelemetry.io/test
-      from: pod
   config:
     extraExtensions:
       k8s_observer:
-        auth_type: serviceAccount
-        node: ${env:K8S_NODE_NAME}
-        observe_pods: true
         observe_nodes: true
         observe_services: true
         observe_ingresses: true
     extraReceivers:
-      nginx:
-        collection_interval: 10s
-        endpoint: http://image-provider.default:8081/status
+      receiver_creator/logs:
+        watch_observers: [k8s_observer]
+        discovery:
+          enabled: true
+      receiver_creator/redis:
+        watch_observers: [k8s_observer]
+        receivers:
+          redis:
+            # Match valkey-cart pods - using name pattern matching
+            rule: type == "pod" && name matches ".*valkey-cart.*"
+            config:
+              endpoint: "`endpoint`:6379"
+              collection_interval: 10s
+              username: valkey
+      receiver_creator/nginx:
+        watch_observers: [k8s_observer]
+        receivers:
+          nginx:
+            # Match image-provider pods - using name pattern matching
+            rule: type == "pod" && name matches ".*image-provider.*"
+            config:
+              endpoint: "http://`endpoint`:8081/status"
+              collection_interval: 10s
       postgresql:
-        endpoint: postgresql.default:5432
+        endpoint: postgresql:5432
         metrics:
           postgresql.blks_hit:
             enabled: true
@@ -42,15 +56,6 @@ agent:
         tls:
           insecure: true
         username: root
-      redis:
-        collection_interval: 10s
-        endpoint: valkey-cart.default:6379
-        username: valkey
-      receiver_creator/logs:
-        watch_observers: [ k8s_observer ]
-        discovery:
-          enabled: true
-        receivers:
     service:
       extraExtensions:
         - k8s_observer
@@ -58,8 +63,8 @@ agent:
         metrics:
           extraReceivers:
             - postgresql
-            - redis
-            - nginx
+            - receiver_creator/redis
+            - receiver_creator/nginx
         logs:
           extraReceivers:
             - receiver_creator/logs

@@ -48,6 +48,9 @@ spec:
   config:
     receivers:
       k8s_cluster:
+        allocatable_types_to_report:
+        - cpu
+        - memory
         collection_interval: 10s
     processors:
       batch:
