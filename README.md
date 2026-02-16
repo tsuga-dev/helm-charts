@@ -17,6 +17,34 @@ If you had already added this repo earlier, run `helm repo update` to retrieve
 the latest versions of the packages. You can then run `helm search repo
 otel-charts` to see the charts.
 
+### Prerequisites
+
+Before installing the opentelemetry-kube-stack chart, you need to install:
+
+1. **cert-manager** (required by the OpenTelemetry Operator):
+   ```bash
+   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+   ```
+
+2. **OpenTelemetry Operator** (choose one option):
+
+   **Option A: Install with this chart (recommended)**
+   ```bash
+   helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack \
+     --set opentelemetry-operator.enabled=true
+   ```
+
+   **Option B: Install separately**
+   ```bash
+   kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+   ```
+   Then install the chart:
+   ```bash
+   helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack
+   ```
+
+### Basic Installation
+
 To install the opentelemetry-kube-stack chart:
 
 ```bash

@@ -65,13 +65,13 @@ processors:
           name: k8s.pod.uid
       - sources:
         - from: connection
+  {{- if .Values.clusterName }}
   resource:
     attributes:
-      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
-      {{- end }}
+  {{- end }}
 exporters:
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 service:
@@ -80,7 +80,9 @@ service:
       receivers:
         - k8s_cluster
       processors:
+        {{- if .Values.clusterName }}
         - resource
+        {{- end }}
         - batch
       exporters:
         - otlphttp/tsuga
@@ -88,7 +90,9 @@ service:
       receivers:
         - k8s_cluster
       processors:
+        {{- if .Values.clusterName }}
         - resource
+        {{- end }}
         - batch
       exporters:
         - otlphttp/tsuga

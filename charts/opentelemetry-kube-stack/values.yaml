@@ -89,6 +89,28 @@ image: ""
 #   instrumentation.opentelemetry.io/inject-nodejs: "true"
 #   instrumentation.opentelemetry.io/inject-dotnet: "true"
 #
+# Top level field related to the OpenTelemetry Operator
+opentelemetry-operator:
+  # Field indicating whether the operator is enabled or not
+  enabled: false
+  manager:
+    collectorImage:
+      repository: otel/opentelemetry-collector-k8s
+  # Sub-field for admission webhooks configuration
+  admissionWebhooks:
+    # Policy for handling failures
+    # Setting this allows for an installation of the otel operator at the same time as the custom resources it manages.
+    failurePolicy: "Ignore"
+
+  # This is disabled by default, as doing so creates a race condition with helm.
+  # https://github.com/open-telemetry/opentelemetry-helm-charts/issues/677
+  # Users of this chart should _never_ set this to be true. If a user wishes
+  # to install the CRDs through the opentelemetry-operator chart, it is recommended
+  # to install the opentelemetry-operator chart separately and prior to the installation
+  # of this chart.
+  crds:
+    create: false
+
 autoInstrumentation:
   # -- Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR)
   # Requires the OpenTelemetry Operator to be installed in the cluster.
