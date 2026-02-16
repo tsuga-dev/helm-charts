@@ -181,6 +181,22 @@ opentelemetry-demo:
 
 opentelemetry-kube-stack:
   enabled: true
+  cluster:
+    config:
+      extraProcessors:
+        resourcedetection:
+          detectors: [env, eks]
+          timeout: 15s
+          override: true
+      service:
+        pipelines:
+          metrics:
+            extraProcessors:
+              - resourcedetection
+          logs:
+            extraProcessors:
+              - resourcedetection
+
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     addLogsVolumes: true
@@ -223,17 +239,29 @@ opentelemetry-kube-stack:
           tls:
             insecure: true
           username: root
+      extraProcessors:
+        resourcedetection:
+          detectors: [env, eks]
+          timeout: 15s
+          override: true
       service:
         extraExtensions:
           - k8s_observer
         pipelines:
           metrics:
+            extraProcessors:
+              - resourcedetection
             extraReceivers:
               - postgresql
               - receiver_creator/metrics
           logs:
+            extraProcessors:
+              - resourcedetection
             extraReceivers:
               - receiver_creator/logs
+          traces:
+            extraProcessors:
+              - resourcedetection
 
 # Optional subchart: vanilla spicy-gremlin for synthetic failures in the OTel demo.
 # Set enabled=true to run with image defaults (randomized scenarios and built-in OFF baseline).

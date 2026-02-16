@@ -104,6 +104,12 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: null
+      resourcedetection:
+        detectors:
+        - env
+        - eks
+        override: true
+        timeout: 15s
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -117,6 +123,7 @@ spec:
           - otlphttp/tsuga
           processors:
           - resource
+          - resourcedetection
           receivers:
           - k8s_cluster
         metrics:
@@ -124,5 +131,6 @@ spec:
           - otlphttp/tsuga
           processors:
           - resource
+          - resourcedetection
           receivers:
           - k8s_cluster
