@@ -3,6 +3,30 @@ entries:
   opentelemetry-demo:
   - apiVersion: v2
     appVersion: 0.40.0
+    created: "2026-02-16T08:24:46.85154738Z"
+    dependencies:
+    - condition: opentelemetry-kube-stack.enabled
+      name: opentelemetry-kube-stack
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.2.15
+    - condition: tsuga-spicy-gremlin.enabled
+      name: tsuga-spicy-gremlin
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.1.1
+    - alias: opentelemetry-demo
+      condition: opentelemetry-demo.enabled
+      name: opentelemetry-demo
+      repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+      version: 0.40.0
+    description: A Helm chart for Tsuga Observability Demo
+    digest: a1648a9300d16b63172410faeb73a199cc8eea92895600117657b591e4118819
+    name: opentelemetry-demo
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-demo-0.6.7/opentelemetry-demo-0.6.7.tgz
+    version: 0.6.7
+  - apiVersion: v2
+    appVersion: 0.40.0
     created: "2026-02-13T15:57:26.255330236Z"
     dependencies:
     - condition: opentelemetry-kube-stack.enabled
@@ -753,6 +777,27 @@ entries:
     version: 0.2.0
   tsuga-spicy-gremlin:
   - apiVersion: v2
+    appVersion: 0.1.3
+    created: "2026-02-16T08:24:47.075472579Z"
+    description: A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo
+      feature flags.
+    digest: 8808bf344d6d5318b5b1dc3ea2e4c4f1e7d0a7da89296f86510c733f914e5509
+    keywords:
+    - opentelemetry
+    - demo
+    - feature-flags
+    - chaos
+    maintainers:
+    - email: hello@tsuga.com
+      name: Tsuga
+    name: tsuga-spicy-gremlin
+    sources:
+    - https://github.com/tsuga-dev/helm-charts
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.2/tsuga-spicy-gremlin-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.1.0
     created: "2026-02-13T15:57:26.383391666Z"
     description: A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo
@@ -773,4 +818,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-02-13T15:57:26.383545301Z"
+generated: "2026-02-16T08:24:47.075623343Z"
