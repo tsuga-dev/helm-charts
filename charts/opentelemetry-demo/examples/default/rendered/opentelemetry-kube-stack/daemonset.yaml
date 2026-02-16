@@ -143,23 +143,9 @@ spec:
           enabled: true
         watch_observers:
         - k8s_observer
-      receiver_creator/nginx:
-        receivers:
-          nginx:
-            config:
-              collection_interval: 10s
-              endpoint: http://`endpoint`:8081/status
-            rule: type == "pod" && name matches ".*image-provider.*"
-        watch_observers:
-        - k8s_observer
-      receiver_creator/redis:
-        receivers:
-          redis:
-            config:
-              collection_interval: 10s
-              endpoint: '`endpoint`:6379'
-              username: valkey
-            rule: type == "pod" && name matches ".*valkey-cart.*"
+      receiver_creator/metrics:
+        discovery:
+          enabled: true
         watch_observers:
         - k8s_observer
       zipkin:
@@ -228,8 +214,6 @@ spec:
           key: k8s.cluster.name
           value: null
     exporters:
-      debug:
-        verbosity: detailed
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
@@ -269,7 +253,6 @@ spec:
         metrics:
           exporters:
           - otlphttp/tsuga
-          - debug
           processors:
           - k8sattributes
           - memory_limiter
@@ -283,8 +266,7 @@ spec:
           - spanmetrics
           - hostmetrics
           - postgresql
-          - receiver_creator/redis
-          - receiver_creator/nginx
+          - receiver_creator/metrics
         traces:
           exporters:
           - otlphttp/tsuga

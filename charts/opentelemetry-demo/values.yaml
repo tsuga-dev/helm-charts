@@ -74,6 +74,11 @@ opentelemetry-demo:
               force_flush_period: 2s
               max_log_size: 2MiB
               preserve_leading_whitespaces: true
+        io.opentelemetry.discovery.metrics.8081/enabled: "true"
+        io.opentelemetry.discovery.metrics.8081/scraper: nginx
+        io.opentelemetry.discovery.metrics.8081/config: |
+          endpoint: "http://`endpoint`/status"
+          collection_interval: 10s
     load-generator:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -157,6 +162,11 @@ opentelemetry-demo:
               force_flush_period: 2s
               max_log_size: 2MiB
               preserve_leading_whitespaces: true
+        io.opentelemetry.discovery.metrics.6379/enabled: "true"
+        io.opentelemetry.discovery.metrics.6379/scraper: redis
+        io.opentelemetry.discovery.metrics.6379/config: |
+          collection_interval: 10s
+          username: valkey
 
   opentelemetry-collector:
     enabled: false
@@ -186,25 +196,10 @@ opentelemetry-kube-stack:
           watch_observers: [k8s_observer]
           discovery:
             enabled: true
-        receiver_creator/redis:
+        receiver_creator/metrics:
           watch_observers: [k8s_observer]
-          receivers:
-            redis:
-              # Match valkey-cart pods - using name pattern matching
-              rule: type == "pod" && name matches ".*valkey-cart.*"
-              config:
-                endpoint: "`endpoint`:6379"
-                collection_interval: 10s
-                username: valkey
-        receiver_creator/nginx:
-          watch_observers: [k8s_observer]
-          receivers:
-            nginx:
-              # Match image-provider pods - using name pattern matching
-              rule: type == "pod" && name matches ".*image-provider.*"
-              config:
-                endpoint: "http://`endpoint`:8081/status"
-                collection_interval: 10s
+          discovery:
+            enabled: true
         postgresql:
           endpoint: postgresql:5432
           metrics:
@@ -228,9 +223,6 @@ opentelemetry-kube-stack:
           tls:
             insecure: true
           username: root
-      extraExporters:
-        debug:
-          verbosity: detailed
       service:
         extraExtensions:
           - k8s_observer
@@ -238,10 +230,7 @@ opentelemetry-kube-stack:
           metrics:
             extraReceivers:
               - postgresql
-              - receiver_creator/redis
-              - receiver_creator/nginx
-            extraExporters:
-              - debug
+              - receiver_creator/metrics
           logs:
             extraReceivers:
               - receiver_creator/logs

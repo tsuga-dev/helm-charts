@@ -31,6 +31,9 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.frontend.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Envoy/nginx multi-line logs (continuation lines without timestamp)\n  - type: recombine\n    id: envoy-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\[\\\\d{4}-\\\\d{2}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3}\\\\]\"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
+| opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.metrics.8081/config" | string | `"endpoint: \"http://`endpoint`/status\"\ncollection_interval: 10s\n"` |  |
+| opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.metrics.8081/enabled" | string | `"true"` |  |
+| opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.metrics.8081/scraper" | string | `"nginx"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."resource.opentelemetry.io/service.name" | string | `"image-provider"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.kafka.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
@@ -56,6 +59,9 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.shipping.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.valkey-cart.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Valkey/Redis multi-line logs (entries start with process:role timestamp pattern)\n  - type: recombine\n    id: valkey-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d+:[A-Z] \\\\d{2} [A-Z][a-z]{2} \\\\d{4} \\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3}\"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.valkey-cart.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
+| opentelemetry-demo.components.valkey-cart.podAnnotations."io.opentelemetry.discovery.metrics.6379/config" | string | `"collection_interval: 10s\nusername: valkey\n"` |  |
+| opentelemetry-demo.components.valkey-cart.podAnnotations."io.opentelemetry.discovery.metrics.6379/enabled" | string | `"true"` |  |
+| opentelemetry-demo.components.valkey-cart.podAnnotations."io.opentelemetry.discovery.metrics.6379/scraper" | string | `"redis"` |  |
 | opentelemetry-demo.components.valkey-cart.podAnnotations."resource.opentelemetry.io/service.name" | string | `"valkey-cart"` |  |
 | opentelemetry-demo.components.valkey-cart.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.default.envOverrides[0].name | string | `"OTEL_COLLECTOR_NAME"` |  |
@@ -69,7 +75,6 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.prometheus.enabled | bool | `false` |  |
 | opentelemetry-kube-stack.agent.addLogsVolumes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.collectLogs | bool | `false` |  |
-| opentelemetry-kube-stack.agent.config.extraExporters.debug.verbosity | string | `"detailed"` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_ingresses | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_nodes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_services | bool | `true` |  |
@@ -87,21 +92,12 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.username | string | `"root"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.discovery.enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.watch_observers[0] | string | `"k8s_observer"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/nginx.receivers.nginx.config.collection_interval | string | `"10s"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/nginx.receivers.nginx.config.endpoint | string | `"http://`endpoint`:8081/status"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/nginx.receivers.nginx.rule | string | `"type == \"pod\" && name matches \".*image-provider.*\""` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/nginx.watch_observers[0] | string | `"k8s_observer"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/redis.receivers.redis.config.collection_interval | string | `"10s"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/redis.receivers.redis.config.endpoint | string | `"`endpoint`:6379"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/redis.receivers.redis.config.username | string | `"valkey"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/redis.receivers.redis.rule | string | `"type == \"pod\" && name matches \".*valkey-cart.*\""` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/redis.watch_observers[0] | string | `"k8s_observer"` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/metrics.discovery.enabled | bool | `true` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/metrics.watch_observers[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.service.extraExtensions[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.logs.extraReceivers[0] | string | `"receiver_creator/logs"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraExporters[0] | string | `"debug"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[0] | string | `"postgresql"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[1] | string | `"receiver_creator/redis"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[2] | string | `"receiver_creator/nginx"` |  |
+| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[1] | string | `"receiver_creator/metrics"` |  |
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.enabled | bool | `true` |  |
