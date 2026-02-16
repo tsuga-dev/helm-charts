@@ -213,6 +213,12 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: null
+      resourcedetection:
+        detectors:
+        - env
+        - eks
+        override: true
+        timeout: 15s
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -247,6 +253,7 @@ spec:
           - memory_limiter
           - batch
           - resource
+          - resourcedetection
           receivers:
           - otlp
           - receiver_creator/logs
@@ -259,6 +266,7 @@ spec:
           - batch
           - cumulativetodelta
           - resource
+          - resourcedetection
           receivers:
           - otlp
           - prometheus
@@ -276,6 +284,7 @@ spec:
           - memory_limiter
           - batch
           - resource
+          - resourcedetection
           receivers:
           - otlp
           - jaeger
