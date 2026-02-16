@@ -190,8 +190,6 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      resource:
-        attributes: null
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -220,7 +218,6 @@ spec:
           - k8sattributes
           - memory_limiter
           - batch
-          - resource
           receivers:
           - otlp
           - filelog
@@ -232,7 +229,6 @@ spec:
           - memory_limiter
           - batch
           - cumulativetodelta
-          - resource
           receivers:
           - otlp
           - prometheus
@@ -247,7 +243,6 @@ spec:
           - k8sattributes
           - memory_limiter
           - batch
-          - resource
           receivers:
           - otlp
           - jaeger

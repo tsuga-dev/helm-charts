@@ -290,6 +290,43 @@
         "nodeSelector": {
             "type": "object"
         },
+        "opentelemetry-operator": {
+            "type": "object",
+            "properties": {
+                "admissionWebhooks": {
+                    "type": "object",
+                    "properties": {
+                        "failurePolicy": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "crds": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "manager": {
+                    "type": "object",
+                    "properties": {
+                        "collectorImage": {
+                            "type": "object",
+                            "properties": {
+                                "repository": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "rbac": {
             "type": "object",
             "properties": {

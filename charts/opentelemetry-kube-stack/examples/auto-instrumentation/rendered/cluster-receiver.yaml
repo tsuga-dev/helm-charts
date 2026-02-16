@@ -105,8 +105,6 @@ spec:
             name: k8s.pod.uid
         - sources:
           - from: connection
-      resource:
-        attributes: null
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -119,7 +117,6 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
-          - resource
           - batch
           receivers:
           - k8s_cluster
@@ -127,7 +124,6 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
-          - resource
           - batch
           receivers:
           - k8s_cluster

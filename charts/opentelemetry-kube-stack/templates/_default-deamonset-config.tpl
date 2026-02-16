@@ -149,13 +149,13 @@ processors:
     limit_percentage: 80
     spike_limit_percentage: 25
   cumulativetodelta: {}
+  {{- if .Values.clusterName }}
   resource:
     attributes:
-      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
-      {{- end }}
+  {{- end }}
 exporters:
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
 connectors:
@@ -181,7 +181,9 @@ service:
         - k8sattributes
         - memory_limiter
         - batch
+        {{- if .Values.clusterName }}
         - resource
+        {{- end }}
       exporters:
         - otlphttp/tsuga
     metrics:
@@ -196,7 +198,9 @@ service:
         - memory_limiter
         - batch
         - cumulativetodelta
+        {{- if .Values.clusterName }}
         - resource
+        {{- end }}
       exporters:
         - otlphttp/tsuga
     traces:
@@ -207,7 +211,9 @@ service:
         - k8sattributes
         - memory_limiter
         - batch
+        {{- if .Values.clusterName }}
         - resource
+        {{- end }}
       receivers:
         - otlp
         - jaeger
