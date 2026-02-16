@@ -1,0 +1,64 @@
+---
+# Source: tsuga-spicy-gremlin/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-tsuga-spicy-gremlin
+  labels:
+    helm.sh/chart: tsuga-spicy-gremlin-0.1.2
+    app.kubernetes.io/name: tsuga-spicy-gremlin
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "0.1.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tsuga-spicy-gremlin
+      app.kubernetes.io/instance: example
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tsuga-spicy-gremlin
+        app.kubernetes.io/instance: example
+      annotations:
+        resource.opentelemetry.io/service.name: 
+        resource.opentelemetry.io/service.version: "0.1.3"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: spicy-gremlin
+          image: "docker.io/l0k0ms/spicy-gremlin:0.1.3"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: FLAGD_API_BASE_URL
+              value: "http://frontend-proxy:8080/feature/api"
+            - name: MIN_INTERVAL_SEC
+              value: "120"
+            - name: MAX_INTERVAL_SEC
+              value: "900"
+            - name: REQUEST_TIMEOUT_SEC
+              value: "20"
+            - name: MAX_ACTIVE_FLAGS
+              value: "2"
+            - name: RUN_ON_START
+              value: "true"
+            - name: DRY_RUN
+              value: "false"
+            - name: WARN_UNKNOWN_FLAGS
+              value: "true"
+            - name: FLAG_SCHEMA
+              value: "https://flagd.dev/schema/v0/flags.json"

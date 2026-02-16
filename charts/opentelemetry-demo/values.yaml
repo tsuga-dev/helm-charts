@@ -1,7 +1,6 @@
 opentelemetry-demo:
   enabled: true
 
-
   default:
     envOverrides:
       - name: OTEL_COLLECTOR_NAME
@@ -72,14 +71,14 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
     postgresql:
-      command: 
-       - docker-entrypoint.sh
-       - -c
-       - log_destination=stderr
-       - -c
-       - log_min_duration_statement=0
-       - -c
-       - log_line_prefix=%m [%p] %u@%d %
+      command:
+        - docker-entrypoint.sh
+        - -c
+        - log_destination=stderr
+        - -c
+        - log_min_duration_statement=0
+        - -c
+        - log_line_prefix=%m [%p] %u@%d %
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
@@ -107,7 +106,6 @@ opentelemetry-demo:
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
-    
 
   opentelemetry-collector:
     enabled: false
@@ -131,12 +129,12 @@ opentelemetry-kube-stack:
         k8s_observer:
           observe_nodes: true
           observe_services: true
-          observe_ingresses: true  
+          observe_ingresses: true
       extraReceivers:
         receiver_creator/logs:
-          watch_observers: [ k8s_observer ]
+          watch_observers: [k8s_observer]
           discovery:
-            enabled: true 
+            enabled: true
         nginx:
           collection_interval: 10s
           endpoint: http://image-provider.default:8081/status
