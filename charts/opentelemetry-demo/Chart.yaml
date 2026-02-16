@@ -29,7 +29,7 @@ dependencies:
     repository: https://tsuga-dev.github.io/helm-charts
     condition: opentelemetry-kube-stack.enabled
   - name: tsuga-spicy-gremlin
-    version: 0.1.1
+    version: 0.1.2
     repository: https://tsuga-dev.github.io/helm-charts
     condition: tsuga-spicy-gremlin.enabled
   - name: opentelemetry-demo
