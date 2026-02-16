@@ -1,6 +1,6 @@
 # tsuga-spicy-gremlin
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3](https://img.shields.io/badge/AppVersion-0.1.3-informational?style=flat-square)
 
 A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature flags.
 
@@ -28,16 +28,30 @@ A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature fla
 | env.maxIntervalSec | int | `900` | Maximum random interval between scenario applications. |
 | env.minIntervalSec | int | `120` | Minimum random interval between scenario applications. |
 | env.offDefaultsJson | string | `""` | Optional JSON override for OFF defaults. Empty uses image defaults. |
+| env.otelCollectorName | string | `""` | Optional collector host/IP used when endpoint override is empty. |
+| env.otelCollectorNameFromHostIP | bool | `false` | Set OTEL_COLLECTOR_NAME from the node host IP (status.hostIP). |
+| env.otelExporterOtlpEndpoint | string | `""` | Optional explicit OTLP endpoint override. Leave empty to derive from OTEL_COLLECTOR_NAME. |
+| env.otelExporterOtlpProtocol | string | `"http/protobuf"` | OTLP protocol used by trace and metric exporters. |
+| env.otelLogsExporter | string | `"none"` | Logs exporter compatibility mode. |
+| env.otelMetricExportInterval | string | `"60000"` | Metric export interval in milliseconds (using integer ms avoids OTel SDK env parse warnings). |
+| env.otelMetricsExporter | string | `"otlp"` | Metrics exporter mode. |
+| env.otelResourceAttributes | string | `""` | Optional OTEL_RESOURCE_ATTRIBUTES override. When empty, defaults to service.name/version/namespace plus deployment environment when available. |
+| env.otelServiceName | string | `"spicy-gremlin"` | OpenTelemetry service.name. |
+| env.otelServiceVersion | string | `""` | OpenTelemetry service.version (defaults to image.tag when empty). |
+| env.otelTracesExporter | string | `"otlp"` | Traces exporter mode. |
+| env.otelTracesSampler | string | `"parentbased_traceidratio"` | OpenTelemetry traces sampler. |
+| env.otelTracesSamplerArg | string | `"1.0"` | Argument for ratio-based samplers. |
 | env.randomSeed | string | `""` | Optional deterministic random seed. |
 | env.requestTimeoutSec | int | `20` | HTTP timeout for read/write API calls. |
 | env.runOnStart | bool | `true` | Apply one scenario immediately after startup. |
 | env.scenariosJson | string | `""` | Optional JSON override for scenarios. Empty uses image defaults. |
 | env.warnUnknownFlags | bool | `true` | Warn when unknown flags are present in OFF_DEFAULTS_JSON or SCENARIOS_JSON. |
+| environment | string | `""` | Deployment environment name used for telemetry tags. |
 | extraEnv | list | `[]` | Additional env vars appended to the container. |
 | fullnameOverride | string | `""` | Override full chart release name. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"docker.io/l0k0ms/spicy-gremlin"` | spicy-gremlin container image repository. |
-| image.tag | string | `"0.1.0"` | spicy-gremlin image tag. |
+| image.tag | string | `"0.1.3"` | spicy-gremlin image tag. |
 | imagePullSecrets | list | `[]` | Optional image pull secrets. |
 | nameOverride | string | `""` | Override chart name. |
 | nodeSelector | object | `{}` |  |
