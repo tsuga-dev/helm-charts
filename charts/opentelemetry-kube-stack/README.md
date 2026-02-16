@@ -14,7 +14,15 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 
 ## Source Code
 
+* <https://github.com/open-telemetry/opentelemetry-operator>
 * <https://github.com/tsuga-dev/helm-charts>
+
+## Requirements
+
+| Repository | Name | Version |
+|------------|------|---------|
+|  | otel-crds | 0.0.0 |
+| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-operator | 0.105.1 |
 
 ## Features
 
@@ -91,15 +99,56 @@ Use the deploy script
 ./deploy.sh
 ```
 
-## Installation
+## Prerequisites
 
-### Install the OpenTelemetry Operator
+Before installing this chart, you need the following components:
 
-First, install the OpenTelemetry Operator in your cluster:
+### 1. cert-manager (Required)
+
+The OpenTelemetry Operator requires cert-manager to be installed in your cluster.
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+```
+
+Verify cert-manager is running:
+```bash
+kubectl wait --for=condition=Ready pods --all -n cert-manager --timeout=300s
+```
+
+### 2. OpenTelemetry Operator (Required)
+
+The OpenTelemetry Operator is required for auto-instrumentation features. You have two options:
+
+#### Option A: Install with this chart (recommended)
+
+This chart includes the OpenTelemetry Operator as a dependency. Enable it in your values:
+
+```yaml
+opentelemetry-operator:
+  enabled: true
+```
+
+Or via command line:
+```bash
+helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set opentelemetry-operator.enabled=true
+```
+
+#### Option B: Install separately
+
+If you prefer to manage the operator separately or it's already installed:
 
 ```bash
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
+
+Verify the operator is running:
+```bash
+kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=opentelemetry-operator -n opentelemetry-operator-system --timeout=300s
+```
+
+## Installation
 
 ## Auto-instrumentation (APM)
 
@@ -107,7 +156,8 @@ This chart can optionally create an OpenTelemetry Operator `Instrumentation` res
 
 ### Prerequisites
 
-- The **OpenTelemetry Operator** must be installed in the cluster (see Installation above).
+- The **OpenTelemetry Operator** must be installed in the cluster (see prerequisites section above).
+- **cert-manager** must be installed in the cluster.
 - Your workloads must opt-in via **pod annotations** (examples below).
 
 ### Enable and configure
@@ -280,6 +330,10 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
 | nameOverride | string | "" | Override the chart name used in resource naming |
 | nodeSelector | object | {} | Node selector for daemonset mode (agent) Used as default when agent.nodeSelector is not set |
+| opentelemetry-operator.admissionWebhooks.failurePolicy | string | `"Ignore"` |  |
+| opentelemetry-operator.crds.create | bool | `false` |  |
+| opentelemetry-operator.enabled | bool | `false` |  |
+| opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` |  |
 | rbac | object | `{"create":true}` | RBAC configuration |
 | rbac.create | bool | true | Create RBAC resources (ClusterRole and ClusterRoleBinding) Required for collecting Kubernetes cluster metrics and metadata |
 | resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits |
