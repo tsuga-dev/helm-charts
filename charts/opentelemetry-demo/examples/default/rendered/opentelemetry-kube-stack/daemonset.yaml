@@ -101,9 +101,6 @@ spec:
         collection_interval: 20s
         endpoint: ${env:NODE_IP}:10250
         insecure_skip_verify: true
-      nginx:
-        collection_interval: 10s
-        endpoint: http://image-provider.default:8081/status
       otlp:
         protocols:
           grpc:
@@ -111,7 +108,7 @@ spec:
           http:
             endpoint: ${env:MY_POD_IP}:4318
       postgresql:
-        endpoint: postgresql.default:5432
+        endpoint: postgresql:5432
         metrics:
           postgresql.blks_hit:
             enabled: true
@@ -146,10 +143,11 @@ spec:
           enabled: true
         watch_observers:
         - k8s_observer
-      redis:
-        collection_interval: 10s
-        endpoint: valkey-cart.default:6379
-        username: valkey
+      receiver_creator/metrics:
+        discovery:
+          enabled: true
+        watch_observers:
+        - k8s_observer
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
     processors:
@@ -268,8 +266,7 @@ spec:
           - spanmetrics
           - hostmetrics
           - postgresql
-          - redis
-          - nginx
+          - receiver_creator/metrics
         traces:
           exporters:
           - otlphttp/tsuga

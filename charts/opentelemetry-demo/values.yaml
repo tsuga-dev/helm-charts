@@ -34,12 +34,51 @@ opentelemetry-demo:
     frontend:
       podAnnotations:
         resource.opentelemetry.io/team: app
+        resource.opentelemetry.io/service.name: frontend
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+
+            # Recombine Next.js multi-line errors (stack traces)
+            - type: recombine
+              id: nextjs-multiline
+              combine_field: body
+              is_first_entry: body matches "^Error:"
+              source_identifier: attributes["log.file.path"]
+              force_flush_period: 2s
+              max_log_size: 2MiB
+              preserve_leading_whitespaces: true
     frontend-proxy:
       podAnnotations:
         resource.opentelemetry.io/team: platform
     image-provider:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        resource.opentelemetry.io/service.name: image-provider
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+
+            # Recombine Envoy/nginx multi-line logs (continuation lines without timestamp)
+            - type: recombine
+              id: envoy-multiline
+              combine_field: body
+              is_first_entry: body matches "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]"
+              source_identifier: attributes["log.file.path"]
+              force_flush_period: 2s
+              max_log_size: 2MiB
+              preserve_leading_whitespaces: true
+        io.opentelemetry.discovery.metrics.8081/enabled: "true"
+        io.opentelemetry.discovery.metrics.8081/scraper: nginx
+        io.opentelemetry.discovery.metrics.8081/config: |
+          endpoint: "http://`endpoint`/status"
+          collection_interval: 10s
     load-generator:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -106,6 +145,28 @@ opentelemetry-demo:
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        resource.opentelemetry.io/service.name: valkey-cart
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
+
+            # Recombine Valkey/Redis multi-line logs (entries start with process:role timestamp pattern)
+            - type: recombine
+              id: valkey-multiline
+              combine_field: body
+              is_first_entry: body matches "^\\d+:[A-Z] \\d{2} [A-Z][a-z]{2} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}"
+              source_identifier: attributes["log.file.path"]
+              force_flush_period: 2s
+              max_log_size: 2MiB
+              preserve_leading_whitespaces: true
+        io.opentelemetry.discovery.metrics.6379/enabled: "true"
+        io.opentelemetry.discovery.metrics.6379/scraper: redis
+        io.opentelemetry.discovery.metrics.6379/config: |
+          collection_interval: 10s
+          username: valkey
 
   opentelemetry-collector:
     enabled: false
@@ -135,11 +196,12 @@ opentelemetry-kube-stack:
           watch_observers: [k8s_observer]
           discovery:
             enabled: true
-        nginx:
-          collection_interval: 10s
-          endpoint: http://image-provider.default:8081/status
+        receiver_creator/metrics:
+          watch_observers: [k8s_observer]
+          discovery:
+            enabled: true
         postgresql:
-          endpoint: postgresql.default:5432
+          endpoint: postgresql:5432
           metrics:
             postgresql.blks_hit:
               enabled: true
@@ -161,10 +223,6 @@ opentelemetry-kube-stack:
           tls:
             insecure: true
           username: root
-        redis:
-          collection_interval: 10s
-          endpoint: valkey-cart.default:6379
-          username: valkey
       service:
         extraExtensions:
           - k8s_observer
@@ -172,8 +230,7 @@ opentelemetry-kube-stack:
           metrics:
             extraReceivers:
               - postgresql
-              - redis
-              - nginx
+              - receiver_creator/metrics
           logs:
             extraReceivers:
               - receiver_creator/logs

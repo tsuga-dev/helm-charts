@@ -4,11 +4,12 @@ Build the final service configuration:
 Input context: $servicectx = merge (dict "defaultService" $service) .Values.cluster.config.service
 
 - .defaultService : the default service map from your base config
-- other keys      : user overrides (extraExtensions, pipelines, extraTelemetry, ...)
+- other keys      : user overrides (extraExtensions, pipelines, extraTelemetry, extraService, ...)
 
 Behavior:
 - Pipelines: default + extraReceivers/extraProcessors/extraExporters
 - Telemetry: default + extraTelemetry
+- Service: default + extraService (for additional top-level service fields)
 */}}
 
 {{- define "opentelemetry-kube-stack.buildService" -}}
@@ -58,6 +59,18 @@ Behavior:
       "exporters"  $exporters
   ) }}
 
+{{- end }}
+
+{{/* Merge extraPipelines (completely new pipelines) */}}
+{{- $extraPipelines := default (dict) $userPipelines.extraPipelines }}
+{{- if $extraPipelines }}
+  {{- range $pname, $pconfig := $extraPipelines }}
+    {{- $_ := set $pipelines $pname (dict
+        "receivers"  (default (list) $pconfig.receivers)
+        "processors" (default (list) $pconfig.processors)
+        "exporters"  (default (list) $pconfig.exporters)
+    ) }}
+  {{- end }}
 {{- end }}
 
 {{- $_ := set $service "pipelines" $pipelines }}

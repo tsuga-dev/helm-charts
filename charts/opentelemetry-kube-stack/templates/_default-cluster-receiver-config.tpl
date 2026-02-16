@@ -2,6 +2,7 @@
 receivers:
   k8s_cluster:
     collection_interval: 10s
+    allocatable_types_to_report: [cpu, memory]
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.

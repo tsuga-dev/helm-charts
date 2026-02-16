@@ -16,7 +16,7 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: true
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
   resources:
     limits:
       cpu: 500m
@@ -69,6 +69,19 @@ spec:
           fieldPath: status.hostIP
   config:
     receivers:
+      filelog:
+        exclude: []
+        include:
+        - /var/log/pods/*/*/*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - id: container-parser
+          max_log_size: 102400
+          type: container
+        retry_on_failure:
+          enabled: true
+        start_at: end
       hostmetrics:
         collection_interval: 10s
         root_path: /hostfs
@@ -107,29 +120,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      postgresql:
-        endpoint: postgresql:5432
-        metrics:
-          postgresql.blks_hit:
-            enabled: true
-          postgresql.blks_read:
-            enabled: true
-          postgresql.deadlocks:
-            enabled: true
-          postgresql.tup_deleted:
-            enabled: true
-          postgresql.tup_fetched:
-            enabled: true
-          postgresql.tup_inserted:
-            enabled: true
-          postgresql.tup_returned:
-            enabled: true
-          postgresql.tup_updated:
-            enabled: true
-        password: otel
-        tls:
-          insecure: true
-        username: root
       prometheus:
         config:
           scrape_configs:
@@ -138,30 +128,6 @@ spec:
             static_configs:
             - targets:
               - ${env:MY_POD_IP}:8888
-      receiver_creator/logs:
-        discovery:
-          enabled: true
-        watch_observers:
-        - k8s_observer
-      receiver_creator/nginx:
-        receivers:
-          nginx:
-            config:
-              collection_interval: 10s
-              endpoint: http://`endpoint`:8081/status
-            rule: type == "pod" && name matches ".*image-provider.*"
-        watch_observers:
-        - k8s_observer
-      receiver_creator/redis:
-        receivers:
-          redis:
-            config:
-              collection_interval: 10s
-              endpoint: '`endpoint`:6379'
-              username: valkey
-            rule: type == "pod" && name matches ".*valkey-cart.*"
-        watch_observers:
-        - k8s_observer
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
     processors:
@@ -237,10 +203,6 @@ spec:
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
-      k8s_observer:
-        observe_ingresses: true
-        observe_nodes: true
-        observe_services: true
     connectors:
       spanmetrics:
         calls_dimensions:
@@ -253,7 +215,6 @@ spec:
     service:
       extensions:
       - health_check
-      - k8s_observer
       pipelines:
         logs:
           exporters:
@@ -265,7 +226,7 @@ spec:
           - resource
           receivers:
           - otlp
-          - receiver_creator/logs
+          - filelog
         metrics:
           exporters:
           - otlphttp/tsuga
@@ -281,9 +242,12 @@ spec:
           - kubeletstats
           - spanmetrics
           - hostmetrics
-          - postgresql
-          - receiver_creator/redis
-          - receiver_creator/nginx
+        metrics/extra:
+          exporters:
+          - otlphttp/tsuga
+          processors: []
+          receivers:
+          - hostmetrics
         traces:
           exporters:
           - otlphttp/tsuga
