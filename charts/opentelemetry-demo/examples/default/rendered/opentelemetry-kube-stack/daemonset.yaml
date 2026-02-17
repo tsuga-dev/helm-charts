@@ -151,7 +151,9 @@ spec:
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
     processors:
-      batch: {}
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
       cumulativetodelta: {}
       k8sattributes:
         extract:
@@ -208,11 +210,6 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      resource:
-        attributes:
-        - action: upsert
-          key: k8s.cluster.name
-          value: null
       resourcedetection:
         detectors:
         - env
@@ -252,7 +249,6 @@ spec:
           - k8sattributes
           - memory_limiter
           - batch
-          - resource
           - resourcedetection
           receivers:
           - otlp
@@ -265,7 +261,6 @@ spec:
           - memory_limiter
           - batch
           - cumulativetodelta
-          - resource
           - resourcedetection
           receivers:
           - otlp
@@ -283,7 +278,6 @@ spec:
           - k8sattributes
           - memory_limiter
           - batch
-          - resource
           - resourcedetection
           receivers:
           - otlp
