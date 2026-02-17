@@ -2,61 +2,6 @@
 
 This repository contains Helm charts for OpenTelemetry Kubernetes stack.
 
-## Usage
-
-[Helm](https://helm.sh) must be installed to use the charts. Please refer to
-Helm's [documentation](https://helm.sh/docs) to get started.
-
-Once Helm has been set up correctly, add the repo as follows:
-
-```bash
-helm repo add tsuga-charts https://tsuga-dev.github.io/helm-charts/
-```
-
-If you had already added this repo earlier, run `helm repo update` to retrieve
-the latest versions of the packages. You can then run `helm search repo
-otel-charts` to see the charts.
-
-### Prerequisites
-
-Before installing the opentelemetry-kube-stack chart, you need to install:
-
-1. **cert-manager** (required by the OpenTelemetry Operator):
-   ```bash
-   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
-   ```
-
-2. **OpenTelemetry Operator** (choose one option):
-
-   **Option A: Install with this chart (recommended)**
-   ```bash
-   helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack \
-     --set opentelemetry-operator.enabled=true
-   ```
-
-   **Option B: Install separately**
-   ```bash
-   kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
-   ```
-   Then install the chart:
-   ```bash
-   helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack
-   ```
-
-### Basic Installation
-
-To install the opentelemetry-kube-stack chart:
-
-```bash
-helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack
-```
-
-To uninstall the chart:
-
-```bash
-helm uninstall my-opentelemetry-kube-stack
-```
-
 ## Quick Deployment with Script
 
 For a streamlined deployment experience, you can use the provided deployment script that handles prerequisites and configuration automatically:
@@ -77,6 +22,80 @@ The script will:
 - `kubectl` configured and connected to your cluster
 - `helm` installed
 - Appropriate cluster permissions
+
+## Prerequisites
+
+[Helm](https://helm.sh) must be installed to use the charts. Please refer to
+Helm's [documentation](https://helm.sh/docs) to get started.
+
+Once Helm has been set up correctly, add the repo as follows:
+
+```bash
+helm repo add tsuga-charts https://tsuga-dev.github.io/helm-charts/
+```
+
+If you had already added this repo earlier, run `helm repo update` to retrieve
+the latest versions of the packages. You can then run `helm search repo
+tsuga-charts` to see the charts.
+
+Before installing the opentelemetry-kube-stack chart, you need to install:
+
+**cert-manager** (required by the OpenTelemetry Operator):
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+```
+
+### OpenTelemetry Operator
+
+You can pre-install the OpenTelemetry Operator or install it with this chart.
+
+**Option A: Pre-Install**
+```bash
+kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+```
+
+**Option B: Install with this chart** by setting `opentelemetry-operator.enabled=true` in your `values.yaml` file or on the command line when installing:
+```bash
+helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack \
+  --set opentelemetry-operator.enabled=true
+```
+
+### Tsuga Secret
+
+It is recommended to create a secret for the Tsuga API key and use it in the `values.yaml` file or on the command line when installing:
+
+**Option A: Generate new secret (default)**
+
+```bash
+helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
+  --set tsuga.apiKey="your-api-key-here"
+```
+
+**Option B: Use existing secret**
+```bash
+helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+  --set secret.create=false \
+  --set secret.name="my-existing-secret" \
+  --set secret.keyMapping.TSUGA_API_KEY="api-key" \
+  --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
+```
+
+### Basic Installation
+
+To install the opentelemetry-kube-stack chart:
+
+```bash
+helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack
+```
+
+To uninstall the chart:
+
+```bash
+helm uninstall my-opentelemetry-kube-stack
+```
+
+You can check the [examples](./charts/opentelemetry-kube-stack/examples) folder for more details.
 
 ## Available Charts
 
