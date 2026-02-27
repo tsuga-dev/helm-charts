@@ -360,8 +360,8 @@ cluster:
   nodeSelector: {}
   # -- Cluster-specific tolerations
   # If not set, inherits from global tolerations configuration
-  # @default -- {}
-  tolerations: {}
+  # @default -- []
+  tolerations: []
   # -- Cluster-specific affinity rules
   # If not set, inherits from global affinity configuration
   # @default -- {}
@@ -533,8 +533,8 @@ agent:
   nodeSelector: {}
   # -- Agent-specific tolerations
   # If not set, inherits from global tolerations configuration
-  # @default -- {}
-  tolerations: {}
+  # @default -- []
+  tolerations: []
   # -- Agent-specific affinity rules
   # If not set, inherits from global affinity configuration
   # @default -- {}

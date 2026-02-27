@@ -1,3 +1,4 @@
 .vscode/
 charts/**/charts/*.tgz
 charts/**/values_test.yaml
+.worktrees/
