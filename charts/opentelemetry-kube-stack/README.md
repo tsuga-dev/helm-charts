@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.4.1](https://img.shields.io/badge/Version-0.4.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -286,7 +286,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
-| agent.tolerations | object | {} | Agent-specific tolerations If not set, inherits from global tolerations configuration |
+| agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
 | autoInstrumentation.annotations | object | {} | Extra annotations to add to the Instrumentation resource |
 | autoInstrumentation.apiVersion | string | "opentelemetry.io/v1alpha1" | apiVersion for the Instrumentation CR (depends on operator version) Common values: "opentelemetry.io/v1alpha1" |
 | autoInstrumentation.enabled | bool | false | Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR) Requires the OpenTelemetry Operator to be installed in the cluster. |
@@ -324,7 +324,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.image | string | "" | OpenTelemetry Collector image for cluster receiver Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
-| cluster.tolerations | object | {} | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
+| cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
 | clusterName | string | "" | The name of the cluster to be used in the resource attributes This value is added to all telemetry data as k8s.cluster.name RECOMMENDED: Set this value to identify your cluster in telemetry data If not set, the k8s.cluster.name attribute will be omitted from telemetry |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
 | image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
