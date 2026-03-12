@@ -1,0 +1,19 @@
+{{- if .Values.targetAllocator.enabled }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-ta
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "target-allocator" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+spec:
+  {{- if .Values.serviceAccount.create }}
+  serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- end }}
+  {{- with .Values.targetAllocator.spec }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}

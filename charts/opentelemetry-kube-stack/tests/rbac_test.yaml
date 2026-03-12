@@ -12,3 +12,66 @@ tests:
     asserts:
       - hasDocuments:
           count: 2
+
+  - it: should not include monitoring.coreos.com rules by default
+    set:
+      rbac.create: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups: ["monitoring.coreos.com"]
+        documentIndex: 0
+
+  - it: should include monitoring.coreos.com rules when prometheusCR enabled
+    set:
+      rbac.create: true
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["monitoring.coreos.com"]
+            resources: ["servicemonitors", "podmonitors"]
+            verbs: ["get", "list", "watch"]
+        documentIndex: 0
+
+  - it: should not include endpointslices permission by default
+    set:
+      rbac.create: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    documentIndex: 0
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups: ["discovery.k8s.io"]
+
+  - it: should include endpointslices permission when targetAllocator enabled
+    set:
+      rbac.create: true
+      targetAllocator.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["discovery.k8s.io"]
+            resources: ["endpointslices"]
+            verbs: ["get", "list", "watch"]

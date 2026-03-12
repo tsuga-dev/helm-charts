@@ -412,6 +412,115 @@
                 }
             }
         },
+        "statefulset": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
+                        "extraExporters": {
+                            "type": "object"
+                        },
+                        "extraProcessors": {
+                            "type": "object"
+                        },
+                        "extraReceivers": {
+                            "type": "object"
+                        },
+                        "extraTelemetry": {
+                            "type": "object"
+                        },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "extraExtensions": {
+                                    "type": "array"
+                                },
+                                "pipelines": {
+                                    "type": "object",
+                                    "properties": {
+                                        "extraPipelines": {
+                                            "type": "object"
+                                        },
+                                        "metrics": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "customConfig": {
+                    "type": "object"
+                },
+                "extraEnvs": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "replicas": {
+                    "type": "integer"
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "targetAllocator": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "spec": {
+                    "type": "object",
+                    "properties": {
+                        "allocationStrategy": {
+                            "type": "string"
+                        },
+                        "prometheusCR": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                },
+                                "podMonitorSelector": {
+                                    "type": "object"
+                                },
+                                "serviceMonitorSelector": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "tolerations": {
             "type": "array"
         },

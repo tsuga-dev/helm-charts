@@ -1,0 +1,63 @@
+suite: statefulset tests
+templates:
+  - statefulset.yaml
+tests:
+  - it: should not render when targetAllocator disabled
+    set:
+      targetAllocator.enabled: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create statefulset collector when targetAllocator enabled
+    set:
+      targetAllocator.enabled: true
+      serviceAccount.create: true
+      serviceAccount.name: ""
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.mode
+          value: statefulset
+      - equal:
+          path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"
+      - equal:
+          path: metadata.labels["opentelemetry.io/target-allocator"]
+          value: "test-release-opentelemetry-kube-stack-ta"
+
+  - it: should not set serviceAccount when serviceAccount.create is false
+    set:
+      targetAllocator.enabled: true
+      serviceAccount.create: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - notExists:
+          path: spec.serviceAccount
+
+  - it: should use custom replicas when specified
+    set:
+      targetAllocator.enabled: true
+      statefulset.replicas: 3
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3

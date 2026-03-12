@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.4.1](https://img.shields.io/badge/Version-0.4.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -354,6 +354,35 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | serviceAccount.annotations | object | {} | Annotations to add to the service account Useful for IRSA (IAM Roles for Service Accounts) or workload identity |
 | serviceAccount.create | bool | true | Create a service account for the OpenTelemetry collectors |
 | serviceAccount.name | string | "" | Name of the service account If not set, will be auto-generated based on release name |
+| statefulset.affinity | object | {} | StatefulSet-specific affinity rules |
+| statefulset.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | StatefulSet collector configuration (merge-based approach) |
+| statefulset.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration |
+| statefulset.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration |
+| statefulset.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration |
+| statefulset.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration |
+| statefulset.config.extraTelemetry | object | {} | Additional telemetry to merge into the collector configuration |
+| statefulset.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
+| statefulset.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration |
+| statefulset.config.service.pipelines | object | `{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
+| statefulset.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration |
+| statefulset.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration |
+| statefulset.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline Added to default exporter (otlphttp/tsuga) |
+| statefulset.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (k8sattributes, batch) |
+| statefulset.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receiver (prometheus) |
+| statefulset.customConfig | object | {} | Replace default config with complete custom configuration |
+| statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
+| statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector |
+| statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
+| statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
+| statefulset.resources | object | {} | StatefulSet-specific resource limits and requests |
+| statefulset.tolerations | list | [] | StatefulSet-specific tolerations |
+| targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector |
+| targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
+| targetAllocator.spec.allocationStrategy | string | "consistent-hashing" | Allocation strategy for distributing targets across collector replicas Options: consistent-hashing (default), least-weighted, per-node |
+| targetAllocator.spec.prometheusCR | object | `{"enabled":false,"podMonitorSelector":{},"serviceMonitorSelector":{}}` | PrometheusCR configuration When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs. Requires monitoring.coreos.com RBAC rules (added automatically when enabled). |
+| targetAllocator.spec.prometheusCR.enabled | bool | false | Enable ServiceMonitor/PodMonitor discovery |
+| targetAllocator.spec.prometheusCR.podMonitorSelector | object | {} | Selector for PodMonitor resources An empty selector ({}) matches all PodMonitors in all namespaces. |
+| targetAllocator.spec.prometheusCR.serviceMonitorSelector | object | {} | Selector for ServiceMonitor resources An empty selector ({}) matches all ServiceMonitors in all namespaces. |
 | tolerations | list | [] | Tolerations for daemonset mode (agent) Used as default when agent.tolerations is not set |
 | tsuga.apiKey | string | "" | Tsuga API key for authentication Set via: --set tsuga.apiKey="your-api-key-here" Or use external secrets: --set tsuga.apiKey="" |
 | tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint for telemetry data Set via: --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" |

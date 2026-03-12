@@ -604,6 +604,115 @@ rbac:
   create: true
 
 # =============================================================================
+# TARGET ALLOCATOR CONFIGURATION
+# =============================================================================
+# The Target Allocator decouples Prometheus service discovery from metric
+# collection. When enabled, it deploys a TargetAllocator CR and a paired
+# StatefulSet OpenTelemetryCollector CR.
+# Requires the OpenTelemetry Operator to be installed.
+targetAllocator:
+  # -- Enable Target Allocator and paired StatefulSet collector
+  # @default -- false
+  enabled: false
+  # -- TargetAllocator CR spec (full passthrough)
+  # All fields are passed directly to the TargetAllocator CR spec.
+  # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
+  # @default -- {}
+  spec:
+    # -- Allocation strategy for distributing targets across collector replicas
+    # Options: consistent-hashing (default), least-weighted, per-node
+    # @default -- "consistent-hashing"
+    allocationStrategy: consistent-hashing
+    # -- PrometheusCR configuration
+    # When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs.
+    # Requires monitoring.coreos.com RBAC rules (added automatically when enabled).
+    prometheusCR:
+      # -- Enable ServiceMonitor/PodMonitor discovery
+      # @default -- false
+      enabled: false
+      # -- Selector for ServiceMonitor resources
+      # An empty selector ({}) matches all ServiceMonitors in all namespaces.
+      # @default -- {}
+      serviceMonitorSelector: {}
+      # -- Selector for PodMonitor resources
+      # An empty selector ({}) matches all PodMonitors in all namespaces.
+      # @default -- {}
+      podMonitorSelector: {}
+
+# =============================================================================
+# STATEFULSET COLLECTOR CONFIGURATION
+# =============================================================================
+# The statefulset collector is deployed alongside the TargetAllocator.
+# It is only created when targetAllocator.enabled is true.
+statefulset:
+  # -- Number of StatefulSet collector replicas
+  # The Target Allocator distributes targets evenly across replicas.
+  # @default -- 1
+  replicas: 1
+  # -- OpenTelemetry Collector image for statefulset collector
+  # @default -- ""
+  image: ""
+  # -- Extra environment variables for statefulset collector
+  # @default -- []
+  extraEnvs: []
+  # -- Replace default config with complete custom configuration
+  # @default -- {}
+  customConfig: {}
+  # -- StatefulSet collector configuration (merge-based approach)
+  config:
+    # -- Additional telemetry to merge into the collector configuration
+    # @default -- {}
+    extraTelemetry: {}
+    # -- Additional receivers to merge into the collector configuration
+    # @default -- {}
+    extraReceivers: {}
+    # -- Additional processors to merge into the collector configuration
+    # @default -- {}
+    extraProcessors: {}
+    # -- Additional exporters to merge into the collector configuration
+    # @default -- {}
+    extraExporters: {}
+    # -- Additional connectors to merge into the collector configuration
+    # @default -- {}
+    extraConnectors: {}
+    # -- Service configuration
+    service:
+      # -- Additional extensions to add to the service configuration
+      # @default -- []
+      extraExtensions: []
+      # -- Pipeline configuration
+      pipelines:
+        # -- Metrics pipeline configuration
+        metrics:
+          # -- Additional exporters to add to the metrics pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the metrics pipeline
+          # Added to default processors (k8sattributes, batch)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the metrics pipeline
+          # Added to default receiver (prometheus)
+          # @default -- []
+          extraReceivers: []
+        # -- Additional pipelines to add to the service configuration
+        # @default -- {}
+        extraPipelines: {}
+  # -- StatefulSet-specific resource limits and requests
+  # @default -- {}
+  resources: {}
+  # -- StatefulSet-specific node selector
+  # @default -- {}
+  nodeSelector: {}
+  # -- StatefulSet-specific tolerations
+  # @default -- []
+  tolerations: []
+  # -- StatefulSet-specific affinity rules
+  # @default -- {}
+  affinity: {}
+
+# =============================================================================
 # VALIDATION CONFIGURATION
 # =============================================================================
 
