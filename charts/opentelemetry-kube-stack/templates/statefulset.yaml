@@ -1,0 +1,65 @@
+{{- if .Values.targetAllocator.enabled }}
+{{- /*
+     First, render the default config and parse it into a map,
+     then build a new context that includes it as .defaultConfig
+*/ -}}
+{{- $default := include "tsuga-otel.statefulset.config.default" . | fromYaml }}
+{{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.statefulset.customConfig) .Values.statefulset.config }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-statefulset
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "statefulset" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+    opentelemetry.io/target-allocator: {{ include "opentelemetry-kube-stack.fullname" . }}-ta
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+spec:
+  mode: statefulset
+  replicas: {{ .Values.statefulset.replicas | default 1 }}
+  image: {{ .Values.statefulset.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  {{- if or .Values.statefulset.resources .Values.resources }}
+  resources:
+    {{- if .Values.statefulset.resources }}
+    {{- toYaml .Values.statefulset.resources | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.resources | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.statefulset.nodeSelector .Values.nodeSelector }}
+  nodeSelector:
+    {{- if .Values.statefulset.nodeSelector }}
+    {{- toYaml .Values.statefulset.nodeSelector | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.nodeSelector | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.statefulset.tolerations .Values.tolerations }}
+  tolerations:
+    {{- if .Values.statefulset.tolerations }}
+    {{- toYaml .Values.statefulset.tolerations | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.tolerations | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.statefulset.affinity .Values.affinity }}
+  affinity:
+    {{- if .Values.statefulset.affinity }}
+    {{- toYaml .Values.statefulset.affinity | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.affinity | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.serviceAccount.create }}
+  serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- end }}
+  env:
+    {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    {{- if .Values.statefulset.extraEnvs }}
+    {{- toYaml .Values.statefulset.extraEnvs | nindent 4 }}
+    {{- end }}
+  config:
+    {{- include "opentelemetry-kube-stack.otelConfig" $ctx | trim | nindent 4 }}
+{{- end }}

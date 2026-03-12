@@ -1,0 +1,14 @@
+suite: statefulset tests
+templates:
+  - statefulset.yaml
+tests:
+  - it: should not render when targetAllocator disabled
+    set:
+      targetAllocator.enabled: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 0
