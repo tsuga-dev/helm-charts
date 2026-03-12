@@ -2,7 +2,13 @@
 receivers:
   prometheus:
     config:
-      scrape_configs: []
+      scrape_configs:
+        # This placeholder config is required but the Target Allocator
+        # will override it with dynamically discovered targets
+        - job_name: 'otel-collector'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['localhost:8888']
     target_allocator:
       endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
       interval: 30s
