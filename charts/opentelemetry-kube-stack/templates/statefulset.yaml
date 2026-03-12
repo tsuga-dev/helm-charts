@@ -10,7 +10,7 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: {{ include "opentelemetry-kube-stack.fullname" . }}-statefulset
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-sts
   labels:
     {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "statefulset" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
     opentelemetry.io/target-allocator: {{ include "opentelemetry-kube-stack.fullname" . }}-ta

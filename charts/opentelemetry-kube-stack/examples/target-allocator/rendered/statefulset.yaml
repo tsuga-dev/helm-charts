@@ -3,16 +3,16 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: test-release-opentelemetry-kube-stack-statefulset
+  name: example-opentelemetry-kube-stack-sts
   labels:
     app.kubernetes.io/name: opentelemetry-kube-stack
-    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/instance: example
     app.kubernetes.io/component: statefulset
     app.kubernetes.io/part-of: opentelemetry-kube-stack
     app.kubernetes.io/managed-by: Helm
-    opentelemetry.io/target-allocator: test-release-opentelemetry-kube-stack-ta
+    opentelemetry.io/target-allocator: example-opentelemetry-kube-stack-ta
   annotations:
-    meta.helm.sh/release-name: "test-release"
+    meta.helm.sh/release-name: "example"
     meta.helm.sh/release-namespace: "default"
 spec:
   mode: statefulset
@@ -25,7 +25,7 @@ spec:
     requests:
       cpu: 100m
       memory: 128Mi
-  serviceAccount: test-release-opentelemetry-kube-stack
+  serviceAccount: example-opentelemetry-kube-stack
   env:
     - name: TSUGA_OTLP_ENDPOINT
       valueFrom:
@@ -47,11 +47,25 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.hostIP
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
   config:
     receivers:
       prometheus:
         config:
-          scrape_configs: []
+          scrape_configs:
+          - job_name: otel-collector
+            scrape_interval: 30s
+            static_configs:
+            - targets:
+              - localhost:8888
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://example-opentelemetry-kube-stack-ta:80
+          interval: 30s
     processors:
       batch:
         send_batch_max_size: 5000
@@ -105,6 +119,10 @@ spec:
             name: k8s.pod.uid
         - sources:
           - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
     exporters:
       otlphttp/tsuga:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -117,6 +135,7 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
+          - memory_limiter
           - k8sattributes
           - batch
           receivers:
