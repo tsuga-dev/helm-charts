@@ -606,10 +606,37 @@ rbac:
 # =============================================================================
 # TARGET ALLOCATOR CONFIGURATION
 # =============================================================================
+# The Target Allocator decouples Prometheus service discovery from metric
+# collection. When enabled, it deploys a TargetAllocator CR and a paired
+# StatefulSet OpenTelemetryCollector CR.
+# Requires the OpenTelemetry Operator to be installed.
 targetAllocator:
-  # -- Enable TargetAllocator and StatefulSet collector deployment
+  # -- Enable Target Allocator and paired StatefulSet collector
   # @default -- false
   enabled: false
+  # -- TargetAllocator CR spec (full passthrough)
+  # All fields are passed directly to the TargetAllocator CR spec.
+  # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
+  spec:
+    # -- Allocation strategy for distributing targets across collector replicas
+    # Options: consistent-hashing (default), least-weighted, per-node
+    # @default -- "consistent-hashing"
+    allocationStrategy: consistent-hashing
+    # -- PrometheusCR configuration
+    # When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs.
+    # Requires monitoring.coreos.com RBAC rules (added automatically when enabled).
+    prometheusCR:
+      # -- Enable ServiceMonitor/PodMonitor discovery
+      # @default -- false
+      enabled: false
+      # -- Selector for ServiceMonitor resources
+      # An empty selector ({}) matches all ServiceMonitors in all namespaces.
+      # @default -- {}
+      serviceMonitorSelector: {}
+      # -- Selector for PodMonitor resources
+      # An empty selector ({}) matches all PodMonitors in all namespaces.
+      # @default -- {}
+      podMonitorSelector: {}
 
 # =============================================================================
 # STATEFULSET COLLECTOR CONFIGURATION
