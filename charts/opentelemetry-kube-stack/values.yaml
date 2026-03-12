@@ -699,6 +699,23 @@ statefulset:
         # -- Additional pipelines to add to the service configuration
         # @default -- {}
         extraPipelines: {}
+  # -- Label mapping configuration for agent
+  # Maps Kubernetes pod labels to OpenTelemetry resource attributes
+  # These are appended to default label mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # Example:
+  #   extraLabelMapping:
+  #     - tag_name: "app.version"
+  #       key: "app.version"
+  #       from: "pod"
+  # @default -- []
+  extraLabelMapping: []
+  # -- Annotations mapping configuration for agent
+  # Maps Kubernetes pod annotations to OpenTelemetry resource attributes
+  # These are appended to default annotation mappings
+  # Format: List of objects with tag_name, key, and from fields
+  # @default -- []
+  extraAnnotationsMapping: []
   # -- StatefulSet-specific resource limits and requests
   # @default -- {}
   resources: {}

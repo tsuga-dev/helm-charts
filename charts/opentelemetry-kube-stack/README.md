@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.5.1](https://img.shields.io/badge/Version-0.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -370,7 +370,9 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | statefulset.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (k8sattributes, batch) |
 | statefulset.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receiver (prometheus) |
 | statefulset.customConfig | object | {} | Replace default config with complete custom configuration |
+| statefulset.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
+| statefulset.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector |
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
