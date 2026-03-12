@@ -56,10 +56,12 @@ rules:
 - apiGroups: ["coordination.k8s.io"]
   resources: ["leases"]
   verbs: ["get", "list", "watch"]
+{{- if .Values.targetAllocator.enabled }}
 # EndpointSlices for Target Allocator service discovery
 - apiGroups: ["discovery.k8s.io"]
   resources: ["endpointslices"]
   verbs: ["get", "list", "watch"]
+{{- end }}
 {{- if and .Values.targetAllocator.enabled .Values.targetAllocator.spec.prometheusCR.enabled }}
 # PrometheusCR discovery for Target Allocator
 - apiGroups: ["monitoring.coreos.com"]
