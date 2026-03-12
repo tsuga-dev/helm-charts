@@ -471,7 +471,13 @@
                 "customConfig": {
                     "type": "object"
                 },
+                "extraAnnotationsMapping": {
+                    "type": "array"
+                },
                 "extraEnvs": {
+                    "type": "array"
+                },
+                "extraLabelMapping": {
                     "type": "array"
                 },
                 "image": {

@@ -48,6 +48,9 @@ processors:
         - tag_name: team
           key: resource.opentelemetry.io/team
           from: pod
+{{- if .Values.statefulset.extraLabelMapping }}
+{{- toYaml .Values.statefulset.extraLabelMapping | nindent 8 }}
+{{- end}}
       annotations:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -61,6 +64,9 @@ processors:
         - tag_name: team
           key: resource.opentelemetry.io/team
           from: pod
+{{- if .Values.statefulset.extraAnnotationsMapping }}
+{{- toYaml .Values.statefulset.extraAnnotationsMapping | nindent 8 }}
+{{- end}}
     passthrough: false
     pod_association:
       - sources:
