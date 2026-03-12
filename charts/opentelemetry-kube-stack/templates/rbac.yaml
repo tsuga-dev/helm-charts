@@ -56,6 +56,12 @@ rules:
 - apiGroups: ["coordination.k8s.io"]
   resources: ["leases"]
   verbs: ["get", "list", "watch"]
+{{- if and .Values.targetAllocator.enabled .Values.targetAllocator.spec.prometheusCR.enabled }}
+# PrometheusCR discovery for Target Allocator
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["servicemonitors", "podmonitors"]
+  verbs: ["get", "list", "watch"]
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
