@@ -1,0 +1,20 @@
+# Target Allocator example
+# Deploys a TargetAllocator CR and a paired StatefulSet OpenTelemetryCollector.
+# The Target Allocator distributes Prometheus targets evenly across 2 collector replicas.
+
+targetAllocator:
+  enabled: true
+  spec:
+    allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: false
+
+statefulset:
+  replicas: 2
+
+# Disable the default agent and cluster receiver for this example
+agent:
+  enabled: false
+
+cluster:
+  enabled: false
