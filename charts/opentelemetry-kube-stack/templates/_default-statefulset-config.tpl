@@ -21,6 +21,7 @@ processors:
   batch:
     send_batch_size: 5000
     send_batch_max_size: 5000
+  cumulativetodelta: {}
   k8sattributes:
     extract:
       metadata:
@@ -64,6 +65,9 @@ processors:
     pod_association:
       - sources:
         - from: resource_attribute
+          name: net.host.name
+      - sources:
+        - from: resource_attribute
           name: k8s.pod.ip
       - sources:
         - from: resource_attribute
@@ -86,6 +90,7 @@ service:
         - prometheus
       processors:
         - memory_limiter
+        - cumulativetodelta
         - k8sattributes
         - batch
         {{- if .Values.clusterName }}
