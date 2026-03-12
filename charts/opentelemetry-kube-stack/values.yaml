@@ -660,8 +660,8 @@ statefulset:
   # @default -- {}
   nodeSelector: {}
   # -- StatefulSet-specific tolerations
-  # @default -- {}
-  tolerations: {}
+  # @default -- []
+  tolerations: []
   # -- StatefulSet-specific affinity rules
   # @default -- {}
   affinity: {}
