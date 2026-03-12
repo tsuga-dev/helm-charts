@@ -1,0 +1,51 @@
+suite: target-allocator tests
+templates:
+  - target-allocator.yaml
+tests:
+  - it: should not render when targetAllocator disabled
+    set:
+      targetAllocator.enabled: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create TargetAllocator CR when enabled
+    set:
+      targetAllocator.enabled: true
+      targetAllocator.spec.allocationStrategy: "consistent-hashing"
+      serviceAccount.create: true
+      serviceAccount.name: ""
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: TargetAllocator
+      - equal:
+          path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"
+      - equal:
+          path: spec.allocationStrategy
+          value: "consistent-hashing"
+
+  - it: should set prometheusCR fields when enabled
+    set:
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+      targetAllocator.spec.prometheusCR.serviceMonitorSelector.matchLabels.release: "test"
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.prometheusCR.enabled
+          value: true
+      - equal:
+          path: spec.prometheusCR.serviceMonitorSelector.matchLabels.release
+          value: "test"
