@@ -646,10 +646,9 @@ targetAllocator:
 # It is only created when targetAllocator.enabled is true.
 statefulset:
   # -- Number of StatefulSet collector replicas
-  # When not set (null), the operator default is used (typically 1).
   # The Target Allocator distributes targets evenly across replicas.
-  # @default -- null (operator default applies)
-  replicas: null
+  # @default -- 1
+  replicas: 1
   # -- OpenTelemetry Collector image for statefulset collector
   # @default -- ""
   image: ""
