@@ -33,6 +33,20 @@ tests:
           path: spec.allocationStrategy
           value: "consistent-hashing"
 
+  - it: should not set serviceAccount when serviceAccount.create is false
+    set:
+      targetAllocator.enabled: true
+      serviceAccount.create: false
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: TargetAllocator
+      - notExists:
+          path: spec.serviceAccount
+
   - it: should set prometheusCR fields when enabled
     set:
       targetAllocator.enabled: true

@@ -10,7 +10,9 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name | quote }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
+  {{- if .Values.serviceAccount.create }}
   serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- end }}
   {{- with .Values.targetAllocator.spec }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
