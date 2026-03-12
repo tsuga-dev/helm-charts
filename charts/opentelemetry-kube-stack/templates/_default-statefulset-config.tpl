@@ -3,7 +3,15 @@ receivers:
   prometheus:
     config:
       scrape_configs: []
+    target_allocator:
+      endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
+      interval: 30s
+      collector_id: ${POD_NAME}
 processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
   batch:
     send_batch_size: 5000
     send_batch_max_size: 5000
@@ -71,6 +79,7 @@ service:
       receivers:
         - prometheus
       processors:
+        - memory_limiter
         - k8sattributes
         - batch
         {{- if .Values.clusterName }}

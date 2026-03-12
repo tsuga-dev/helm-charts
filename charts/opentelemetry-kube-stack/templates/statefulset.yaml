@@ -60,6 +60,11 @@ spec:
   {{- end }}
   env:
     {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     {{- if .Values.statefulset.extraEnvs }}
     {{- toYaml .Values.statefulset.extraEnvs | nindent 4 }}
     {{- end }}
