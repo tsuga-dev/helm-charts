@@ -1,4 +1,5 @@
 {{- if .Values.targetAllocator.enabled }}
+{{- /* StatefulSet collector is always deployed as a unit with the TargetAllocator. */ -}}
 {{- /*
      First, render the default config and parse it into a map,
      then build a new context that includes it as .defaultConfig
@@ -18,7 +19,9 @@ metadata:
     meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
   mode: statefulset
-  replicas: {{ .Values.statefulset.replicas | default 1 }}
+  {{- if .Values.statefulset.replicas }}
+  replicas: {{ .Values.statefulset.replicas }}
+  {{- end }}
   image: {{ .Values.statefulset.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
   {{- if or .Values.statefulset.resources .Values.resources }}
   resources:
