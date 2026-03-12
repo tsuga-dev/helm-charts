@@ -44,3 +44,19 @@ tests:
             resources: ["servicemonitors", "podmonitors"]
             verbs: ["get", "list", "watch"]
         documentIndex: 0
+
+  - it: should include endpointslices permission
+    set:
+      rbac.create: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["discovery.k8s.io"]
+            resources: ["endpointslices"]
+            verbs: ["get", "list", "watch"]
