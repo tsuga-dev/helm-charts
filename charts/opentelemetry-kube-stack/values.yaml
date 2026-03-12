@@ -617,6 +617,7 @@ targetAllocator:
   # -- TargetAllocator CR spec (full passthrough)
   # All fields are passed directly to the TargetAllocator CR spec.
   # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
+  # @default -- {}
   spec:
     # -- Allocation strategy for distributing targets across collector replicas
     # Options: consistent-hashing (default), least-weighted, per-node
@@ -644,9 +645,10 @@ targetAllocator:
 # The statefulset collector is deployed alongside the TargetAllocator.
 # It is only created when targetAllocator.enabled is true.
 statefulset:
-  # -- Number of statefulset collector replicas
-  # If not set, no replicas field is rendered (operator default applies)
-  # @default -- null
+  # -- Number of StatefulSet collector replicas
+  # When not set (null), the operator default is used (typically 1).
+  # The Target Allocator distributes targets evenly across replicas.
+  # @default -- null (operator default applies)
   replicas: null
   # -- OpenTelemetry Collector image for statefulset collector
   # @default -- ""
@@ -659,26 +661,44 @@ statefulset:
   customConfig: {}
   # -- StatefulSet collector configuration (merge-based approach)
   config:
+    # -- Additional telemetry to merge into the collector configuration
+    # @default -- {}
     extraTelemetry: {}
+    # -- Additional receivers to merge into the collector configuration
+    # @default -- {}
     extraReceivers: {}
+    # -- Additional processors to merge into the collector configuration
+    # @default -- {}
     extraProcessors: {}
+    # -- Additional exporters to merge into the collector configuration
+    # @default -- {}
     extraExporters: {}
+    # -- Additional connectors to merge into the collector configuration
+    # @default -- {}
     extraConnectors: {}
+    # -- Service configuration
     service:
+      # -- Additional extensions to add to the service configuration
+      # @default -- []
       extraExtensions: []
+      # -- Pipeline configuration
       pipelines:
-        logs:
-          extraExporters: []
-          extraProcessors: []
-          extraReceivers: []
+        # -- Metrics pipeline configuration
         metrics:
+          # -- Additional exporters to add to the metrics pipeline
+          # Added to default exporter (otlphttp/tsuga)
+          # @default -- []
           extraExporters: []
+          # -- Additional processors to add to the metrics pipeline
+          # Added to default processors (k8sattributes, batch)
+          # @default -- []
           extraProcessors: []
+          # -- Additional receivers to add to the metrics pipeline
+          # Added to default receiver (prometheus)
+          # @default -- []
           extraReceivers: []
-        traces:
-          extraExporters: []
-          extraProcessors: []
-          extraReceivers: []
+        # -- Additional pipelines to add to the service configuration
+        # @default -- {}
         extraPipelines: {}
   # -- StatefulSet-specific resource limits and requests
   # @default -- {}
