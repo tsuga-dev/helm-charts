@@ -439,6 +439,87 @@
                     "type": "integer"
                 }
             }
+        },
+        "targetAllocator": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "spec": {
+                    "type": "object",
+                    "properties": {
+                        "allocationStrategy": {
+                            "type": "string"
+                        },
+                        "prometheusCR": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                },
+                                "serviceMonitorSelector": {
+                                    "type": "object"
+                                },
+                                "podMonitorSelector": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "statefulset": {
+            "type": "object",
+            "properties": {
+                "replicas": {
+                    "type": ["integer", "null"]
+                },
+                "image": {
+                    "type": "string"
+                },
+                "extraEnvs": {
+                    "type": "array"
+                },
+                "customConfig": {
+                    "type": "object"
+                },
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "extraTelemetry": { "type": "object" },
+                        "extraReceivers": { "type": "object" },
+                        "extraProcessors": { "type": "object" },
+                        "extraExporters": { "type": "object" },
+                        "extraConnectors": { "type": "object" },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "extraExtensions": { "type": "array" },
+                                "pipelines": {
+                                    "type": "object",
+                                    "properties": {
+                                        "extraPipelines": { "type": "object" },
+                                        "metrics": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": { "type": "array" },
+                                                "extraProcessors": { "type": "array" },
+                                                "extraReceivers": { "type": "array" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "resources": { "type": "object" },
+                "nodeSelector": { "type": "object" },
+                "tolerations": { "type": "array" },
+                "affinity": { "type": "object" }
+            }
         }
     }
 }
