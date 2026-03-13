@@ -100,7 +100,12 @@ spec:
         auth_type: serviceAccount
         collection_interval: 20s
         endpoint: ${env:NODE_IP}:10250
+        extra_metadata_labels:
+        - k8s.volume.type
         insecure_skip_verify: true
+        metric_groups:
+        - node
+        - pod
       otlp:
         protocols:
           grpc:
