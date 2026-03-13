@@ -242,6 +242,7 @@ cluster:
   # @default -- {}
   customConfig: {}
 
+  collectk8sobjects: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default config includes: k8s_cluster receiver, k8sattributes processor, resource processor

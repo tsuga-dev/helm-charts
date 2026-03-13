@@ -168,6 +168,9 @@
                 "affinity": {
                     "type": "object"
                 },
+                "collectk8sobjects": {
+                    "type": "boolean"
+                },
                 "config": {
                     "type": "object",
                     "properties": {

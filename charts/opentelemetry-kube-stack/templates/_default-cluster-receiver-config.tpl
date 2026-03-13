@@ -4,6 +4,10 @@ receivers:
     collection_interval: 10s
     allocatable_types_to_report: [cpu, memory, storage]
     node_conditions_to_report: [Ready, MemoryPressure, DiskPressure, PIDPressure]
+    metrics:
+      k8s.pod.status_reason:
+        enabled: true
+{{- if .Values.cluster.collectk8sobjects }}
   k8sobjects:
     auth_type: serviceAccount
     objects:
@@ -12,6 +16,7 @@ receivers:
         # Only collect warning events to reduce cardinality in large clusters
         # Set field_selector: "" to collect all events, or customize as needed
         field_selector: "type=Warning"
+{{- end }}
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -88,7 +93,9 @@ service:
     logs:
       receivers:
         - k8s_cluster
+{{- if .Values.cluster.collectk8sobjects }}
         - k8sobjects
+{{- end }}
       processors:
         {{- if .Values.clusterName }}
         - resource
