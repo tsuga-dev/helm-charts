@@ -31,10 +31,15 @@ receivers:
       thrift_http:
         endpoint: ${env:MY_POD_IP}:14268
   kubeletstats:
-    insecure_skip_verify: true
     auth_type: serviceAccount
     collection_interval: 20s
     endpoint: ${env:NODE_IP}:10250
+    insecure_skip_verify: true
+    # Collect node and pod metrics (not container) to manage cardinality
+    # Users can add 'container' to metric_groups if detailed container metrics are needed
+    metric_groups: [node, pod]
+    # Add volume type labels for storage observability
+    extra_metadata_labels: [k8s.volume.type]
   hostmetrics:
     root_path: /hostfs
     collection_interval: 10s
