@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.5.1](https://img.shields.io/badge/Version-0.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -294,6 +294,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
+| cluster.collectk8sobjects | bool | `false` |  |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: k8s_cluster receiver, k8sattributes processor, resource processor |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
 | cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlphttp/tsuga) |
