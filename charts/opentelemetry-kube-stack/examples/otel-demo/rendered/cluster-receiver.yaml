@@ -51,7 +51,16 @@ spec:
         allocatable_types_to_report:
         - cpu
         - memory
+        - storage
         collection_interval: 10s
+        metrics:
+          k8s.pod.status_reason:
+            enabled: true
+        node_conditions_to_report:
+        - Ready
+        - MemoryPressure
+        - DiskPressure
+        - PIDPressure
     processors:
       batch:
         send_batch_max_size: 5000
