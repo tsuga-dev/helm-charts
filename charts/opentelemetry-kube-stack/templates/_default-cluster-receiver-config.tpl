@@ -2,7 +2,13 @@
 receivers:
   k8s_cluster:
     collection_interval: 10s
-    allocatable_types_to_report: [cpu, memory]
+    allocatable_types_to_report: [cpu, memory, storage]
+    node_conditions_to_report: [Ready, MemoryPressure, DiskPressure, PIDPressure]
+  k8sobjects:
+    auth_type: serviceAccount
+    objects:
+      - name: events
+        mode: watch
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -79,6 +85,7 @@ service:
     logs:
       receivers:
         - k8s_cluster
+        - k8sobjects
       processors:
         {{- if .Values.clusterName }}
         - resource

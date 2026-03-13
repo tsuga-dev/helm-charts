@@ -31,10 +31,12 @@ receivers:
       thrift_http:
         endpoint: ${env:MY_POD_IP}:14268
   kubeletstats:
-    insecure_skip_verify: true
     auth_type: serviceAccount
     collection_interval: 20s
     endpoint: ${env:NODE_IP}:10250
+    insecure_skip_verify: true
+    metric_groups: [node, pod, container]
+    extra_metadata_labels: [container.id, k8s.volume.type]
   hostmetrics:
     root_path: /hostfs
     collection_interval: 10s
