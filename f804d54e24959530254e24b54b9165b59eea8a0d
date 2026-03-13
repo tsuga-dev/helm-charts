@@ -1,0 +1,23 @@
+charts/opentelemetry-kube-stack/templates/rbac.yaml
+  c468ef37a37a2aa7 48-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "f804d54e24959530254e24b54b9165b59eea8a0d",
+  "prompts": {
+    "c468ef37a37a2aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc972bde-bc53-4f84-8e7e-feffc98596e5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
