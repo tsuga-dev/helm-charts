@@ -1,0 +1,25 @@
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  c468ef37a37a2aa7 37-42
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  c468ef37a37a2aa7 5-14,91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "88c5df00cec6719bb2b461b765d5cd827b4fed10",
+  "prompts": {
+    "c468ef37a37a2aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc972bde-bc53-4f84-8e7e-feffc98596e5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 10,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
