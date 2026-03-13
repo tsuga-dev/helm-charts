@@ -45,7 +45,10 @@ rules:
 - apiGroups: [""]
   resources: ["persistentvolumes", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch"]
-# Events
+# Events (core and events.k8s.io groups for k8sobjects collector)
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["events.k8s.io"]
   resources: ["events"]
   verbs: ["get", "list", "watch"]
