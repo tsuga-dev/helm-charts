@@ -100,6 +100,7 @@ service:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - k8sattributes
         - batch
       exporters:
         - otlphttp/tsuga
@@ -110,6 +111,7 @@ service:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - k8sattributes
         - batch
       exporters:
         - otlphttp/tsuga

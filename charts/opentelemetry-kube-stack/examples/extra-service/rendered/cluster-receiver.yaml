@@ -126,6 +126,7 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
+          - k8sattributes
           - batch
           receivers:
           - k8s_cluster
@@ -133,6 +134,7 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
+          - k8sattributes
           - batch
           receivers:
           - k8s_cluster
