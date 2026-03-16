@@ -1,0 +1,144 @@
+---
+# Source: opentelemetry-kube-stack/templates/statefulset.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: example-opentelemetry-kube-stack-sts
+  labels:
+    app.kubernetes.io/name: opentelemetry-kube-stack
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: statefulset
+    app.kubernetes.io/part-of: opentelemetry-kube-stack
+    app.kubernetes.io/managed-by: Helm
+    opentelemetry.io/target-allocator: example-opentelemetry-kube-stack-ta
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+spec:
+  mode: statefulset
+  replicas: 1
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  serviceAccount: example-opentelemetry-kube-stack
+  env:
+    - name: TSUGA_OTLP_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_OTLP_ENDPOINT
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: TSUGA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_API_KEY
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: otel-collector
+            scrape_interval: 30s
+            static_configs:
+            - targets:
+              - localhost:8888
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://example-opentelemetry-kube-stack-ta:80
+          interval: 30s
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
+      cumulativetodelta: {}
+      k8sattributes:
+        extract:
+          annotations:
+          - from: pod
+            key: resource.opentelemetry.io/service.name
+            tag_name: service.name
+          - from: pod
+            key: resource.opentelemetry.io/service.version
+            tag_name: service.version
+          - from: pod
+            key: resource.opentelemetry.io/env
+            tag_name: env
+          - from: pod
+            key: resource.opentelemetry.io/team
+            tag_name: team
+          labels:
+          - from: pod
+            key: resource.opentelemetry.io/service.name
+            tag_name: service.name
+          - from: pod
+            key: resource.opentelemetry.io/service.version
+            tag_name: service.version
+          - from: pod
+            key: resource.opentelemetry.io/env
+            tag_name: env
+          - from: pod
+            key: resource.opentelemetry.io/team
+            tag_name: team
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+          - k8s.pod.uid
+          - k8s.pod.start_time
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: net.host.name
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    exporters:
+      debug: {}
+    service:
+      extensions: []
+      pipelines:
+        metrics:
+          exporters:
+          - debug
+          processors:
+          - memory_limiter
+          - cumulativetodelta
+          - k8sattributes
+          - batch
+          receivers:
+          - prometheus
