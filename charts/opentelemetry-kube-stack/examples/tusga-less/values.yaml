@@ -1,0 +1,49 @@
+tsuga:
+  enabledForClusterReceiver: false
+  enabledForDaemonset: false
+  enabledForStatefulset: false
+
+cluster:
+  enabled: true
+  config:
+    extraExporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          extraExporters:
+            - debug
+        logs:
+          extraExporters:
+            - debug
+agent:
+  enabled: true
+  config:
+    extraExporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          extraExporters:
+            - debug
+        logs:
+          extraExporters:
+            - debug
+        traces:
+          extraExporters:
+            - debug
+targetAllocator:
+  enabled: true
+
+statefulset:
+  config:
+    extraExporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          extraExporters:
+            - debug
+        logs:
+          extraExporters:
+            - debug
