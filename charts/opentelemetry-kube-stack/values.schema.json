@@ -539,6 +539,15 @@
                 "apiKey": {
                     "type": "string"
                 },
+                "enabledForClusterReceiver": {
+                    "type": "boolean"
+                },
+                "enabledForDaemonset": {
+                    "type": "boolean"
+                },
+                "enabledForStatefulset": {
+                    "type": "boolean"
+                },
                 "otlpEndpoint": {
                     "type": "string"
                 }

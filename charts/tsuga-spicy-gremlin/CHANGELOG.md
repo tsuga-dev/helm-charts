@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove hardcoded OTEL env vars and add examples
 - Merge pull request #54 from tsuga-dev/chore/spicy-gremlin-otel-cleanup
+- Merge pull request #74 from tsuga-dev/feat/per-chart-changelogs-and-release-notes
+
+### Fixed
+
+- Enhance CHANGELOG.md validation to accept chart-specific version formats
 
 ## [tsuga-spicy-gremlin-0.1.2] - 2026-02-16
 
@@ -32,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adding tsuga-spicy-gremlin
 - Merge pull request #48 from tsuga-dev/gus/automated-failures
 
-[unreleased]: https://github.com/tsuga-dev/helm-charts/compare/tsuga-spicy-gremlin-0.1.2..HEAD
-[tsuga-spicy-gremlin-0.1.2]: https://github.com/tsuga-dev/helm-charts/compare/tsuga-spicy-gremlin-0.1.1..tsuga-spicy-gremlin-0.1.2
-[tsuga-spicy-gremlin-0.1.1]: https://github.com/tsuga-dev/helm-charts/tree/tsuga-spicy-gremlin-0.1.1
+[unreleased]: https://github.com///compare/tsuga-spicy-gremlin-0.1.2..HEAD
+[tsuga-spicy-gremlin-0.1.2]: https://github.com///compare/tsuga-spicy-gremlin-0.1.1..tsuga-spicy-gremlin-0.1.2
+[tsuga-spicy-gremlin-0.1.1]: https://github.com///tree/tsuga-spicy-gremlin-0.1.1
 

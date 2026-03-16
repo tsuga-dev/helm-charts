@@ -61,3 +61,18 @@ tests:
       - equal:
           path: spec.replicas
           value: 3
+
+  - it: should not include tsuga exporter when enabledForStatefulset is false
+    set:
+      targetAllocator.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+      tsuga.enabledForStatefulset: false
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.config.service.pipelines.metrics.exporters
+          value: []

@@ -88,7 +88,11 @@ processors:
         action: upsert
   {{- end }}
 exporters:
+{{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
+{{- else }}
+  {}
+{{- end }}
 service:
   pipelines:
     metrics:
@@ -103,5 +107,7 @@ service:
         - resource
         {{- end }}
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
         - otlphttp/tsuga
+        {{- end }}
 {{- end}}

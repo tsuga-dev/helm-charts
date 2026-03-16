@@ -21,3 +21,18 @@ tests:
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"
+
+  - it: should not include tsuga exporter when enabledForDaemonset is false
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+      tsuga.enabledForDaemonset: false
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.config.service.pipelines.logs.exporters
+          value: []

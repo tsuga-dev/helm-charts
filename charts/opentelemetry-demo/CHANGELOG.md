@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Merge branch 'main' into feat/target-allocator-support
+- Merge pull request #74 from tsuga-dev/feat/per-chart-changelogs-and-release-notes
+
+### Fixed
+
+- Enhance CHANGELOG.md validation to accept chart-specific version formats
 
 ## [opentelemetry-demo-0.7.0] - 2026-02-17
 
@@ -165,21 +170,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhance OpenTelemetry demo chart and CI/CD configuration
 - Merge pull request #18 from tsuga-dev/Otel-demo-improvment
 
-[unreleased]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.7.0..HEAD
-[opentelemetry-demo-0.7.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.8..opentelemetry-demo-0.7.0
-[opentelemetry-demo-0.6.8]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.6..opentelemetry-demo-0.6.8
-[opentelemetry-demo-0.6.6]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.7..opentelemetry-demo-0.6.6
-[opentelemetry-demo-0.6.7]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.4..opentelemetry-demo-0.6.7
-[opentelemetry-demo-0.6.4]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.2..opentelemetry-demo-0.6.4
-[opentelemetry-demo-0.6.2]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.1..opentelemetry-demo-0.6.2
-[opentelemetry-demo-0.6.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.6.0..opentelemetry-demo-0.6.1
-[opentelemetry-demo-0.6.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.5.0..opentelemetry-demo-0.6.0
-[opentelemetry-demo-0.5.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.4.0..opentelemetry-demo-0.5.0
-[opentelemetry-demo-0.4.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.3.0..opentelemetry-demo-0.4.0
-[opentelemetry-demo-0.3.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.2.0..opentelemetry-demo-0.3.0
-[opentelemetry-demo-0.2.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.1.4..opentelemetry-demo-0.2.0
-[opentelemetry-demo-0.1.4]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.1.3..opentelemetry-demo-0.1.4
-[opentelemetry-demo-0.1.3]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.1.2..opentelemetry-demo-0.1.3
-[opentelemetry-demo-0.1.2]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.1.1..opentelemetry-demo-0.1.2
-[opentelemetry-demo-0.1.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.1.0..opentelemetry-demo-0.1.1
+[unreleased]: https://github.com///compare/opentelemetry-demo-0.7.0..HEAD
+[opentelemetry-demo-0.7.0]: https://github.com///compare/opentelemetry-demo-0.6.8..opentelemetry-demo-0.7.0
+[opentelemetry-demo-0.6.8]: https://github.com///compare/opentelemetry-demo-0.6.6..opentelemetry-demo-0.6.8
+[opentelemetry-demo-0.6.6]: https://github.com///compare/opentelemetry-demo-0.6.7..opentelemetry-demo-0.6.6
+[opentelemetry-demo-0.6.7]: https://github.com///compare/opentelemetry-demo-0.6.4..opentelemetry-demo-0.6.7
+[opentelemetry-demo-0.6.4]: https://github.com///compare/opentelemetry-demo-0.6.2..opentelemetry-demo-0.6.4
+[opentelemetry-demo-0.6.2]: https://github.com///compare/opentelemetry-demo-0.6.1..opentelemetry-demo-0.6.2
+[opentelemetry-demo-0.6.1]: https://github.com///compare/opentelemetry-demo-0.6.0..opentelemetry-demo-0.6.1
+[opentelemetry-demo-0.6.0]: https://github.com///compare/opentelemetry-demo-0.5.0..opentelemetry-demo-0.6.0
+[opentelemetry-demo-0.5.0]: https://github.com///compare/opentelemetry-demo-0.4.0..opentelemetry-demo-0.5.0
+[opentelemetry-demo-0.4.0]: https://github.com///compare/opentelemetry-demo-0.3.0..opentelemetry-demo-0.4.0
+[opentelemetry-demo-0.3.0]: https://github.com///compare/opentelemetry-demo-0.2.0..opentelemetry-demo-0.3.0
+[opentelemetry-demo-0.2.0]: https://github.com///compare/opentelemetry-demo-0.1.4..opentelemetry-demo-0.2.0
+[opentelemetry-demo-0.1.4]: https://github.com///compare/opentelemetry-demo-0.1.3..opentelemetry-demo-0.1.4
+[opentelemetry-demo-0.1.3]: https://github.com///compare/opentelemetry-demo-0.1.2..opentelemetry-demo-0.1.3
+[opentelemetry-demo-0.1.2]: https://github.com///compare/opentelemetry-demo-0.1.1..opentelemetry-demo-0.1.2
+[opentelemetry-demo-0.1.1]: https://github.com///compare/opentelemetry-demo-0.1.0..opentelemetry-demo-0.1.1
 
