@@ -87,7 +87,11 @@ processors:
         action: upsert
   {{- end }}
 exporters:
+{{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
+{{- else }}
+  {}
+{{- end }}
 service:
   pipelines:
     logs:
@@ -103,7 +107,9 @@ service:
         - k8sattributes
         - batch
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlphttp/tsuga
+        {{- end }}
     metrics:
       receivers:
         - k8s_cluster
@@ -114,5 +120,7 @@ service:
         - k8sattributes
         - batch
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlphttp/tsuga
+        {{- end }}
 {{- end}}

@@ -162,7 +162,11 @@ processors:
         action: upsert
   {{- end }}
 exporters:
+{{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
+{{- else }}
+  {}
+{{- end }}
 connectors:
   spanmetrics:
     dimensions:
@@ -190,7 +194,9 @@ service:
         - resource
         {{- end }}
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlphttp/tsuga
+        {{- end }}
     metrics:
       receivers:
         - otlp
@@ -207,10 +213,14 @@ service:
         - resource
         {{- end }}
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlphttp/tsuga
+        {{- end }}
     traces:
       exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlphttp/tsuga
+        {{- end }}
         - spanmetrics
       processors:
         - k8sattributes

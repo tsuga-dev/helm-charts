@@ -158,6 +158,15 @@ tsuga:
   # Or use external secrets: --set tsuga.apiKey=""
   # @default -- ""
   apiKey: ""
+  # -- Enable Tsuga OTLP exporter for the cluster receiver (gateway)
+  # @default -- true
+  enabledForClusterReceiver: true
+  # -- Enable Tsuga OTLP exporter for the agent DaemonSet
+  # @default -- true
+  enabledForDaemonset: true
+  # -- Enable Tsuga OTLP exporter for the StatefulSet collector (when targetAllocator is enabled)
+  # @default -- true
+  enabledForStatefulset: true
 
 # =============================================================================
 # SECRET CONFIGURATION
