@@ -1,0 +1,3 @@
+# chart-releaser config
+# Release body is read from this file inside each chart package (see release.yml)
+release-notes-file: release-notes.md

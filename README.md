@@ -103,6 +103,18 @@ You can check the [examples](./charts/opentelemetry-kube-stack/examples) folder 
 - **opentelemetry-demo**: Demo stack wiring OpenTelemetry demo app with Tsuga-focused defaults
 - **tsuga-spicy-gremlin**: Reusable chaos-style rotator for OpenTelemetry demo feature flags
 
+## Changelog
+
+Each chart has its own `CHANGELOG.md` in [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format under its directory (e.g. `charts/opentelemetry-kube-stack/CHANGELOG.md`). When you bump a chart's `version` in `Chart.yaml`, you must add a corresponding entry to that chart's `CHANGELOG.md`; CI will fail otherwise.
+
+Changelogs can be generated or updated with [git-cliff](https://git-cliff.org/) using the per-chart config in each chart directory (e.g. `charts/opentelemetry-kube-stack/cliff.toml`). From the repo root, run:
+
+```bash
+git cliff -c charts/<chart-name>/cliff.toml
+```
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `docs:`) for commits that touch a chart so they are categorized correctly.
+
 ## Chart Repository
 
 The charts are published to: https://tsuga-dev.github.io/helm-charts/

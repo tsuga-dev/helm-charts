@@ -36,3 +36,18 @@ repos:
         entry: bash -c 'make generate-examples'
         language: system
         pass_filenames: false
+      - id: changelog-kube-stack
+        name: Update CHANGELOG.md for opentelemetry-kube-stack
+        entry: bash -c 'git cliff -c charts/opentelemetry-kube-stack/cliff.toml'
+        language: system
+        pass_filenames: false
+      - id: changelog-demo
+        name: Update CHANGELOG.md for opentelemetry-demo
+        entry: bash -c 'git cliff -c charts/opentelemetry-demo/cliff.toml'
+        language: system
+        pass_filenames: false
+      - id: changelog-gremlin
+        name: Update CHANGELOG.md for tsuga-spicy-gremlin
+        entry: bash -c 'git cliff -c charts/tsuga-spicy-gremlin/cliff.toml'
+        language: system
+        pass_filenames: false

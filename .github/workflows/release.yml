@@ -21,18 +21,48 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Generate release notes (opentelemetry-kube-stack)
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: charts/opentelemetry-kube-stack/cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: charts/opentelemetry-kube-stack/release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Generate release notes (opentelemetry-demo)
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: charts/opentelemetry-demo/cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: charts/opentelemetry-demo/release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Generate release notes (tsuga-spicy-gremlin)
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: charts/tsuga-spicy-gremlin/cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: charts/tsuga-spicy-gremlin/release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: Install Helm
         uses: azure/setup-helm@v4
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
       - name: Add dependent repositories
         run: |
           helm repo add tsuga-dev https://tsuga-dev.github.io/helm-charts
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
         with:
           skip_existing: true
           charts_dir: charts
+          config: .cr.yaml
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

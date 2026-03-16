@@ -87,3 +87,35 @@ jobs:
     - name: Run Helm unit tests
       run: |
         helm unittest charts/${{ matrix.chart }}
+
+  changelog-version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check changelog has entry for each chart version
+        run: |
+          set -e
+          for chart_yaml in charts/*/Chart.yaml; do
+            # Only top-level charts (charts/<name>/Chart.yaml), not subcharts
+            if [[ "$chart_yaml" =~ ^charts/[^/]+/Chart\.yaml$ ]]; then
+              chart_dir="${chart_yaml%/Chart.yaml}"
+              chart_name="${chart_dir#charts/}"
+              version=$(grep '^version:' "$chart_yaml" | sed 's/version:[[:space:]]*//' | tr -d ' ')
+              # Skip subcharts (version 0.0.0)
+              if [ "$version" = "0.0.0" ]; then
+                echo "Skipping $chart_name (subchart)"
+                continue
+              fi
+              changelog="$chart_dir/CHANGELOG.md"
+              if [ ! -f "$changelog" ]; then
+                echo "::error::$chart_name: CHANGELOG.md is missing (chart version $version)"
+                exit 1
+              fi
+              if ! grep -qE "^[[:space:]]*##[[:space:]]+\[$version\]" "$changelog"; then
+                echo "::error::$chart_name: CHANGELOG.md has no entry for version $version (from Chart.yaml)"
+                exit 1
+              fi
+              echo "OK $chart_name: version $version documented in CHANGELOG.md"
+            fi
+          done
