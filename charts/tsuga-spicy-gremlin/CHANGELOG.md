@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add per-chart changelogs and release notes from git-cliff
+
 ### Changed
 
 - Remove hardcoded OTEL env vars and add examples
@@ -28,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adding tsuga-spicy-gremlin
 - Merge pull request #48 from tsuga-dev/gus/automated-failures
 
-[unreleased]: https://github.com///compare/tsuga-spicy-gremlin-0.1.2..HEAD
-[tsuga-spicy-gremlin-0.1.2]: https://github.com///compare/tsuga-spicy-gremlin-0.1.1..tsuga-spicy-gremlin-0.1.2
-[tsuga-spicy-gremlin-0.1.1]: https://github.com///tree/tsuga-spicy-gremlin-0.1.1
+[unreleased]: https://github.com/tsuga-dev/helm-charts/compare/tsuga-spicy-gremlin-0.1.2..HEAD
+[tsuga-spicy-gremlin-0.1.2]: https://github.com/tsuga-dev/helm-charts/compare/tsuga-spicy-gremlin-0.1.1..tsuga-spicy-gremlin-0.1.2
+[tsuga-spicy-gremlin-0.1.1]: https://github.com/tsuga-dev/helm-charts/tree/tsuga-spicy-gremlin-0.1.1
 

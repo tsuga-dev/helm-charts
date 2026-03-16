@@ -112,7 +112,8 @@ jobs:
                 echo "::error::$chart_name: CHANGELOG.md is missing (chart version $version)"
                 exit 1
               fi
-              if ! grep -qE "^[[:space:]]*##[[:space:]]+\[$version\]" "$changelog"; then
+              # Accept either ## [X.Y.Z] or ## [chart-name-X.Y.Z] (git-cliff tag format)
+              if ! grep -qE "^[[:space:]]*##[[:space:]]+\[($version|$chart_name-$version)\]" "$changelog"; then
                 echo "::error::$chart_name: CHANGELOG.md has no entry for version $version (from Chart.yaml)"
                 exit 1
               fi

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Add per-chart changelogs and release notes from git-cliff
+
 ## [opentelemetry-kube-stack-0.6.1] - 2026-03-16
 
 ### Added
@@ -274,28 +280,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Makefile for example generation and validation; update Helm chart configurations
 - Merge pull request #2 from tsuga-dev/update-secret-management
 
-[opentelemetry-kube-stack-0.6.1]: https://github.com///compare/opentelemetry-kube-stack-0.6.0..opentelemetry-kube-stack-0.6.1
-[opentelemetry-kube-stack-0.6.0]: https://github.com///compare/opentelemetry-kube-stack-0.5.1..opentelemetry-kube-stack-0.6.0
-[opentelemetry-kube-stack-0.5.1]: https://github.com///compare/opentelemetry-kube-stack-0.5.0..opentelemetry-kube-stack-0.5.1
-[opentelemetry-kube-stack-0.5.0]: https://github.com///compare/opentelemetry-kube-stack-0.4.1..opentelemetry-kube-stack-0.5.0
-[opentelemetry-kube-stack-0.4.1]: https://github.com///compare/opentelemetry-kube-stack-0.4.0..opentelemetry-kube-stack-0.4.1
-[opentelemetry-kube-stack-0.4.0]: https://github.com///compare/opentelemetry-kube-stack-0.3.0..opentelemetry-kube-stack-0.4.0
-[opentelemetry-kube-stack-0.3.0]: https://github.com///compare/opentelemetry-kube-stack-0.2.16..opentelemetry-kube-stack-0.3.0
-[opentelemetry-kube-stack-0.2.16]: https://github.com///compare/opentelemetry-kube-stack-0.2.15..opentelemetry-kube-stack-0.2.16
-[opentelemetry-kube-stack-0.2.15]: https://github.com///compare/opentelemetry-kube-stack-0.2.14..opentelemetry-kube-stack-0.2.15
-[opentelemetry-kube-stack-0.2.14]: https://github.com///compare/opentelemetry-kube-stack-0.2.13..opentelemetry-kube-stack-0.2.14
-[opentelemetry-kube-stack-0.2.13]: https://github.com///compare/opentelemetry-kube-stack-0.2.12..opentelemetry-kube-stack-0.2.13
-[opentelemetry-kube-stack-0.2.12]: https://github.com///compare/opentelemetry-kube-stack-0.2.11..opentelemetry-kube-stack-0.2.12
-[opentelemetry-kube-stack-0.2.11]: https://github.com///compare/opentelemetry-kube-stack-0.2.10..opentelemetry-kube-stack-0.2.11
-[opentelemetry-kube-stack-0.2.10]: https://github.com///compare/opentelemetry-kube-stack-0.2.9..opentelemetry-kube-stack-0.2.10
-[opentelemetry-kube-stack-0.2.9]: https://github.com///compare/opentelemetry-kube-stack-0.2.8..opentelemetry-kube-stack-0.2.9
-[opentelemetry-kube-stack-0.2.8]: https://github.com///compare/opentelemetry-kube-stack-0.2.7..opentelemetry-kube-stack-0.2.8
-[opentelemetry-kube-stack-0.2.7]: https://github.com///compare/opentelemetry-kube-stack-0.2.6..opentelemetry-kube-stack-0.2.7
-[opentelemetry-kube-stack-0.2.6]: https://github.com///compare/opentelemetry-kube-stack-0.2.5..opentelemetry-kube-stack-0.2.6
-[opentelemetry-kube-stack-0.2.5]: https://github.com///compare/opentelemetry-kube-stack-0.2.4..opentelemetry-kube-stack-0.2.5
-[opentelemetry-kube-stack-0.2.4]: https://github.com///compare/opentelemetry-kube-stack-0.2.3..opentelemetry-kube-stack-0.2.4
-[opentelemetry-kube-stack-0.2.3]: https://github.com///compare/opentelemetry-kube-stack-0.2.2..opentelemetry-kube-stack-0.2.3
-[opentelemetry-kube-stack-0.2.2]: https://github.com///compare/opentelemetry-kube-stack-0.2.1..opentelemetry-kube-stack-0.2.2
-[opentelemetry-kube-stack-0.2.1]: https://github.com///compare/opentelemetry-kube-stack-0.2.0..opentelemetry-kube-stack-0.2.1
-[opentelemetry-kube-stack-0.2.0]: https://github.com///tree/opentelemetry-kube-stack-0.2.0
+[unreleased]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.6.1..HEAD
+[opentelemetry-kube-stack-0.6.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.6.0..opentelemetry-kube-stack-0.6.1
+[opentelemetry-kube-stack-0.6.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.5.1..opentelemetry-kube-stack-0.6.0
+[opentelemetry-kube-stack-0.5.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.5.0..opentelemetry-kube-stack-0.5.1
+[opentelemetry-kube-stack-0.5.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.4.1..opentelemetry-kube-stack-0.5.0
+[opentelemetry-kube-stack-0.4.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.4.0..opentelemetry-kube-stack-0.4.1
+[opentelemetry-kube-stack-0.4.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.3.0..opentelemetry-kube-stack-0.4.0
+[opentelemetry-kube-stack-0.3.0]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.16..opentelemetry-kube-stack-0.3.0
+[opentelemetry-kube-stack-0.2.16]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.15..opentelemetry-kube-stack-0.2.16
+[opentelemetry-kube-stack-0.2.15]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.14..opentelemetry-kube-stack-0.2.15
+[opentelemetry-kube-stack-0.2.14]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.13..opentelemetry-kube-stack-0.2.14
+[opentelemetry-kube-stack-0.2.13]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.12..opentelemetry-kube-stack-0.2.13
+[opentelemetry-kube-stack-0.2.12]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.11..opentelemetry-kube-stack-0.2.12
+[opentelemetry-kube-stack-0.2.11]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.10..opentelemetry-kube-stack-0.2.11
+[opentelemetry-kube-stack-0.2.10]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.9..opentelemetry-kube-stack-0.2.10
+[opentelemetry-kube-stack-0.2.9]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.8..opentelemetry-kube-stack-0.2.9
+[opentelemetry-kube-stack-0.2.8]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.7..opentelemetry-kube-stack-0.2.8
+[opentelemetry-kube-stack-0.2.7]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.6..opentelemetry-kube-stack-0.2.7
+[opentelemetry-kube-stack-0.2.6]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.5..opentelemetry-kube-stack-0.2.6
+[opentelemetry-kube-stack-0.2.5]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.4..opentelemetry-kube-stack-0.2.5
+[opentelemetry-kube-stack-0.2.4]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.3..opentelemetry-kube-stack-0.2.4
+[opentelemetry-kube-stack-0.2.3]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.2..opentelemetry-kube-stack-0.2.3
+[opentelemetry-kube-stack-0.2.2]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.1..opentelemetry-kube-stack-0.2.2
+[opentelemetry-kube-stack-0.2.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.2.0..opentelemetry-kube-stack-0.2.1
+[opentelemetry-kube-stack-0.2.0]: https://github.com/tsuga-dev/helm-charts/tree/opentelemetry-kube-stack-0.2.0
 
