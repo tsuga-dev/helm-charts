@@ -36,3 +36,28 @@ tests:
       - equal:
           path: spec.config.service.pipelines.logs.exporters
           value: []
+
+  - it: should configure spanmetrics with low-cardinality HTTP dimensions by default
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: spec.config.connectors.spanmetrics.dimensions[0].name
+          value: "http.request.method"
+      - equal:
+          path: spec.config.connectors.spanmetrics.dimensions[0].default
+          value: "GET"
+      - equal:
+          path: spec.config.connectors.spanmetrics.dimensions[1].name
+          value: "http.response.status_code"
+      - equal:
+          path: spec.config.connectors.spanmetrics.dimensions[2].name
+          value: "http.route"
+      - notExists:
+          path: spec.config.connectors.spanmetrics.calls_dimensions
