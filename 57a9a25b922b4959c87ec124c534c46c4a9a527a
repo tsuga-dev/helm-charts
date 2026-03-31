@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "57a9a25b922b4959c87ec124c534c46c4a9a527a",
+  "prompts": {
+    "c468ef37a37a2aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc972bde-bc53-4f84-8e7e-feffc98596e5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
