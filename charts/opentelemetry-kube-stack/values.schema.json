@@ -26,6 +26,27 @@
                 "collectProcesses": {
                     "type": "boolean"
                 },
+                "hostMetrics": {
+                    "type": "object",
+                    "properties": {
+                        "filesystem": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                },
+                                "excludeMountPoints": {
+                                    "type": "array",
+                                    "items": { "type": "string" }
+                                },
+                                "excludeFsTypes": {
+                                    "type": "array",
+                                    "items": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                },
                 "config": {
                     "type": "object",
                     "properties": {

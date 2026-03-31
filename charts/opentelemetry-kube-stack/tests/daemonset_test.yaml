@@ -36,3 +36,38 @@ tests:
       - equal:
           path: spec.config.service.pipelines.logs.exporters
           value: []
+
+  - it: should include filesystem exclude filters by default
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_mount_points.match_type
+          value: regexp
+      - equal:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_fs_types.match_type
+          value: strict
+      - contains:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_mount_points.mount_points
+          content: "^/proc(/|$)"
+      - contains:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_fs_types.fs_types
+          content: "tmpfs"
+
+  - it: should omit filesystem exclude filters when disabled
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://test-endpoint.com"
+      tsuga.apiKey: "test-api-key"
+      agent.hostMetrics.filesystem.enabled: false
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_mount_points
+      - isNull:
+          path: spec.config.receivers.hostmetrics.scrapers.filesystem.exclude_fs_types

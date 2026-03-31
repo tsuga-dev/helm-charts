@@ -79,6 +79,43 @@ spec:
                 enabled: true
           disk: null
           filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              - tmpfs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - ^/dev(/|$)
+              - ^/proc(/|$)
+              - ^/run/credentials/
+              - ^/sys(/|$)
+              - ^/var/lib/docker/
+              - ^/var/lib/containers/storage/
             metrics:
               system.filesystem.utilization:
                 enabled: true

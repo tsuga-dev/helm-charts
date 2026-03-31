@@ -427,6 +427,60 @@ agent:
   # @default -- false
   collectProcesses: false
 
+  # -- Host metrics configuration
+  # Controls advanced scraper settings for the hostmetrics receiver
+  hostMetrics:
+    # -- Filesystem scraper configuration
+    # The agent DaemonSet already mounts the host filesystem at /hostfs (read-only),
+    # so no extra volume configuration is required to use these settings.
+    filesystem:
+      # -- Enable exclude filters on the filesystem scraper
+      # When true, filters out pseudo-filesystems and noisy mount points using
+      # the lists below, producing clean metrics suitable for disk space alerts
+      # (e.g. NodeFilesystemAlmostOutOfSpace).
+      # Set to false to revert to the bare scraper with no excludes.
+      # @default -- true
+      enabled: true
+      # -- Mount point regexp patterns to exclude from filesystem metrics
+      # Patterns are Go regexps. Defaults match the Prometheus node_exporter defaults.
+      # @default -- see values
+      excludeMountPoints:
+        - ^/dev(/|$)
+        - ^/proc(/|$)
+        - ^/run/credentials/
+        - ^/sys(/|$)
+        - ^/var/lib/docker/
+        - ^/var/lib/containers/storage/
+      # -- Filesystem types to exclude from filesystem metrics
+      # Exact string matches. Defaults match the Prometheus node_exporter defaults.
+      # @default -- see values
+      excludeFsTypes:
+        - autofs
+        - binfmt_misc
+        - bpf
+        - cgroup
+        - cgroup2
+        - configfs
+        - debugfs
+        - devpts
+        - devtmpfs
+        - fusectl
+        - hugetlbfs
+        - iso9660
+        - mqueue
+        - nsfs
+        - overlay
+        - proc
+        - procfs
+        - pstore
+        - rpc_pipefs
+        - securityfs
+        - selinuxfs
+        - squashfs
+        - sysfs
+        - tracefs
+        - tmpfs
+
   # -- Replace default config with complete custom configuration
   # When set, this completely replaces the default collector configuration
   # Use this for full control over the OpenTelemetry Collector config

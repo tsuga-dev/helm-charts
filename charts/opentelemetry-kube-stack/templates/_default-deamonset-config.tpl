@@ -57,6 +57,14 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
+        {{- if .Values.agent.hostMetrics.filesystem.enabled }}
+        exclude_mount_points:
+          mount_points: {{ toYaml .Values.agent.hostMetrics.filesystem.excludeMountPoints | nindent 12 }}
+          match_type: regexp
+        exclude_fs_types:
+          fs_types: {{ toYaml .Values.agent.hostMetrics.filesystem.excludeFsTypes | nindent 12 }}
+          match_type: strict
+        {{- end }}
       load:
       memory:
       {{- if .Values.agent.collectNetwork }}

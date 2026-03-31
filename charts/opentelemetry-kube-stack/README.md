@@ -244,6 +244,50 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 
 ## Configuration
 
+### Node Filesystem Monitoring
+
+The agent DaemonSet already mounts the host filesystem at `/hostfs` (read-only) — no extra volume configuration is needed.
+
+By default (`agent.hostMetrics.filesystem.enabled: true`), the filesystem scraper filters out pseudo-filesystems and container overlay mounts using exclude lists derived from the Prometheus `node_exporter` defaults. This produces clean, low-noise metrics that work out of the box with alerts like `NodeFilesystemAlmostOutOfSpace`.
+
+**Minimal values snippet** — accept all defaults (no action required):
+
+```yaml
+agent:
+  hostMetrics:
+    filesystem:
+      enabled: true   # this is the default
+```
+
+**Custom excludes** — override either list to suit your environment:
+
+```yaml
+agent:
+  hostMetrics:
+    filesystem:
+      enabled: true
+      excludeMountPoints:
+        - ^/dev(/|$)
+        - ^/proc(/|$)
+        - ^/sys(/|$)
+        - ^/var/lib/docker/
+        # add site-specific paths here
+      excludeFsTypes:
+        - tmpfs
+        - overlay
+        - sysfs
+        # add site-specific fs types here
+```
+
+**Disable excludes** — revert to the bare scraper (collects all mount points):
+
+```yaml
+agent:
+  hostMetrics:
+    filesystem:
+      enabled: false
+```
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -282,6 +326,11 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | agent.extraEnvs | list | [] | Extra environment variables for agent These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) |
 | agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
+| agent.hostMetrics | object | `{"filesystem":{"enabled":true,"excludeFsTypes":["autofs","binfmt_misc","bpf","cgroup","cgroup2","configfs","debugfs","devpts","devtmpfs","fusectl","hugetlbfs","iso9660","mqueue","nsfs","overlay","proc","procfs","pstore","rpc_pipefs","securityfs","selinuxfs","squashfs","sysfs","tracefs","tmpfs"],"excludeMountPoints":["^/dev(/|$)","^/proc(/|$)","^/run/credentials/","^/sys(/|$)","^/var/lib/docker/","^/var/lib/containers/storage/"]}}` | Host metrics configuration Controls advanced scraper settings for the hostmetrics receiver |
+| agent.hostMetrics.filesystem | object | `{"enabled":true,"excludeFsTypes":["autofs","binfmt_misc","bpf","cgroup","cgroup2","configfs","debugfs","devpts","devtmpfs","fusectl","hugetlbfs","iso9660","mqueue","nsfs","overlay","proc","procfs","pstore","rpc_pipefs","securityfs","selinuxfs","squashfs","sysfs","tracefs","tmpfs"],"excludeMountPoints":["^/dev(/|$)","^/proc(/|$)","^/run/credentials/","^/sys(/|$)","^/var/lib/docker/","^/var/lib/containers/storage/"]}` | Filesystem scraper configuration The agent DaemonSet already mounts the host filesystem at /hostfs (read-only), so no extra volume configuration is required to use these settings. |
+| agent.hostMetrics.filesystem.enabled | bool | true | Enable exclude filters on the filesystem scraper When true, filters out pseudo-filesystems and noisy mount points using the lists below, producing clean metrics suitable for disk space alerts (e.g. NodeFilesystemAlmostOutOfSpace). Set to false to revert to the bare scraper with no excludes. |
+| agent.hostMetrics.filesystem.excludeFsTypes | list | see values | Filesystem types to exclude from filesystem metrics Exact string matches. Defaults match the Prometheus node_exporter defaults. |
+| agent.hostMetrics.filesystem.excludeMountPoints | list | see values | Mount point regexp patterns to exclude from filesystem metrics Patterns are Go regexps. Defaults match the Prometheus node_exporter defaults. |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |

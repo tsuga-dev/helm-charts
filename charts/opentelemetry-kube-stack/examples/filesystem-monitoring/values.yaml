@@ -1,0 +1,43 @@
+# Node Filesystem Monitoring Example
+#
+# Enables production-ready filesystem metrics suitable for alerts like
+# NodeFilesystemAlmostOutOfSpace.
+#
+# The agent DaemonSet already mounts the host filesystem at /hostfs (read-only),
+# so no extra volume configuration is needed.
+#
+# agent.hostMetrics.filesystem.enabled is true by default — this example shows
+# both the default setup and a customized configuration.
+
+# ── Minimal setup (accept all defaults) ─────────────────────────────────────
+# Nothing to set. Filesystem monitoring with sensible excludes is on by default.
+# The default excludes are derived from Prometheus node_exporter defaults and
+# filter out pseudo-filesystems (proc, sysfs, tmpfs, overlay, etc.) and
+# container storage mount points.
+
+# ── Custom excludes ───────────────────────────────────────────────────────────
+# Override the exclude lists to match your environment.
+#
+# agent:
+#   hostMetrics:
+#     filesystem:
+#       enabled: true
+#       excludeMountPoints:
+#         - ^/dev(/|$)
+#         - ^/proc(/|$)
+#         - ^/sys(/|$)
+#         - ^/var/lib/docker/
+#         - ^/var/lib/containers/storage/
+#         - ^/run/credentials/
+#       excludeFsTypes:
+#         - tmpfs
+#         - overlay
+#         - sysfs
+#         - proc
+#         - devtmpfs
+
+# ── Disable excludes (bare scraper, all mount points) ────────────────────────
+# agent:
+#   hostMetrics:
+#     filesystem:
+#       enabled: false
