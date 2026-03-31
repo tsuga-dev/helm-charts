@@ -1,0 +1,23 @@
+docs/superpowers/specs/2026-03-31-filesystem-monitoring-design.md
+  55ae6ceea243481d 1-177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "090f167f1a412fff7a1a7653c6a7df49ff9277ed",
+  "prompts": {
+    "55ae6ceea243481d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e621c34-44b2-4117-ba63-79fe8b3abfd3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 189,
+      "total_deletions": 12,
+      "accepted_lines": 177,
+      "overriden_lines": 0
+    }
+  }
+}
