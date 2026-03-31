@@ -1,0 +1,23 @@
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  55ae6ceea243481d 39-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "81691c2ca325fbcc417e26fbe05a4a0df60ac754",
+  "prompts": {
+    "55ae6ceea243481d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e621c34-44b2-4117-ba63-79fe8b3abfd3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 0,
+      "accepted_lines": 35,
+      "overriden_lines": 0
+    }
+  }
+}
