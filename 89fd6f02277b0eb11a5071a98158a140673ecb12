@@ -1,0 +1,31 @@
+charts/opentelemetry-kube-stack/values.schema.json
+  55ae6ceea243481d 29-49
+charts/opentelemetry-kube-stack/values.yaml
+  55ae6ceea243481d 430-483
+charts/opentelemetry-kube-stack/README.md
+  55ae6ceea243481d 247-290
+charts/opentelemetry-kube-stack/examples/filesystem-monitoring/values.yaml
+  55ae6ceea243481d 1-43
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  55ae6ceea243481d 60-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "89fd6f02277b0eb11a5071a98158a140673ecb12",
+  "prompts": {
+    "55ae6ceea243481d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e621c34-44b2-4117-ba63-79fe8b3abfd3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>",
+      "messages": [],
+      "total_additions": 170,
+      "total_deletions": 0,
+      "accepted_lines": 170,
+      "overriden_lines": 0
+    }
+  }
+}
