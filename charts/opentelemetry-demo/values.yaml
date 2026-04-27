@@ -183,6 +183,40 @@ opentelemetry-kube-stack:
   enabled: true
   cluster:
     config:
+      extraReceivers:
+        k8sobjects:
+          auth_type: serviceAccount
+          include_initial_state: true
+          objects:
+            - group: ""
+              name: pods
+              mode: watch
+            - group: ""
+              name: events
+              mode: watch
+            - group: "apps"
+              name: deployments
+              mode: watch
+            - group: ""
+              name: nodes
+              mode: watch
+            - group: "apps"
+              name: replicasets
+              mode: watch
+            - group: "apps"
+              name: daemonsets
+              mode: watch
+            - group: "apps"
+              name: statefulsets
+              mode: watch
+        k8s_cluster:
+          metrics:
+            k8s.container.status.state:
+              enabled: true
+            k8s.pod.status_reason:
+              enabled: true
+            k8s.container.status.reason:
+              enabled: true
       extraProcessors:
         resourcedetection:
           detectors: [env, eks]
@@ -196,6 +230,8 @@ opentelemetry-kube-stack:
           logs:
             extraProcessors:
               - resourcedetection
+            extraReceivers:
+              - k8sobjects
 
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
