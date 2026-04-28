@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [opentelemetry-demo-0.8.0] - 2026-04-27
+
 ### Added
+- Add k8s objects receiver (pods, events, deployments, nodes, replicasets, daemonsets, statefulsets)
+- Add k8s.container.status.state, k8s.container.status.reason, and k8s.pod.status_reason metrics
 - Add per-chart changelogs and release notes from git-cliff
 - Add per-component Tsuga exporter toggles
 
@@ -122,7 +126,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Revert "Otel-demo-improvement"
 - Enhance OpenTelemetry demo chart and CI/CD configuration
 
-[unreleased]: https://github.com///compare/opentelemetry-demo-0.7.0...HEAD
+[unreleased]: https://github.com///compare/opentelemetry-demo-0.8.0...HEAD
+[opentelemetry-demo-0.8.0]: https://github.com///compare/opentelemetry-demo-0.7.0...opentelemetry-demo-0.8.0
 [opentelemetry-demo-0.7.0]: https://github.com///compare/opentelemetry-demo-0.6.8...opentelemetry-demo-0.7.0
 [opentelemetry-demo-0.6.8]: https://github.com///compare/opentelemetry-demo-0.6.6...opentelemetry-demo-0.6.8
 [opentelemetry-demo-0.6.6]: https://github.com///compare/opentelemetry-demo-0.6.7...opentelemetry-demo-0.6.6
