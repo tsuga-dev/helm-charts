@@ -2,13 +2,13 @@ name: Test OpenTelemetry Helm Chart
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'charts/**'
+      - "charts/**"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'charts/**'
+      - "charts/**"
 
 jobs:
   detect-charts:
@@ -16,35 +16,35 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Detect changed charts
-      id: set-matrix
-      run: |
-        # Determine base commit for comparison
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-        else
-          BASE_SHA="HEAD~1"
-        fi
-        
-        # Get changed files and extract unique chart names
-        CHANGED_FILES=$(git diff --name-only $BASE_SHA HEAD | grep -E '^charts/[^/]+/' || true)
-        
-        if [ -z "$CHANGED_FILES" ]; then
-          # No chart changes detected, output empty matrix
-          echo 'matrix=[]' >> $GITHUB_OUTPUT
-        else
-          # Extract unique chart names from paths matching charts/<chart-name>/
-          CHARTS=$(echo "$CHANGED_FILES" | sed -n 's|^charts/\([^/]*\)/.*|\1|p' | sort -u)
-          
-          # Convert to JSON array format for matrix
-          MATRIX=$(echo "$CHARTS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-          echo "Detected changed charts: $CHARTS"
-        fi
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed charts
+        id: set-matrix
+        run: |
+          # Determine base commit for comparison
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+          fi
+
+          # Get changed files and extract unique chart names
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA HEAD | grep -E '^charts/[^/]+/' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            # No chart changes detected, output empty matrix
+            echo 'matrix=[]' >> $GITHUB_OUTPUT
+          else
+            # Extract unique chart names from paths matching charts/<chart-name>/
+            CHARTS=$(echo "$CHANGED_FILES" | sed -n 's|^charts/\([^/]*\)/.*|\1|p' | sort -u)
+
+            # Convert to JSON array format for matrix
+            MATRIX=$(echo "$CHARTS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+            echo "Detected changed charts: $CHARTS"
+          fi
 
   lint:
     needs: detect-charts
@@ -54,16 +54,14 @@ jobs:
       matrix:
         chart: ${{ fromJson(needs.detect-charts.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: '3.12.0'
-    
-    - name: Lint Helm chart
-      run: |
-        helm lint charts/${{ matrix.chart }}
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Lint Helm chart
+        run: |
+          helm lint charts/${{ matrix.chart }}
 
   unittest:
     needs: detect-charts
@@ -73,18 +71,14 @@ jobs:
       matrix:
         chart: ${{ fromJson(needs.detect-charts.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: '3.12.0'
-    
-    - name: Install Helm unittest plugin
-      run: |
-        helm plugin install https://github.com/quintush/helm-unittest
-    
-    - name: Run Helm unit tests
-      run: |
-        helm unittest charts/${{ matrix.chart }}
+      - uses: actions/checkout@v4
 
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Install Helm unittest plugin
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git --verify=false
+      - name: Run Helm unit tests
+        run: |
+          helm unittest charts/${{ matrix.chart }}
