@@ -76,6 +76,7 @@ output = "charts/opentelemetry-demo/CHANGELOG.md"
 conventional_commits = true
 filter_unconventional = false
 include_paths = ["charts/opentelemetry-demo/**"]
+exclude_paths = ["charts/opentelemetry-demo/CHANGELOG.md", "charts/opentelemetry-demo/examples/*/rendered/**"]
 tag_pattern = "opentelemetry-demo-[0-9].*"
 commit_parsers = [
   { message = "^feat", group = "Added" },

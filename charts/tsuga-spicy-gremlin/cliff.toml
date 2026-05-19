@@ -76,6 +76,7 @@ output = "charts/tsuga-spicy-gremlin/CHANGELOG.md"
 conventional_commits = true
 filter_unconventional = false
 include_paths = ["charts/tsuga-spicy-gremlin/**"]
+exclude_paths = ["charts/tsuga-spicy-gremlin/CHANGELOG.md", "charts/tsuga-spicy-gremlin/examples/*/rendered/**"]
 tag_pattern = "tsuga-spicy-gremlin-[0-9].*"
 commit_parsers = [
   { message = "^feat", group = "Added" },

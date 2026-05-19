@@ -77,6 +77,7 @@ conventional_commits = true
 filter_unconventional = false
 # Only commits that touch this chart
 include_paths = ["charts/opentelemetry-kube-stack/**"]
+exclude_paths = ["charts/opentelemetry-kube-stack/CHANGELOG.md", "charts/opentelemetry-kube-stack/examples/*/rendered/**"]
 # Tags created by helm chart-releaser for this chart (e.g. opentelemetry-kube-stack-0.6.1)
 tag_pattern = "opentelemetry-kube-stack-[0-9].*"
 commit_parsers = [
