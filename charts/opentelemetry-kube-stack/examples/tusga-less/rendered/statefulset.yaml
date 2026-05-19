@@ -142,3 +142,14 @@ spec:
           - batch
           receivers:
           - prometheus
+      telemetry:
+        metrics:
+          readers:
+          - periodic:
+              exporter:
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf
+

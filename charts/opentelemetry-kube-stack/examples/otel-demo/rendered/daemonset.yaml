@@ -88,14 +88,6 @@ spec:
             metrics:
               system.paging.utilization:
                 enabled: true
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
       kubeletstats:
         auth_type: serviceAccount
         collection_interval: 20s
@@ -135,14 +127,6 @@ spec:
         tls:
           insecure: true
         username: root
-      prometheus:
-        config:
-          scrape_configs:
-          - job_name: opentelemetry-collector
-            scrape_interval: 10s
-            static_configs:
-            - targets:
-              - ${env:MY_POD_IP}:8888
       receiver_creator/logs:
         discovery:
           enabled: true
@@ -167,8 +151,6 @@ spec:
             rule: type == "pod" && name matches ".*valkey-cart.*"
         watch_observers:
         - k8s_observer
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
     processors:
       batch:
         send_batch_max_size: 5000
@@ -231,6 +213,8 @@ spec:
         spike_limit_percentage: 25
     exporters:
       otlphttp/tsuga:
+        compression: gzip
+        encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
@@ -271,11 +255,10 @@ spec:
           processors:
           - k8sattributes
           - memory_limiter
-          - batch
           - cumulativetodelta
+          - batch
           receivers:
           - otlp
-          - prometheus
           - kubeletstats
           - spanmetrics
           - hostmetrics
@@ -292,13 +275,13 @@ spec:
           - batch
           receivers:
           - otlp
-          - jaeger
-          - zipkin
       telemetry:
         metrics:
           readers:
-          - pull:
+          - periodic:
               exporter:
-                prometheus:
-                  host: ${env:MY_POD_IP}
-                  port: 8888
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf

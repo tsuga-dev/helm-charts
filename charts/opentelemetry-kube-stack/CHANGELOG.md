@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Add tusga-less example and update chart changelogs
+
 ## [opentelemetry-kube-stack-0.6.2] - 2026-03-16
 
 ### Added
@@ -211,6 +216,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First commit
 - Add Makefile for example generation and validation; update Helm chart configurations
 
+[unreleased]: https://github.com///compare/opentelemetry-kube-stack-0.6.2...HEAD
 [opentelemetry-kube-stack-0.6.2]: https://github.com///compare/opentelemetry-kube-stack-0.6.1...opentelemetry-kube-stack-0.6.2
 [opentelemetry-kube-stack-0.6.1]: https://github.com///compare/opentelemetry-kube-stack-0.6.0...opentelemetry-kube-stack-0.6.1
 [opentelemetry-kube-stack-0.6.0]: https://github.com///compare/opentelemetry-kube-stack-0.5.1...opentelemetry-kube-stack-0.6.0

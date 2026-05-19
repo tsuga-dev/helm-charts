@@ -129,6 +129,8 @@ spec:
         spike_limit_percentage: 25
     exporters:
       otlphttp/tsuga:
+        compression: gzip
+        encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
@@ -145,3 +147,14 @@ spec:
           - batch
           receivers:
           - prometheus
+      telemetry:
+        metrics:
+          readers:
+          - periodic:
+              exporter:
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf
+

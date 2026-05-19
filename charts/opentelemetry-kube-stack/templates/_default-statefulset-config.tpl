@@ -102,12 +102,14 @@ service:
         - memory_limiter
         - cumulativetodelta
         - k8sattributes
-        - batch
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
         - otlphttp/tsuga
         {{- end }}
+  telemetry:
+    {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
 {{- end}}

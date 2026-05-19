@@ -83,3 +83,4 @@ subjects:
 - kind: ServiceAccount
   name: example-opentelemetry-kube-stack
   namespace: default
+

@@ -62,3 +62,4 @@ spec:
               value: "true"
             - name: FLAG_SCHEMA
               value: "https://flagd.dev/schema/v0/flags.json"
+

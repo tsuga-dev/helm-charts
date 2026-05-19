@@ -22,14 +22,6 @@ receivers:
       enabled: true
     start_at: end
   {{- end }}
-  jaeger:
-    protocols:
-      grpc:
-        endpoint: ${env:MY_POD_IP}:14250
-      thrift_compact:
-        endpoint: ${env:MY_POD_IP}:6831
-      thrift_http:
-        endpoint: ${env:MY_POD_IP}:14268
   kubeletstats:
     auth_type: serviceAccount
     collection_interval: 20s
@@ -75,16 +67,6 @@ receivers:
         endpoint: ${env:MY_POD_IP}:4317
       http:
         endpoint: ${env:MY_POD_IP}:4318
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: opentelemetry-collector
-          scrape_interval: 10s
-          static_configs:
-            - targets:
-                - ${env:MY_POD_IP}:8888
-  zipkin:
-    endpoint: ${env:MY_POD_IP}:9411
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -200,18 +182,17 @@ service:
     metrics:
       receivers:
         - otlp
-        - prometheus
         - kubeletstats
         - spanmetrics
         - hostmetrics
       processors:
         - k8sattributes
         - memory_limiter
-        - batch
         - cumulativetodelta
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlphttp/tsuga
@@ -225,20 +206,12 @@ service:
       processors:
         - k8sattributes
         - memory_limiter
-        - batch
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - batch
       receivers:
         - otlp
-        - jaeger
-        - zipkin
   telemetry:
-    metrics:
-      readers:
-        - pull:
-            exporter:
-              prometheus:
-                host: ${env:MY_POD_IP}
-                port: 8888
+    {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
 {{- end}}
