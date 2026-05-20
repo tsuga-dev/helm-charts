@@ -112,8 +112,11 @@ jobs:
 
       - name: Install Helm unittest plugin
         run: |
-          # The helm-unittest plugin does not publish provenance metadata for Helm plugin verification.
-          helm plugin install https://github.com/helm-unittest/helm-unittest.git --version "${HELM_UNITTEST_VERSION}" --verify=false
+          if helm plugin install --help | grep -q -- "--verify"; then
+            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version "${HELM_UNITTEST_VERSION}" --verify=false
+          else
+            helm plugin install https://github.com/helm-unittest/helm-unittest.git --version "${HELM_UNITTEST_VERSION}"
+          fi
 
       - name: Run Helm unit tests
         run: |
