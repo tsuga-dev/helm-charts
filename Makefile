@@ -26,6 +26,7 @@ generate-examples:
 			done; \
 		done; \
 	done
+	find charts -path '*/examples/*/rendered/*.yaml' -type f -exec perl -0pi -e 's/\n+\z/\n/' {} +
 
 .PHONY: check-examples
 check-examples:
@@ -45,6 +46,7 @@ check-examples:
 					mv ${TMP_DIRECTORY}/$${example}/$${chart_name}/charts/$${subchart}/templates/* "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates/$${subchart}"; \
 				done; \
 			done; \
+			find "$${EXAMPLES_DIR}/$${example}/rendered" "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates" -name '*.yaml' -type f -exec perl -0pi -e 's/\n+\z/\n/' {} +; \
 			if diff -r "$${EXAMPLES_DIR}/$${example}/rendered" "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates" > /dev/null; then \
 				echo "Passed $${example}"; \
 			else \

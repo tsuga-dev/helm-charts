@@ -1,3 +1,4 @@
+---
 # Test values file for auto-instrumentation feature
 # This file configures the chart to enable OpenTelemetry auto-instrumentation
 # Use with: helm install my-release . -f tests/values/auto-instrumentation.yaml
@@ -5,43 +6,43 @@
 # Enable auto-instrumentation
 autoInstrumentation:
   enabled: true
-  
+
   # Use the standard apiVersion
   apiVersion: "opentelemetry.io/v1alpha1"
-  
+
   # Add descriptive labels
   labels:
     environment: "test"
     component: "auto-instrumentation"
-  
+
   # Add descriptive annotations
   annotations:
     description: "Auto-instrumentation configuration for testing"
-  
+
   # Full spec configuration for all supported languages
   spec:
     # Exporter configuration - where to send telemetry
     exporter:
       endpoint: "http://opentelemetry-kube-stack-agent:4317"
-    
+
     # Propagators for distributed tracing
     propagators:
       - tracecontext
       - baggage
       - b3
-    
+
     # Sampling configuration
     sampler:
       type: "parentbased_traceidratio"
-      argument: "1.0"  # 100% sampling for testing
-    
+      argument: "1.0" # 100% sampling for testing
+
     # Resource attributes added to all telemetry
     resource:
       addK8sUIDAttributes: true
       resourceAttributes:
         "deployment.environment": "test"
         "service.namespace": "default"
-    
+
     # Java auto-instrumentation
     java:
       image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest"
@@ -56,7 +57,7 @@ autoInstrumentation:
           value: "otlp"
         - name: OTEL_LOGS_EXPORTER
           value: "otlp"
-    
+
     # Node.js auto-instrumentation
     nodejs:
       image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest"
@@ -67,7 +68,7 @@ autoInstrumentation:
           value: "otlp"
         - name: OTEL_LOGS_EXPORTER
           value: "otlp"
-    
+
     # Python auto-instrumentation
     python:
       image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest"
@@ -78,7 +79,7 @@ autoInstrumentation:
           value: "otlp"
         - name: OTEL_LOGS_EXPORTER
           value: "otlp"
-    
+
     # .NET auto-instrumentation
     dotnet:
       image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest"
@@ -89,11 +90,11 @@ autoInstrumentation:
           value: "otlp"
         - name: OTEL_LOGS_EXPORTER
           value: "otlp"
-    
+
     # Go auto-instrumentation (if supported by your operator version)
     # go:
     #   image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest"
-    
+
     # Global environment variables for all languages
     env:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL

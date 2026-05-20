@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: tsuga-spicy-gremlin
 description: A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature flags.

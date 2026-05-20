@@ -1,3 +1,4 @@
+---
 env:
   minIntervalSec: 120
   maxIntervalSec: 600

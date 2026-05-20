@@ -52,6 +52,38 @@ spec:
         - cpu
         - memory
         collection_interval: 10s
+        metrics:
+          k8s.container.status.reason:
+            enabled: true
+          k8s.container.status.state:
+            enabled: true
+          k8s.pod.status_reason:
+            enabled: true
+      k8sobjects:
+        auth_type: serviceAccount
+        include_initial_state: true
+        objects:
+        - group: ""
+          mode: watch
+          name: pods
+        - group: ""
+          mode: watch
+          name: events
+        - group: apps
+          mode: watch
+          name: deployments
+        - group: ""
+          mode: watch
+          name: nodes
+        - group: apps
+          mode: watch
+          name: replicasets
+        - group: apps
+          mode: watch
+          name: daemonsets
+        - group: apps
+          mode: watch
+          name: statefulsets
     processors:
       batch:
         send_batch_max_size: 5000
@@ -127,6 +159,7 @@ spec:
           - resourcedetection
           receivers:
           - k8s_cluster
+          - k8sobjects
         metrics:
           exporters:
           - otlphttp/tsuga

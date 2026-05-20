@@ -1,3 +1,4 @@
+---
 tsuga:
   otlpEndpoint: "https://test-endpoint.com"
   apiKey: "test-api-key"
