@@ -19,9 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update changelog templates and enhance validation
 
-### Fixed
-- Enhance CHANGELOG.md validation to accept chart-specific version formats
-
 ## [opentelemetry-kube-stack-0.6.1] - 2026-03-16
 
 ### Added
@@ -38,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Bump chart version to 0.6.0 and update documentation
-- Regenerate rendered examples with enhanced configuration
 - Make collectk8sobjects optional
 
 ## [opentelemetry-kube-stack-0.5.1] - 2026-03-12
@@ -169,7 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add annotations to OpenTelemetry configuration in _config.tpl
 - Add OpenTelemetry configuration schema and enhance values.yaml
 - Fix templates
-- Update examples
 - Add extraConnectors configuration to OpenTelemetry schema and values.yaml
 - Fix _service.tpl
 - Bump versions
@@ -181,7 +176,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Update OpenTelemetry Kube Stack to v0.2.5
-- Add Change Log
 - Remove duplicated attributes
 - Fix grammar
 - Fix indentation in _config.tpl to properly align k8sattributes and labels sections

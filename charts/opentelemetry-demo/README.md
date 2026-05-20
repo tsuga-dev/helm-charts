@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.7.0](https://img.shields.io/badge/Version-0.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -110,7 +110,34 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.cluster.config.extraProcessors.resourcedetection.detectors[1] | string | `"eks"` |  |
 | opentelemetry-kube-stack.cluster.config.extraProcessors.resourcedetection.override | bool | `true` |  |
 | opentelemetry-kube-stack.cluster.config.extraProcessors.resourcedetection.timeout | string | `"15s"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8s_cluster.metrics."k8s.container.status.reason".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8s_cluster.metrics."k8s.container.status.state".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8s_cluster.metrics."k8s.pod.status_reason".enabled | bool | `true` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.auth_type | string | `"serviceAccount"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.include_initial_state | bool | `true` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[0].group | string | `""` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[0].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[0].name | string | `"pods"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[1].group | string | `""` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[1].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[1].name | string | `"events"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[2].group | string | `"apps"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[2].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[2].name | string | `"deployments"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[3].group | string | `""` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[3].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[3].name | string | `"nodes"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[4].group | string | `"apps"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[4].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[4].name | string | `"replicasets"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[5].group | string | `"apps"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[5].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[5].name | string | `"daemonsets"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[6].group | string | `"apps"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[6].mode | string | `"watch"` |  |
+| opentelemetry-kube-stack.cluster.config.extraReceivers.k8sobjects.objects[6].name | string | `"statefulsets"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraProcessors[0] | string | `"resourcedetection"` |  |
+| opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraReceivers[0] | string | `"k8sobjects"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.metrics.extraProcessors[0] | string | `"resourcedetection"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.enabled | bool | `true` |  |

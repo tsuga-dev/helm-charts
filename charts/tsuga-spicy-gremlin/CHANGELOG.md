@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add per-chart changelogs and release notes from git-cliff
-- Add per-component Tsuga exporter toggles
-- Add tusga-less example and update chart changelogs
 
 ### Changed
 - Leveraging new gremlin with o11y in it
@@ -18,9 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removing hard-coded env
 - Remove hardcoded OTEL env vars and add examples
 - Update changelog templates and enhance validation
-
-### Fixed
-- Enhance CHANGELOG.md validation to accept chart-specific version formats
 
 ## [tsuga-spicy-gremlin-0.1.1] - 2026-02-13
 

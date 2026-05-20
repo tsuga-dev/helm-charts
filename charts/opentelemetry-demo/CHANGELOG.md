@@ -9,14 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add per-chart changelogs and release notes from git-cliff
-- Add per-component Tsuga exporter toggles
-- Add tusga-less example and update chart changelogs
 
 ### Changed
 - Update changelog templates and enhance validation
-
-### Fixed
-- Enhance CHANGELOG.md validation to accept chart-specific version formats
 
 ## [opentelemetry-demo-0.7.0] - 2026-02-17
 
