@@ -36,4 +36,21 @@ otlphttp/tsuga:
   endpoint: ${TSUGA_OTLP_ENDPOINT}
   headers:
     Authorization: Bearer ${TSUGA_API_KEY}
+  encoding: json
+  compression: gzip
+{{- end }}
+
+{{/*
+Generate Otel telemetry export
+*/}}
+{{- define "opentelemetry-kube-stack.otelTelemetry" -}}
+metrics:
+    readers:
+    - periodic:
+        exporter:
+            otlp:
+                protocol: http/protobuf
+                headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
 {{- end }}

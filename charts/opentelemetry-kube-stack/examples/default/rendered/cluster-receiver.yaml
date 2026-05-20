@@ -116,6 +116,8 @@ spec:
           - from: connection
     exporters:
       otlphttp/tsuga:
+        compression: gzip
+        encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
@@ -138,3 +140,13 @@ spec:
           - batch
           receivers:
           - k8s_cluster
+      telemetry:
+        metrics:
+          readers:
+          - periodic:
+              exporter:
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf
