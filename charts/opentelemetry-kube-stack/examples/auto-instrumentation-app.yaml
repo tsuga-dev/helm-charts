@@ -46,7 +46,7 @@ spec:
       containers:
       - name: java-app
         image: openjdk:11-jre-slim
-        command: 
+        command:
           - "sh"
           - "-c"
           - |
@@ -97,7 +97,7 @@ spec:
       containers:
       - name: nodejs-app
         image: node:18-alpine
-        command: 
+        command:
           - "sh"
           - "-c"
           - |
@@ -147,7 +147,7 @@ spec:
       containers:
       - name: python-app
         image: python:3.11-slim
-        command: 
+        command:
           - "sh"
           - "-c"
           - |
@@ -197,7 +197,7 @@ spec:
       containers:
       - name: dotnet-app
         image: mcr.microsoft.com/dotnet/runtime:7.0
-        command: 
+        command:
           - "sh"
           - "-c"
           - |

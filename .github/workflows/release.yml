@@ -1,9 +1,15 @@
+---
 name: Release Charts
+
+permissions: {}
 
 on:
   push:
     branches:
       - main
+
+env:
+  HELM_VERSION: "3.12.0"
 
 jobs:
   release:
@@ -12,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -22,7 +28,7 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Generate release notes (opentelemetry-kube-stack)
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         with:
           config: charts/opentelemetry-kube-stack/cliff.toml
           args: -vv --latest --strip header
@@ -31,7 +37,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Generate release notes (opentelemetry-demo)
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         with:
           config: charts/opentelemetry-demo/cliff.toml
           args: -vv --latest --strip header
@@ -40,7 +46,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Generate release notes (tsuga-spicy-gremlin)
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         with:
           config: charts/tsuga-spicy-gremlin/cliff.toml
           args: -vv --latest --strip header
@@ -49,7 +55,9 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Install Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: ${{ env.HELM_VERSION }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -59,7 +67,7 @@ jobs:
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
         with:
           skip_existing: true
           charts_dir: charts

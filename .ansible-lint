@@ -1,0 +1,10 @@
+---
+
+exclude_paths:
+  - charts/opentelemetry-demo/examples/**/rendered/**
+  - charts/opentelemetry-kube-stack/examples/**/rendered/**
+  - charts/tsuga-spicy-gremlin/examples/**/rendered/**
+  - charts/opentelemetry-demo/templates/
+  - charts/opentelemetry-kube-stack/templates/
+  - charts/tsuga-spicy-gremlin/templates/
+  - charts/*/charts/otel-crds/**

@@ -1,3 +1,4 @@
+---
 # Agent-only configuration
 tsuga:
   otlpEndpoint: "https://test-endpoint.com"

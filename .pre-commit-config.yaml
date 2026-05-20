@@ -1,7 +1,13 @@
 ---
 repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--config-file, .yamllint.yaml]
+
   - repo: https://github.com/norwoodj/helm-docs
-    rev:  "v1.14.2"
+    rev: "v1.14.2"
     hooks:
       - id: helm-docs
         args:
@@ -13,7 +19,7 @@ repos:
     hooks:
       - id: helm-schema
         args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]
-  
+
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.23
     hooks:
@@ -25,29 +31,35 @@ repos:
         name: Helm Dependency Update
         entry: bash -c 'find . -name Chart.yaml | xargs -I% bash -c "dirname %" | xargs -t -I% helm dep up %'
         language: system
+        files: ^charts/.*/Chart\.yaml$
         pass_filenames: false
       - id: helm-lint
         name: Helm Lint
         entry: bash -c 'find . -name Chart.yaml | xargs -I% bash -c "dirname %" | xargs -t -I% helm lint %'
         language: system
+        files: ^charts/
         pass_filenames: false
       - id: helm-example
         name: Generate Helm examples
         entry: bash -c 'make generate-examples'
         language: system
+        files: ^charts/
         pass_filenames: false
       - id: changelog-kube-stack
         name: Update CHANGELOG.md for opentelemetry-kube-stack
-        entry: bash -c 'git cliff -c charts/opentelemetry-kube-stack/cliff.toml'
+        entry: bash -c 'git cliff -c charts/opentelemetry-kube-stack/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-kube-stack/CHANGELOG.md'
         language: system
+        files: ^charts/opentelemetry-kube-stack/
         pass_filenames: false
       - id: changelog-demo
         name: Update CHANGELOG.md for opentelemetry-demo
-        entry: bash -c 'git cliff -c charts/opentelemetry-demo/cliff.toml'
+        entry: bash -c 'git cliff -c charts/opentelemetry-demo/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-demo/CHANGELOG.md'
         language: system
+        files: ^charts/opentelemetry-demo/
         pass_filenames: false
       - id: changelog-gremlin
         name: Update CHANGELOG.md for tsuga-spicy-gremlin
-        entry: bash -c 'git cliff -c charts/tsuga-spicy-gremlin/cliff.toml'
+        entry: bash -c 'git cliff -c charts/tsuga-spicy-gremlin/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/tsuga-spicy-gremlin/CHANGELOG.md'
         language: system
+        files: ^charts/tsuga-spicy-gremlin/
         pass_filenames: false
