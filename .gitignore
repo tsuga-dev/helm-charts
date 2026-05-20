@@ -4,3 +4,4 @@ charts/**/charts/*.tgz
 charts/**/values_test.yaml
 .worktrees/
 docs/plans/
+charts/**/.helm_ls_cache

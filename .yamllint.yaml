@@ -1,0 +1,61 @@
+---
+extends: default
+
+ignore: |
+  # Helm Go templates — not valid YAML
+  charts/*/templates/
+  charts/*/templates/**
+  # Vendored and generated CRD files
+  charts/*/charts/otel-crds/
+  charts/*/charts/otel-crds/**
+  # Generated rendered examples
+  charts/*/examples/*/rendered/
+  charts/*/examples/*/rendered/**
+  # helm-ls editor cache — generated, not source
+  charts/**/.helm_ls_cache/
+  charts/**/.helm_ls_cache/**
+  # Local git worktrees are not part of this checkout's lint target
+  .worktrees/
+  .worktrees/**
+
+rules:
+  # Long lines are common in chart descriptions and comments
+  line-length: disable
+
+  # Require explicit YAML document start markers for consistency.
+  document-start:
+    present: true
+
+  # 2-space indentation; allow both Kubernetes sequence styles
+  # (- item at same level as key, or indented under key)
+  indentation:
+    spaces: 2
+    indent-sequences: whatever
+    check-multi-line-strings: false
+
+  # Allow both compact and expanded block styles
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+
+  # Require at least one space after # in comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Disable comment-indentation: helm-docs annotations (# @default, # --)
+  # are intentionally indented under their associated key
+  comments-indentation: disable
+
+  trailing-spaces: enable
+
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
+
+  octal-values:
+    forbid-implicit-octal: true # yamllint defaults to false
+    forbid-explicit-octal: true # yamllint defaults to false

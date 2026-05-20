@@ -1,3 +1,4 @@
+---
 # yaml-language-server: $schema=./values.schema.json
 # =============================================================================
 # SECURITY NOTICE: This values.yaml file has been sanitized for security
@@ -130,11 +131,9 @@ autoInstrumentation:
   # -- Extra labels to add to the Instrumentation resource
   # @default -- {}
   labels: {}
-
   # -- Extra annotations to add to the Instrumentation resource
   # @default -- {}
   annotations: {}
-
   # -- Instrumentation spec (full passthrough)
   # This is passed directly to the Instrumentation Custom Resource spec.
   # It can include (non-exhaustive): exporter, propagators, sampler, env, resource,
@@ -142,7 +141,6 @@ autoInstrumentation:
   # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation
   # @default -- {}
   spec: {}
-
 # =============================================================================
 # TSUGA CONFIGURATION
 # =============================================================================
@@ -228,7 +226,6 @@ cluster:
   #       value: "custom-value"
   # @default -- []
   extraEnvs: []
-
   # -- Replace default config with complete custom configuration
   # When set, this completely replaces the default collector configuration
   # Use this for full control over the OpenTelemetry Collector config
@@ -250,7 +247,6 @@ cluster:
   #           exporters: [otlphttp/tsuga]
   # @default -- {}
   customConfig: {}
-
   collectk8sobjects: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
@@ -359,8 +355,7 @@ cluster:
   # Format: List of objects with tag_name, key, and from fields
   # @default -- []
   extraAnnotationsMapping: []
-
-    # -- Cluster-specific resource limits and requests
+  # -- Cluster-specific resource limits and requests
   # If not set, inherits from global resources configuration
   # @default -- {}
   resources: {}
@@ -376,7 +371,6 @@ cluster:
   # If not set, inherits from global affinity configuration
   # @default -- {}
   affinity: {}
-
 # =============================================================================
 # AGENT (DAEMONSET) CONFIGURATION
 # =============================================================================
@@ -398,7 +392,6 @@ agent:
   # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
   # @default -- []
   extraEnvs: []
-
   # -- Collect logs from the host and containers
   # When true, enables filelog receiver to collect logs from /var/log/pods
   # Also mounts required volumes for log collection
@@ -433,7 +426,6 @@ agent:
   # See cluster.customConfig for example format
   # @default -- {}
   customConfig: {}
-
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default config includes: filelog, jaeger, kubeletstats, hostmetrics, otlp, prometheus, zipkin receivers
@@ -514,7 +506,6 @@ agent:
           # @default -- []
           extraReceivers: []
         extraPipelines: {}
-
   # -- Label mapping configuration for agent
   # Maps Kubernetes pod labels to OpenTelemetry resource attributes
   # These are appended to default label mappings
@@ -532,7 +523,6 @@ agent:
   # Format: List of objects with tag_name, key, and from fields
   # @default -- []
   extraAnnotationsMapping: []
-
   # -- Agent-specific resource limits and requests
   # If not set, inherits from global resources configuration
   # @default -- {}
@@ -549,7 +539,6 @@ agent:
   # If not set, inherits from global affinity configuration
   # @default -- {}
   affinity: {}
-
 # =============================================================================
 # RESOURCE CONFIGURATION
 # =============================================================================
@@ -577,17 +566,14 @@ resources:
 # Used as default when agent.nodeSelector is not set
 # @default -- {}
 nodeSelector: {}
-
 # -- Tolerations for daemonset mode (agent)
 # Used as default when agent.tolerations is not set
 # @default -- []
 tolerations: []
-
 # -- Affinity rules for pod scheduling
 # Used as default when agent.affinity is not set
 # @default -- {}
 affinity: {}
-
 # =============================================================================
 # SERVICE ACCOUNT & RBAC CONFIGURATION
 # =============================================================================
@@ -605,7 +591,6 @@ serviceAccount:
   # Useful for IRSA (IAM Roles for Service Accounts) or workload identity
   # @default -- {}
   annotations: {}
-
 # -- RBAC configuration
 rbac:
   # -- Create RBAC resources (ClusterRole and ClusterRoleBinding)
@@ -648,7 +633,6 @@ targetAllocator:
       # An empty selector ({}) matches all PodMonitors in all namespaces.
       # @default -- {}
       podMonitorSelector: {}
-
 # =============================================================================
 # STATEFULSET COLLECTOR CONFIGURATION
 # =============================================================================
@@ -738,7 +722,6 @@ statefulset:
   # -- StatefulSet-specific affinity rules
   # @default -- {}
   affinity: {}
-
 # =============================================================================
 # VALIDATION CONFIGURATION
 # =============================================================================

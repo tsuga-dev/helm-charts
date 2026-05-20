@@ -1,3 +1,4 @@
+---
 # Minimal configuration for testing
 tsuga:
   otlpEndpoint: "https://test-endpoint.com"

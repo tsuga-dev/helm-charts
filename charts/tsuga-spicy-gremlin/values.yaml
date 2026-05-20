@@ -1,3 +1,4 @@
+---
 # -- Enable spicy-gremlin deployment.
 enabled: true
 
@@ -14,7 +15,6 @@ image:
 
 # -- Optional image pull secrets.
 imagePullSecrets: []
-
 # -- Override chart name.
 nameOverride: ""
 # -- Override full chart release name.
@@ -44,7 +44,6 @@ resources: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
 env:
   # -- Base URL of flagd-ui API exposed by the OTel demo frontend-proxy.
   flagdApiBaseUrl: "http://frontend-proxy:8080/feature/api"

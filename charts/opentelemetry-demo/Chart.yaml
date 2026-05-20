@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: opentelemetry-demo
 description: A Helm chart for Tsuga Observability Demo
