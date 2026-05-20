@@ -1,14 +1,14 @@
+---
 name: Sync README to gh-pages
 
 permissions: {}
-
 on:
   push:
     branches:
       - main
     paths:
-      - 'README.md'
-      - 'charts/**/README.md'
+      - "README.md"
+      - "charts/**/README.md"
 
 jobs:
   sync:
@@ -39,7 +39,7 @@ jobs:
           ref: gh-pages
 
       - name: Sync READMEs and push
-        run: |
+        run: |-
           # Copy root README if it exists
           if [ -f ${{ runner.temp }}/readmes/README.md ]; then
             cp -f ${{ runner.temp }}/readmes/README.md .

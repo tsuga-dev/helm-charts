@@ -1,7 +1,13 @@
 ---
 repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--config-file, .yamllint.yaml]
+
   - repo: https://github.com/norwoodj/helm-docs
-    rev:  "v1.14.2"
+    rev: "v1.14.2"
     hooks:
       - id: helm-docs
         args:
@@ -13,7 +19,7 @@ repos:
     hooks:
       - id: helm-schema
         args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]
-  
+
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.23
     hooks:
