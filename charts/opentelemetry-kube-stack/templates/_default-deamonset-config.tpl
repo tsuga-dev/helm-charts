@@ -170,12 +170,10 @@ exporters:
 connectors:
   spanmetrics:
     dimensions:
-      - name: http.method
+      - name: http.request.method
         default: GET
-      - name: http.status_code
-    calls_dimensions:
-      - name: http.url
-        default: /ping
+      - name: http.response.status_code
+      - name: http.route
 service:
   extensions:
     - health_check
