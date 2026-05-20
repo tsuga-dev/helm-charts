@@ -123,4 +123,6 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlphttp/tsuga
         {{- end }}
+  telemetry:
+    {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
 {{- end}}
