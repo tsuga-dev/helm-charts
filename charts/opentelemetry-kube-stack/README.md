@@ -73,6 +73,45 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **Metrics**: `otlp`, `prometheus`, `kubeletstats`, `spanmetrics`, `hostmetrics` → `k8sattributes`, `memory_limiter`, `batch`, `cumulativetodelta`, `resource` → `otlphttp/tsuga`
 - **Traces**: `otlp`, `jaeger`, `zipkin` → `k8sattributes`, `memory_limiter`, `batch`, `resource` → `otlphttp/tsuga`, `spanmetrics`
 
+**Default Spanmetrics Dimensions:**
+- `http.request.method`
+- `http.response.status_code`
+- `http.route`
+
+`http.route` is preferred over raw URL/path attributes because it represents the logical route template and keeps metric cardinality under control. URL-like attributes such as `http.url`, `url.full`, `http.path`, and `http.target` are intentionally excluded from the default metric dimensions because they fragment metrics with IDs, query strings, and other request-specific values.
+
+This default targets modern OpenTelemetry HTTP semantic conventions and is most useful for server spans. If your workloads still emit legacy attributes such as `http.method` and `http.status_code`, or if you want client-focused dependency metrics, override the connector dimensions through the existing merge-based config.
+
+Example override for client-oriented HTTP dependency metrics:
+
+```yaml
+agent:
+  config:
+    additionalConfig:
+      connectors:
+        spanmetrics:
+          dimensions:
+            - name: http.request.method
+              default: GET
+            - name: http.response.status_code
+            - name: server.address
+```
+
+Example override for workloads still emitting legacy HTTP semantic conventions:
+
+```yaml
+agent:
+  config:
+    additionalConfig:
+      connectors:
+        spanmetrics:
+          dimensions:
+            - name: http.method
+              default: GET
+            - name: http.status_code
+            - name: http.route
+```
+
 ### Cluster Receiver (Deployment)
 
 - Collects cluster metrics and events using the Kubernetes API server
