@@ -83,25 +83,27 @@ spec:
               system.filesystem.utilization:
                 enabled: true
           load: null
-          memory: null
+          memory:
+            metrics:
+              system.memory.limit:
+                enabled: true
+              system.memory.utilization:
+                enabled: true
           network: null
           paging:
             metrics:
               system.paging.utilization:
                 enabled: true
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
       kubeletstats:
         auth_type: serviceAccount
         collection_interval: 20s
         endpoint: ${env:NODE_IP}:10250
+        extra_metadata_labels:
+        - k8s.volume.type
         insecure_skip_verify: true
+        metric_groups:
+        - node
+        - pod
       otlp:
         protocols:
           grpc:
@@ -110,6 +112,9 @@ spec:
             endpoint: ${env:MY_POD_IP}:4318
       postgresql:
         endpoint: postgresql:5432
+        events:
+          db.server.top_query:
+            enabled: true
         metrics:
           postgresql.blks_hit:
             enabled: true
@@ -131,14 +136,6 @@ spec:
         tls:
           insecure: true
         username: root
-      prometheus:
-        config:
-          scrape_configs:
-          - job_name: opentelemetry-collector
-            scrape_interval: 10s
-            static_configs:
-            - targets:
-              - ${env:MY_POD_IP}:8888
       receiver_creator/logs:
         discovery:
           enabled: true
@@ -149,8 +146,6 @@ spec:
           enabled: true
         watch_observers:
         - k8s_observer
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
     processors:
       batch:
         send_batch_max_size: 5000
@@ -219,6 +214,8 @@ spec:
         timeout: 15s
     exporters:
       otlphttp/tsuga:
+        compression: gzip
+        encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
@@ -231,13 +228,11 @@ spec:
         observe_services: true
     connectors:
       spanmetrics:
-        calls_dimensions:
-        - default: /ping
-          name: http.url
         dimensions:
         - default: GET
-          name: http.method
-        - name: http.status_code
+          name: http.request.method
+        - name: http.response.status_code
+        - name: http.route
     service:
       extensions:
       - health_check
@@ -260,12 +255,11 @@ spec:
           processors:
           - k8sattributes
           - memory_limiter
-          - batch
           - cumulativetodelta
+          - batch
           - resourcedetection
           receivers:
           - otlp
-          - prometheus
           - kubeletstats
           - spanmetrics
           - hostmetrics
@@ -282,13 +276,13 @@ spec:
           - resourcedetection
           receivers:
           - otlp
-          - jaeger
-          - zipkin
       telemetry:
         metrics:
           readers:
-          - pull:
+          - periodic:
               exporter:
-                prometheus:
-                  host: ${env:MY_POD_IP}
-                  port: 8888
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf

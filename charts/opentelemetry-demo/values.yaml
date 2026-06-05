@@ -119,6 +119,17 @@ opentelemetry-demo:
         - log_min_duration_statement=0
         - -c
         - log_line_prefix=%m [%p] %u@%d %
+        - -c
+        - shared_preload_libraries=pg_stat_statements
+      mountedConfigMaps:
+        - name: "postgresql-init"
+          mountPath: "/docker-entrypoint-initdb.d"
+          existingConfigMap: "postgresql-init"
+        - name: "extensions"
+          mountPath: "/docker-entrypoint-initdb.d/00-extensions.sql"
+          subPath: "00-extensions.sql"
+          data:
+            "00-extensions.sql": 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\n'
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
@@ -272,6 +283,9 @@ opentelemetry-kube-stack:
             postgresql.tup_returned:
               enabled: true
             postgresql.tup_updated:
+              enabled: true
+          events:
+            db.server.top_query:
               enabled: true
           password: otel
           tls:
