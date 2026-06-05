@@ -10,12 +10,11 @@ receivers:
 {{- if .Values.cluster.collectk8sobjects }}
   k8sobjects:
     auth_type: serviceAccount
+    include_initial_state: true
     objects:
-      - name: events
+      - group: ""
+        name: pods
         mode: watch
-        # Only collect warning events to reduce cardinality in large clusters
-        # Set field_selector: "" to collect all events, or customize as needed
-        field_selector: "type=Warning"
 {{- end }}
 processors:
   batch:

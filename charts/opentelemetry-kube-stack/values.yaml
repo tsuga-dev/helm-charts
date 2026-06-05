@@ -247,6 +247,7 @@ cluster:
   #           exporters: [otlphttp/tsuga]
   # @default -- {}
   customConfig: {}
+  # This is used in the Kubernetes view to show pod configuration
   collectk8sobjects: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration

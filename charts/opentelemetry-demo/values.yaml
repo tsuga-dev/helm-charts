@@ -238,6 +238,7 @@ opentelemetry-kube-stack:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     addLogsVolumes: true
     collectLogs: false
+    collectNetwork: true
     config:
       extraExtensions:
         k8s_observer:

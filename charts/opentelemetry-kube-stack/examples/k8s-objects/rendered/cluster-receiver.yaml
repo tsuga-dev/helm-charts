@@ -63,10 +63,11 @@ spec:
         - PIDPressure
       k8sobjects:
         auth_type: serviceAccount
+        include_initial_state: true
         objects:
-        - field_selector: type=Warning
+        - group: ""
           mode: watch
-          name: events
+          name: pods
     processors:
       batch:
         send_batch_max_size: 5000

@@ -51,6 +51,11 @@ receivers:
             enabled: true
       load:
       memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
+          system.memory.utilization:
+            enabled: true
       {{- if .Values.agent.collectNetwork }}
       network:
       {{- end }}

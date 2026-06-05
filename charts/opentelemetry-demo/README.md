@@ -75,6 +75,7 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.prometheus.enabled | bool | `false` |  |
 | opentelemetry-kube-stack.agent.addLogsVolumes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.collectLogs | bool | `false` |  |
+| opentelemetry-kube-stack.agent.collectNetwork | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_ingresses | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_nodes | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraExtensions.k8s_observer.observe_services | bool | `true` |  |
