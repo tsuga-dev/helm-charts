@@ -130,7 +130,7 @@ opentelemetry-demo:
           mountPath: "/docker-entrypoint-initdb.d/00-extensions.sql"
           subPath: "00-extensions.sql"
           data:
-            "00-extensions.sql": 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\n'
+            "00-extensions.sql": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
