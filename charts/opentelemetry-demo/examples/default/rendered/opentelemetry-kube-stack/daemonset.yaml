@@ -84,6 +84,7 @@ spec:
                 enabled: true
           load: null
           memory: null
+          network: null
           paging:
             metrics:
               system.paging.utilization:

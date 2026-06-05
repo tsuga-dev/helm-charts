@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.6.3] - 2026-05-20
+
+### Added
+- Add tusga-less example and update chart changelogs
+
+### Changed
+- Standardize YAML formatting checks (#82)
+- Update default spanmetrics dims (#77)
+
 ## [opentelemetry-kube-stack-0.6.2] - 2026-03-16
 
 ### Added
@@ -202,6 +211,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - First commit
 - Add Makefile for example generation and validation; update Helm chart configurations
+[opentelemetry-kube-stack-0.6.3]: https://github.com///compare/opentelemetry-kube-stack-0.6.2...opentelemetry-kube-stack-0.6.3
+
 [opentelemetry-kube-stack-0.6.2]: https://github.com///compare/opentelemetry-kube-stack-0.6.1...opentelemetry-kube-stack-0.6.2
 
 [opentelemetry-kube-stack-0.6.1]: https://github.com///compare/opentelemetry-kube-stack-0.6.0...opentelemetry-kube-stack-0.6.1

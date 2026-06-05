@@ -61,6 +61,16 @@ spec:
         - MemoryPressure
         - DiskPressure
         - PIDPressure
+      k8sobjects:
+        auth_type: serviceAccount
+        include_initial_state: true
+        objects:
+        - field_selector: type=Warning
+          mode: watch
+          name: events
+        - group: ""
+          mode: watch
+          name: pods
     processors:
       batch:
         send_batch_max_size: 5000
@@ -132,6 +142,7 @@ spec:
           - batch
           receivers:
           - k8s_cluster
+          - k8sobjects
         metrics:
           exporters:
           - otlphttp/tsuga

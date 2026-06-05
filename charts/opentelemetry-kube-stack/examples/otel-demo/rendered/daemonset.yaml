@@ -83,7 +83,13 @@ spec:
               system.filesystem.utilization:
                 enabled: true
           load: null
-          memory: null
+          memory:
+            metrics:
+              system.memory.limit:
+                enabled: true
+              system.memory.utilization:
+                enabled: true
+          network: null
           paging:
             metrics:
               system.paging.utilization:
