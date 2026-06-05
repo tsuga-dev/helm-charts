@@ -112,6 +112,9 @@ spec:
             endpoint: ${env:MY_POD_IP}:4318
       postgresql:
         endpoint: postgresql:5432
+        events:
+          db.server.top_query:
+            enabled: true
         metrics:
           postgresql.blks_hit:
             enabled: true

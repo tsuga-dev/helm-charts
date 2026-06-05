@@ -46,6 +46,15 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.postgresql.command[4] | string | `"log_min_duration_statement=0"` |  |
 | opentelemetry-demo.components.postgresql.command[5] | string | `"-c"` |  |
 | opentelemetry-demo.components.postgresql.command[6] | string | `"log_line_prefix=%m [%p] %u@%d %"` |  |
+| opentelemetry-demo.components.postgresql.command[7] | string | `"-c"` |  |
+| opentelemetry-demo.components.postgresql.command[8] | string | `"shared_preload_libraries=pg_stat_statements"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].existingConfigMap | string | `"postgresql-init"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].mountPath | string | `"/docker-entrypoint-initdb.d"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].name | string | `"postgresql-init"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].data."00-extensions.sql" | string | `"CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\\n"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].mountPath | string | `"/docker-entrypoint-initdb.d/00-extensions.sql"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].name | string | `"extensions"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].subPath | string | `"00-extensions.sql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Drop Postgres DETAIL logs\n  - type: filter\n    id: drop-postgres-detail\n    expr: 'body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} .*\\\\bDETAIL:\"'\n\n  # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)\n  - type: recombine\n    id: postgres-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} \"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/service.name" | string | `"postgresql"` |  |
@@ -84,6 +93,7 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraProcessors.resourcedetection.override | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraProcessors.resourcedetection.timeout | string | `"15s"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.endpoint | string | `"postgresql:5432"` |  |
+| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.events."db.server.top_query".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_hit".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_read".enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.deadlocks".enabled | bool | `true` |  |
