@@ -51,6 +51,7 @@ spec:
         allocatable_types_to_report:
         - cpu
         - memory
+        - storage
         collection_interval: 10s
         metrics:
           k8s.container.status.reason:
@@ -59,6 +60,11 @@ spec:
             enabled: true
           k8s.pod.status_reason:
             enabled: true
+        node_conditions_to_report:
+        - Ready
+        - MemoryPressure
+        - DiskPressure
+        - PIDPressure
       k8sobjects:
         auth_type: serviceAccount
         include_initial_state: true
@@ -145,6 +151,8 @@ spec:
         timeout: 15s
     exporters:
       otlphttp/tsuga:
+        compression: gzip
+        encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
@@ -155,6 +163,7 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
+          - k8sattributes
           - batch
           - resourcedetection
           receivers:
@@ -164,7 +173,18 @@ spec:
           exporters:
           - otlphttp/tsuga
           processors:
+          - k8sattributes
           - batch
           - resourcedetection
           receivers:
           - k8s_cluster
+      telemetry:
+        metrics:
+          readers:
+          - periodic:
+              exporter:
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                    Authorization: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf
