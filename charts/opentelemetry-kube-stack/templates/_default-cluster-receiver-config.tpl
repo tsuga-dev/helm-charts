@@ -12,11 +12,6 @@ receivers:
     auth_type: serviceAccount
     include_initial_state: true
     objects:
-      - name: events
-        mode: watch
-        # Only collect warning events to reduce cardinality in large clusters
-        # Set field_selector: "" to collect all events, or customize as needed
-        field_selector: "type=Warning"
       - group: ""
         name: pods
         mode: watch

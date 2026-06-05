@@ -65,9 +65,6 @@ spec:
         auth_type: serviceAccount
         include_initial_state: true
         objects:
-        - field_selector: type=Warning
-          mode: watch
-          name: events
         - group: ""
           mode: watch
           name: pods
