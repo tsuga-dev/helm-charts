@@ -123,7 +123,8 @@ opentelemetry-demo:
         - shared_preload_libraries=pg_stat_statements
       mountedConfigMaps:
         - name: "postgresql-init"
-          mountPath: "/docker-entrypoint-initdb.d"
+          mountPath: "/docker-entrypoint-initdb.d/init.sql"
+          subPath: "init.sql"
           existingConfigMap: "postgresql-init"
         - name: "extensions"
           mountPath: "/docker-entrypoint-initdb.d/00-extensions.sql"

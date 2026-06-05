@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -49,8 +49,9 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.postgresql.command[7] | string | `"-c"` |  |
 | opentelemetry-demo.components.postgresql.command[8] | string | `"shared_preload_libraries=pg_stat_statements"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[0].existingConfigMap | string | `"postgresql-init"` |  |
-| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].mountPath | string | `"/docker-entrypoint-initdb.d"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].mountPath | string | `"/docker-entrypoint-initdb.d/init.sql"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[0].name | string | `"postgresql-init"` |  |
+| opentelemetry-demo.components.postgresql.mountedConfigMaps[0].subPath | string | `"init.sql"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[1].data."00-extensions.sql" | string | `"CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\\n"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[1].mountPath | string | `"/docker-entrypoint-initdb.d/00-extensions.sql"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[1].name | string | `"extensions"` |  |
