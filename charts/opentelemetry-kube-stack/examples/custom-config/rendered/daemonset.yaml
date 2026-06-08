@@ -67,6 +67,16 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.hostIP
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_UID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.uid
   config:
     connectors:
       custom-connector: {}

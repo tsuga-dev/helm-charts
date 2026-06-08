@@ -16,6 +16,13 @@ receivers:
         name: pods
         mode: watch
 {{- end }}
+  prometheus/self:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -78,6 +85,17 @@ processors:
           name: k8s.pod.uid
       - sources:
         - from: connection
+  cumulativetodelta: {}
+  resource/collector:
+    attributes:
+      - key: service.instance.id
+        value: ${POD_UID}
+        action: upsert
+      {{- if .Values.clusterName }}
+      - key: k8s.cluster.name
+        value: {{ .Values.clusterName }}
+        action: upsert
+      {{- end }}
   {{- if .Values.clusterName }}
   resource:
     attributes:
@@ -117,6 +135,17 @@ service:
         - resource
         {{- end }}
         - k8sattributes
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
+        - otlphttp/tsuga
+        {{- end }}
+    metrics/collector:
+      receivers:
+        - prometheus/self
+      processors:
+        - cumulativetodelta
+        - resource/collector
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
