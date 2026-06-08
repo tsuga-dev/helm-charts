@@ -72,6 +72,11 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: metadata.name
+    - name: POD_UID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.uid
   config:
     receivers:
       hostmetrics:
@@ -138,6 +143,14 @@ spec:
         tls:
           insecure: true
         username: root
+      prometheus/self:
+        config:
+          scrape_configs:
+          - job_name: otel-collector
+            scrape_interval: 10s
+            static_configs:
+            - targets:
+              - localhost:8888
       receiver_creator/logs:
         discovery:
           enabled: true
@@ -222,6 +235,11 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      resource/collector:
+        attributes:
+        - action: upsert
+          key: service.instance.id
+          value: ${POD_UID}
     exporters:
       otlphttp/tsuga:
         compression: gzip
@@ -274,6 +292,16 @@ spec:
           - postgresql
           - receiver_creator/redis
           - receiver_creator/nginx
+        metrics/collector:
+          exporters:
+          - otlphttp/tsuga
+          processors:
+          - memory_limiter
+          - cumulativetodelta
+          - resource/collector
+          - batch
+          receivers:
+          - prometheus/self
         traces:
           exporters:
           - otlphttp/tsuga
@@ -294,5 +322,13 @@ spec:
                   headers:
                     Authorization: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
         resource:
-          service.instance.id: ${POD_NAME}
+          service.instance.id: ${POD_UID}

@@ -22,7 +22,7 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 | Repository | Name | Version |
 |------------|------|---------|
 |  | otel-crds | 0.0.0 |
-| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-operator | 0.105.1 |
+| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-operator | 0.114.1 |
 
 ## Features
 

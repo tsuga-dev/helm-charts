@@ -55,5 +55,5 @@ dependencies:
     condition: opentelemetry-operator.enabled
   - name: opentelemetry-operator
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
-    version: 0.105.1
+    version: 0.114.1
     condition: opentelemetry-operator.enabled

@@ -72,6 +72,13 @@ receivers:
         endpoint: ${env:MY_POD_IP}:4317
       http:
         endpoint: ${env:MY_POD_IP}:4318
+  prometheus/self:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -141,6 +148,16 @@ processors:
     limit_percentage: 80
     spike_limit_percentage: 25
   cumulativetodelta: {}
+  resource/collector:
+    attributes:
+      - key: service.instance.id
+        value: ${POD_UID}
+        action: upsert
+      {{- if .Values.clusterName }}
+      - key: k8s.cluster.name
+        value: {{ .Values.clusterName }}
+        action: upsert
+      {{- end }}
   {{- if .Values.clusterName }}
   resource:
     attributes:
@@ -215,6 +232,18 @@ service:
         - batch
       receivers:
         - otlp
+    metrics/collector:
+      receivers:
+        - prometheus/self
+      processors:
+        - memory_limiter
+        - cumulativetodelta
+        - resource/collector
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlphttp/tsuga
+        {{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
 {{- end}}

@@ -31,6 +31,11 @@ Generate environment variables for OpenTelemetry Collector
     fieldRef:
       apiVersion: v1
       fieldPath: metadata.name
+- name: POD_UID
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: metadata.uid
 {{- end }}
 
 {{/*
@@ -53,7 +58,7 @@ resource:
   {{- if .Values.clusterName }}
   k8s.cluster.name: {{ .Values.clusterName }}
   {{- end}}
-  service.instance.id: ${POD_NAME}
+  service.instance.id: ${POD_UID}
 metrics:
     readers:
     - periodic:
@@ -63,4 +68,12 @@ metrics:
                 headers:
                     Authorization: Bearer ${TSUGA_API_KEY}
                 endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+    - pull:
+        exporter:
+          prometheus:
+            host: 0.0.0.0
+            port: 8888
+            without_scope_info: false
+            without_type_suffix: false
+            without_units: false
 {{- end }}
