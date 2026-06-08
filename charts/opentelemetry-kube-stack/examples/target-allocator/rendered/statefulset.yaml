@@ -157,3 +157,5 @@ spec:
                   headers:
                     Authorization: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
+        resource:
+          service.instance.id: ${POD_NAME}

@@ -26,6 +26,11 @@ Generate environment variables for OpenTelemetry Collector
     fieldRef:
       apiVersion: v1
       fieldPath: status.hostIP
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: metadata.name
 {{- end }}
 
 {{/*
@@ -44,6 +49,11 @@ otlphttp/tsuga:
 Generate Otel telemetry export
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
+resource:
+  {{- if .Values.clusterName }}
+  k8s.cluster.name: {{ .Values.clusterName }}
+  {{- end}}
+  service.instance.id: ${POD_NAME}
 metrics:
     readers:
     - periodic:

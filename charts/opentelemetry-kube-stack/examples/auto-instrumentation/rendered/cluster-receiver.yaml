@@ -45,6 +45,11 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.hostIP
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
   config:
     receivers:
       k8s_cluster:
@@ -150,3 +155,5 @@ spec:
                   headers:
                     Authorization: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
+        resource:
+          service.instance.id: ${POD_NAME}
