@@ -1,12 +1,12 @@
 dependencies:
 - name: opentelemetry-kube-stack
   repository: https://tsuga-dev.github.io/helm-charts
-  version: 0.7.0
+  version: 0.7.1
 - name: tsuga-spicy-gremlin
   repository: https://tsuga-dev.github.io/helm-charts
   version: 0.1.2
 - name: opentelemetry-demo
   repository: https://open-telemetry.github.io/opentelemetry-helm-charts
   version: 0.40.0
-digest: sha256:25712e83a3619c35aeb60141c8b9f4a07fe7290040ae515c7f640fc149d530d3
-generated: "2026-06-05T14:48:27.097632+02:00"
+digest: sha256:2d90f57baa734126b7756fa4ff112ed1b070d15621be5fdbb0e5231c995cd26b
+generated: "2026-06-08T21:17:02.724723+02:00"

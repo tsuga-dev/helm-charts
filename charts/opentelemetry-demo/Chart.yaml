@@ -26,7 +26,7 @@ appVersion: 0.40.0
 
 dependencies:
   - name: opentelemetry-kube-stack
-    version: 0.7.0
+    version: 0.7.1
     repository: https://tsuga-dev.github.io/helm-charts
     condition: opentelemetry-kube-stack.enabled
   - name: tsuga-spicy-gremlin
