@@ -138,6 +138,148 @@ spec:
           enabled: true
         watch_observers:
         - k8s_observer
+      sqlquery/postgresql_top_queries:
+        datasource: host=postgresql port=5432 user=root password=otel sslmode=disable
+        driver: postgres
+        queries:
+        - metrics:
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            - query_text
+            data_type: gauge
+            metric_name: db.query.calls
+            unit: '{query}'
+            value_column: calls
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.rows
+            unit: '{row}'
+            value_column: rows
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.total_exec_time
+            unit: ms
+            value_column: total_exec_time
+            value_type: double
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.total_plan_time
+            unit: ms
+            value_column: total_plan_time
+            value_type: double
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.shared_blks_hit
+            unit: '{block}'
+            value_column: shared_blks_hit
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.shared_blks_read
+            unit: '{block}'
+            value_column: shared_blks_read
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.shared_blks_dirtied
+            unit: '{block}'
+            value_column: shared_blks_dirtied
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.shared_blks_written
+            unit: '{block}'
+            value_column: shared_blks_written
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.temp_blks_read
+            unit: '{block}'
+            value_column: temp_blks_read
+            value_type: int
+          - attribute_columns:
+            - queryid
+            - datname
+            - rolname
+            - host
+            - server_version
+            data_type: gauge
+            metric_name: db.query.temp_blks_written
+            unit: '{block}'
+            value_column: temp_blks_written
+            value_type: int
+          sql: |
+            SELECT
+              queryid::TEXT AS queryid,
+              datname,
+              COALESCE(rolname, '') AS rolname,
+              'postgresql' AS host,
+              current_setting('server_version') AS server_version,
+              LEFT(query, 200) AS query_text,
+              calls,
+              rows,
+              total_exec_time,
+              total_plan_time,
+              shared_blks_hit,
+              shared_blks_read,
+              shared_blks_dirtied,
+              shared_blks_written,
+              temp_blks_read,
+              temp_blks_written
+            FROM pg_stat_statements
+            LEFT JOIN pg_roles ON pg_stat_statements.userid = pg_roles.oid
+            LEFT JOIN pg_database ON pg_stat_statements.dbid = pg_database.oid
+            WHERE datname IS NOT NULL
+              AND query != '<insufficient privilege>'
+              AND query NOT LIKE '/* otel-collector-ignore */%'
+            ORDER BY calls DESC
+            LIMIT 20
     processors:
       batch:
         send_batch_max_size: 5000

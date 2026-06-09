@@ -688,6 +688,7 @@ opentelemetry-kube-stack:
               - resourcedetection
             extraReceivers:
               - receiver_creator/metrics
+              - sqlquery/postgresql_top_queries
           logs:
             extraProcessors:
               - resourcedetection

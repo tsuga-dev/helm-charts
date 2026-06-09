@@ -13,6 +13,13 @@ receivers:
       endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
       interval: 30s
       collector_id: ${POD_NAME}
+  prometheus/self:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
 processors:
   memory_limiter:
     check_interval: 5s
@@ -22,6 +29,16 @@ processors:
     send_batch_size: 5000
     send_batch_max_size: 5000
   cumulativetodelta: {}
+  resource/collector:
+    attributes:
+      - key: service.instance.id
+        value: ${POD_UID}
+        action: upsert
+      {{- if .Values.clusterName }}
+      - key: k8s.cluster.name
+        value: {{ .Values.clusterName }}
+        action: upsert
+      {{- end }}
   k8sattributes:
     extract:
       metadata:
@@ -105,6 +122,18 @@ service:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
+        - otlphttp/tsuga
+        {{- end }}
+    metrics/collector:
+      receivers:
+        - prometheus/self
+      processors:
+        - memory_limiter
+        - cumulativetodelta
+        - resource/collector
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
