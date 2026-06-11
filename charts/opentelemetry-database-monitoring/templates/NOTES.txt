@@ -1,0 +1,19 @@
+{{- if .Values.postgres.enabled }}
+PostgreSQL monitoring deployed for {{ len .Values.postgres.databases }} database(s).
+
+{{- range .Values.postgres.databases }}
+  Database : {{ .name }} ({{ .host }}:{{ .port }})
+  Secret   : {{ .name }}-pg-monitor-credentials
+  Sidecar  : {{ index . "sidecar-name" }}
+{{ end }}
+Check that the setup Jobs completed successfully:
+  kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/managed-by=Helm
+
+If a Job failed, inspect its logs:
+  kubectl logs job/<db-name>-postgresql-monitoring-setup -n {{ .Release.Namespace }}
+
+Verify the OTel sidecars are running inside the target Pods:
+  kubectl get opentelemetrycollectors -n {{ .Release.Namespace }}
+{{- else }}
+PostgreSQL monitoring is disabled. Set postgres.enabled=true to deploy.
+{{- end }}

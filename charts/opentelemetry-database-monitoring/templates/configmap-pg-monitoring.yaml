@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-monitoring-setup
+data:
+  monitoring-setup.sql: |
+{{ .Files.Get "assets/pg-monitoring-setup.sql" | indent 4 }}
