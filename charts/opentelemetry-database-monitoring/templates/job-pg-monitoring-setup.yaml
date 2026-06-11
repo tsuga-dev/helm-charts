@@ -1,0 +1,42 @@
+{{- if .Values.postgres.enabled }}
+{{- $root := . }}
+{{- range $db := .Values.postgres.databases }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{$db.name}}-postgresql-monitoring-setup
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: postgres:17
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h {{$db.host}} -p {{$db.port}} -U {{$db.user}}; do sleep 2; done
+              PGPASSWORD={{$db.pwd}} psql -h {{$db.host}} -p {{$db.port}} -U {{$db.user}} -d otel -f /scripts/monitoring-setup.sql
+              PGPASSWORD={{$db.pwd}} psql -h {{$db.host}} -p {{$db.port}} -U {{$db.user}} -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+          env:
+            - name: OTEL_MONITOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-pg-monitor-credentials" $db.name }}
+                  key: password
+          volumeMounts:
+            - name: monitoring-setup
+              mountPath: /scripts
+      volumes:
+        - name: monitoring-setup
+          configMap:
+            name: postgresql-monitoring-setup
+{{- end }}
+{{- end }}

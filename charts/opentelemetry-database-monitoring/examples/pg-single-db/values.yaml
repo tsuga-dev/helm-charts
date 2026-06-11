@@ -1,0 +1,9 @@
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      sidecar-name: postgres-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql
