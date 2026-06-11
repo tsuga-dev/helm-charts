@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  opentelemetry-database-monitoring:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-06-11T08:36:54.092774945Z"
+    description: A Helm chart for Kubernetes
+    digest: a3e74aa2c624d9100b709ac23e246b08a38a85f9353928f2aae744a3a5a353f7
+    name: opentelemetry-database-monitoring
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-database-monitoring-0.1.0/opentelemetry-database-monitoring-0.1.0.tgz
+    version: 0.1.0
   opentelemetry-demo:
   - apiVersion: v2
     appVersion: 0.40.0
@@ -1380,4 +1391,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-06-08T18:36:04.59035347Z"
+generated: "2026-06-11T08:36:54.626737841Z"
