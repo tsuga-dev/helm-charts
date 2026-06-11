@@ -84,7 +84,7 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
       cumulativetodelta: {}
-      k8sattributes:
+      k8s_attributes:
         extract:
           annotations:
           - from: pod
@@ -147,7 +147,7 @@ spec:
           exporters:
           - debug
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
           receivers:
           - k8s_cluster
@@ -155,7 +155,7 @@ spec:
           exporters:
           - debug
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
           receivers:
           - k8s_cluster

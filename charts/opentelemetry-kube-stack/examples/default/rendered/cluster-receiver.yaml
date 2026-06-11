@@ -84,7 +84,7 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
       cumulativetodelta: {}
-      k8sattributes:
+      k8s_attributes:
         extract:
           annotations:
           - from: pod
@@ -139,7 +139,7 @@ spec:
           key: service.instance.id
           value: ${POD_UID}
     exporters:
-      otlphttp/tsuga:
+      otlp_http/tsuga:
         compression: gzip
         encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -150,23 +150,23 @@ spec:
       pipelines:
         logs:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
           receivers:
           - k8s_cluster
         metrics:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
           receivers:
           - k8s_cluster
         metrics/collector:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
           - cumulativetodelta
           - resource/collector

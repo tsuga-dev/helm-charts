@@ -32,7 +32,7 @@ receivers:
     metric_groups: [node, pod]
     # Add volume type labels for storage observability
     extra_metadata_labels: [k8s.volume.type]
-  hostmetrics:
+  host_metrics:
     root_path: /hostfs
     collection_interval: 10s
     scrapers:
@@ -86,7 +86,7 @@ processors:
     # Enforce a hard limit of 5000 items per batch. This prevents the
     # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
-  k8sattributes:
+  k8s_attributes:
     extract:
       metadata:
         - k8s.namespace.name
@@ -189,7 +189,7 @@ service:
         - filelog
 {{- end }}
       processors:
-        - k8sattributes
+        - k8s_attributes
         - memory_limiter
         - batch
         {{- if .Values.clusterName }}
@@ -197,16 +197,16 @@ service:
         {{- end }}
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
     metrics:
       receivers:
         - otlp
         - kubeletstats
         - spanmetrics
-        - hostmetrics
+        - host_metrics
       processors:
-        - k8sattributes
+        - k8s_attributes
         - memory_limiter
         - cumulativetodelta
         {{- if .Values.clusterName }}
@@ -215,16 +215,16 @@ service:
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
     traces:
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
         - spanmetrics
       processors:
-        - k8sattributes
+        - k8s_attributes
         - memory_limiter
         {{- if .Values.clusterName }}
         - resource
@@ -242,7 +242,7 @@ service:
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}

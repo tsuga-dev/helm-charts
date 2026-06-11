@@ -42,7 +42,7 @@ Generate environment variables for OpenTelemetry Collector
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}
-otlphttp/tsuga:
+otlp_http/tsuga:
   endpoint: ${TSUGA_OTLP_ENDPOINT}
   headers:
     Authorization: Bearer ${TSUGA_API_KEY}

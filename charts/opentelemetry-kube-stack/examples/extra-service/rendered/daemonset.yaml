@@ -92,7 +92,7 @@ spec:
         retry_on_failure:
           enabled: true
         start_at: end
-      hostmetrics:
+      host_metrics:
         collection_interval: 10s
         root_path: /hostfs
         scrapers:
@@ -145,7 +145,7 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
       cumulativetodelta: {}
-      k8sattributes:
+      k8s_attributes:
         extract:
           annotations:
           - from: pod
@@ -206,7 +206,7 @@ spec:
           key: service.instance.id
           value: ${POD_UID}
     exporters:
-      otlphttp/tsuga:
+      otlp_http/tsuga:
         compression: gzip
         encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -228,9 +228,9 @@ spec:
       pipelines:
         logs:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - batch
           receivers:
@@ -238,9 +238,9 @@ spec:
           - filelog
         metrics:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - cumulativetodelta
           - batch
@@ -248,10 +248,10 @@ spec:
           - otlp
           - kubeletstats
           - spanmetrics
-          - hostmetrics
+          - host_metrics
         metrics/collector:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
           - memory_limiter
           - cumulativetodelta
@@ -267,10 +267,10 @@ spec:
           - hostmetrics
         traces:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           - spanmetrics
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - batch
           receivers:
