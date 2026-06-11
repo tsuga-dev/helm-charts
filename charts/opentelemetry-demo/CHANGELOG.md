@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-demo-0.9.4] - 2026-06-11
+
+### Added
+- PostgreSQL deep monitoring via stored functions and receiver_creator (#90) by @abruneau in [#90](https://github.com/tsuga-dev/helm-charts/pull/90)
+
 ## [opentelemetry-demo-0.9.3] - 2026-06-08
 
 ### Added
-- Add PostgreSQL top queries metrics via sqlquery receiver
-- Add pg monitoring setup via stored functions and receiver_creator
 - Add PostgreSQL top queries metrics via sqlquery receiver (#88) by @abruneau in [#88](https://github.com/tsuga-dev/helm-charts/pull/88)
 
 ## [opentelemetry-demo-0.9.2] - 2026-06-05
@@ -150,6 +153,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump versions by @abruneau
 - Revert "Otel-demo-improvement" by @abruneau
 - Enhance OpenTelemetry demo chart and CI/CD configuration by @abruneau
+[opentelemetry-demo-0.9.4]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.3...opentelemetry-demo-0.9.4
+
 [opentelemetry-demo-0.9.3]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.2...opentelemetry-demo-0.9.3
 
 [opentelemetry-demo-0.9.2]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.1...opentelemetry-demo-0.9.2

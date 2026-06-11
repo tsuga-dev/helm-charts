@@ -39,7 +39,7 @@ processors:
         value: {{ .Values.clusterName }}
         action: upsert
       {{- end }}
-  k8sattributes:
+  k8s_attributes:
     extract:
       metadata:
         - k8s.namespace.name
@@ -118,14 +118,14 @@ service:
       processors:
         - memory_limiter
         - cumulativetodelta
-        - k8sattributes
+        - k8s_attributes
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
     metrics/collector:
       receivers:
@@ -137,7 +137,7 @@ service:
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}

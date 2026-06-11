@@ -8,7 +8,7 @@ receivers:
       k8s.pod.status_reason:
         enabled: true
 {{- if .Values.cluster.collectk8sobjects }}
-  k8sobjects:
+  k8s_objects:
     auth_type: serviceAccount
     include_initial_state: true
     objects:
@@ -30,7 +30,7 @@ processors:
     # Enforce a hard limit of 5000 items per batch. This prevents the
     # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
-  k8sattributes:
+  k8s_attributes:
     extract:
       metadata:
         - k8s.namespace.name
@@ -115,17 +115,17 @@ service:
       receivers:
         - k8s_cluster
 {{- if .Values.cluster.collectk8sobjects }}
-        - k8sobjects
+        - k8s_objects
 {{- end }}
       processors:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
-        - k8sattributes
+        - k8s_attributes
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
     metrics:
       receivers:
@@ -134,11 +134,11 @@ service:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
-        - k8sattributes
+        - k8s_attributes
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
     metrics/collector:
       receivers:
@@ -149,7 +149,7 @@ service:
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
-        - otlphttp/tsuga
+        - otlp_http/tsuga
         {{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
