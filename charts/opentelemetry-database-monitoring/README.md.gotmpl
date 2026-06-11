@@ -18,12 +18,12 @@ A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL usi
 
 ```
 ┌───────────────────────────────────────────┐
-│  Your PostgreSQL Pod                       │
+│  Your PostgreSQL Pod                      │
 │                                           │
-│  ┌─────────────┐   ┌─────────────────┐   │
-│  │  PostgreSQL  │   │  OTel Collector │   │
-│  │  container  │◄──│    (sidecar)    │   │
-│  └─────────────┘   └────────┬────────┘   │
+│  ┌─────────────┐   ┌─────────────────┐    │
+│  │  PostgreSQL │   │  OTel Collector │    │
+│  │  container  │◄──│    (sidecar)    │    │
+│  └─────────────┘   └────────┬────────┘    │
 │                              │ OTLP/gRPC  │
 └──────────────────────────────┼────────────┘
                                ▼
