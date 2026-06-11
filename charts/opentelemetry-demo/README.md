@@ -144,7 +144,6 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraProcessors[0] | string | `"resourcedetection"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraReceivers[0] | string | `"k8sobjects"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.metrics.extraProcessors[0] | string | `"resourcedetection"` |  |
-| opentelemetry-kube-stack.cluster.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.env.maxIntervalSec | int | `600` |  |
