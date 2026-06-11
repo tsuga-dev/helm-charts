@@ -1,0 +1,20 @@
+---
+dbm:
+  enabled: true
+  postgres:
+    enabled: true
+    databases:
+      - name: postgresql
+        sidecar-name: postgres-dbm-sidecar
+        user: root
+        pwd: otel
+        port: 5432
+        host: postgresql
+        monitorPassword: "example-monitor-password"
+      - name: postgresql2
+        sidecar-name: postgres2-dbm-sidecar
+        user: root
+        pwd: otel
+        port: 5432
+        host: postgresql2
+        monitorPassword: "example-monitor-password"

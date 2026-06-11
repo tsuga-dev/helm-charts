@@ -1,10 +1,9 @@
 ---
-# Source: opentelemetry-demo/templates/configmap-pg-monitoring.yaml
+# Source: opentelemetry-demo/charts/dbm/templates/configmap-pg-monitoring.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgresql-monitoring-setup
-  namespace: default
 data:
   monitoring-setup.sql: |
     -- PostgreSQL monitoring setup for OpenTelemetry
@@ -18,7 +17,7 @@ data:
     DO $$
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'otel_monitor') THEN
-        CREATE USER otel_monitor WITH PASSWORD 'otelmonitor';
+        CREATE USER otel_monitor WITH PASSWORD 'your-password';
         END IF;
     END;
     $$;

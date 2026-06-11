@@ -18,7 +18,13 @@ repos:
     rev: v2.3.1
     hooks:
       - id: helm-schema
-        args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]
+        args:
+          [
+            "--values",
+            "./charts/opentelemetry-kube-stack/values.yaml",
+            "-o",
+            "./charts/opentelemetry-kube-stack/values.schema.json",
+          ]
 
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.23
@@ -41,7 +47,7 @@ repos:
         pass_filenames: false
       - id: helm-example
         name: Generate Helm examples
-        entry: bash -c 'make generate-examples'
+        entry: bash -c 'make generate-examples && git add .'
         language: system
         files: ^charts/
         pass_filenames: false

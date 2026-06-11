@@ -38,3 +38,8 @@ dependencies:
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
     condition: opentelemetry-demo.enabled
     alias: opentelemetry-demo
+  - name: opentelemetry-database-monitoring
+    version: 0.1.0
+    condition: dbm.enabled
+    alias: dbm
+    repository: https://tsuga-dev.github.io/helm-charts
