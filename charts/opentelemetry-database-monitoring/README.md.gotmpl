@@ -1,0 +1,204 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL using a sidecar collector pattern. It installs stored functions on the target database, creates a dedicated monitoring user, and runs an `OpenTelemetryCollector` sidecar that emits metrics via OTLP.
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+## How it works
+
+```
+┌───────────────────────────────────────────┐
+│  Your PostgreSQL Pod                       │
+│                                           │
+│  ┌─────────────┐   ┌─────────────────┐   │
+│  │  PostgreSQL  │   │  OTel Collector │   │
+│  │  container  │◄──│    (sidecar)    │   │
+│  └─────────────┘   └────────┬────────┘   │
+│                              │ OTLP/gRPC  │
+└──────────────────────────────┼────────────┘
+                               ▼
+                     Node IP :4317
+                 (DaemonSet collector
+                  or any OTLP endpoint)
+```
+
+For each database entry in `values.yaml`, the chart creates:
+
+1. **Secret** — a `<name>-pg-monitor-credentials` Secret holding the auto-generated (or idempotently preserved) password for the `otel_monitor` user.
+2. **ConfigMap** — embeds `pg-monitoring-setup.sql` (the stored functions).
+3. **Job** (post-install/post-upgrade hook) — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret.
+4. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
+
+## Prerequisites
+
+- Kubernetes 1.21+
+- [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator) installed in the cluster (provides the `OpenTelemetryCollector` CRD and injects sidecars)
+- PostgreSQL 10+ (for `pg_stat_progress_vacuum`)
+- A superuser (or a role with `CREATEROLE` and `CREATEDB`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
+- An `otel` database must exist on each target PostgreSQL instance before install (the Job connects to it: `psql … -d otel`)
+
+## Installation
+
+```bash
+helm repo add tsuga-charts https://tsuga-dev.github.io/helm-charts/
+helm repo update
+
+helm install pg-monitoring tsuga-charts/opentelemetry-database-monitoring \
+  --set postgres.enabled=true \
+  --set postgres.databases[0].name=postgresql \
+  --set postgres.databases[0].host=postgresql \
+  --set postgres.databases[0].user=root \
+  --set postgres.databases[0].pwd=<superuser-password>
+```
+
+## Examples
+
+### Single database
+
+```yaml
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      sidecar-name: postgres-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql
+```
+
+### Multiple databases
+
+Each entry produces an independent set of resources (Secret, Job, sidecar CR).
+
+```yaml
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      sidecar-name: postgres-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql
+    - name: postgresql2
+      sidecar-name: postgres2-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql2
+```
+
+## Database setup
+
+The setup Job runs `assets/pg-monitoring-setup.sql` idempotently on every install and upgrade. It:
+
+1. Creates the `otel_monitor` user (if absent) and grants it `pg_monitor` + `SELECT` on `pg_stat_database`.
+2. Enables the `pg_stat_statements` extension.
+3. Creates the `otel` schema and grants `USAGE` to `otel_monitor`.
+4. Installs the following stored functions (all `STABLE`, safe for repeated execution):
+
+| Function | Description |
+|----------|-------------|
+| `otel.pg_table_stats()` | Vacuum/analyze ages, autovacuum counts, rows modified since last analyze. Top 50 tables by `n_mod_since_analyze`. |
+| `otel.pg_bloat()` | Table bloat ratio and wasted bytes using the standard check_postgres algorithm. Top 20 tables by wasted bytes. |
+| `otel.pg_connections()` | Connection count and max state age per database per connection state. |
+| `otel.pg_lock_counts()` | Lock counts by type, mode, and granted status. |
+| `otel.pg_blocking_queries()` | Count of queries currently waiting on a lock. |
+| `otel.pg_idle_in_transaction()` | Idle-in-transaction connection count and max age per database. |
+| `otel.pg_replication_slots()` | Replication slot lag in bytes per slot. |
+| `otel.pg_wal()` | WAL segment file count and total WAL directory size. |
+| `otel.pg_vacuum_progress()` | Active vacuum operations with phase and block progress (PG 10+). |
+| `otel.pg_top_queries()` | Top 20 queries by call count from `pg_stat_statements`. Query text truncated to 200 characters. |
+
+5. Grants `EXECUTE` on all `otel` functions to `otel_monitor`.
+6. Rotates the `otel_monitor` password to match the value in the Secret.
+
+> **Note:** The Job connects to the `otel` database (`-d otel`). This database must exist before the chart is installed.
+
+## Metrics
+
+The sidecar collector runs two categories of receivers.
+
+### Built-in `postgresql` receiver
+
+Polls the PostgreSQL stats system views directly. Default collection interval.
+
+| Metric | Unit | Description |
+|--------|------|-------------|
+| `postgresql.bgwriter.buffers.allocated` | `{buffer}` | Buffers allocated by bgwriter |
+| `postgresql.bgwriter.buffers.writes` | `{buffer}` | Buffers written by bgwriter |
+| `postgresql.bgwriter.checkpoint.count` | `{checkpoint}` | Checkpoint count |
+| `postgresql.bgwriter.duration` | `ms` | Checkpoint write/sync duration |
+| `postgresql.bgwriter.maxwritten` | `1` | Times bgwriter stopped a round due to too many buffers written |
+| `postgresql.blks_hit` | `{hit}` | Buffer cache hits |
+| `postgresql.blks_read` | `{read}` | Disk blocks read |
+| `postgresql.connection.max` | `{connection}` | Max connections configured |
+| `postgresql.database.locks` | `{lock}` | Database lock counts |
+| `postgresql.deadlocks` | `{deadlock}` | Deadlocks detected |
+| `postgresql.replication.data_delay` | `By` | Replication data delay |
+| `postgresql.sequential_scans` | `{scan}` | Sequential scans |
+| `postgresql.temp_files` | `{file}` | Temp files created |
+| `postgresql.tup_deleted` / `tup_fetched` / `tup_inserted` / `tup_returned` / `tup_updated` | `{tuple}` | Row operation counters |
+| `postgresql.wal.age` | `s` | WAL archiver age |
+| `postgresql.wal.lag` | `s` | Replication WAL lag |
+
+### `sqlquery` receivers (stored functions)
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `sqlquery/postgresql_top_queries` | default | `postgresql.query.calls`, `.rows`, `.exec_time`, `.plan_time`, `.blocks.shared.*`, `.blocks.temp.*` — attributed by `db.namespace`, `db.user.name`, `db.query.text`, `db.version` |
+| `sqlquery/pg_table_stats` | 5 min | `postgresql.table.vacuum.age`, `.autovacuum.age`, `.analyze.age`, `.autoanalyze.age`, `.autovacuum.count`, `.analyze.count`, `.autoanalyze.count`, `.rows.modified.since.analyze` |
+| `sqlquery/pg_bloat` | 1 hour | `postgresql.table.bloat.ratio`, `postgresql.table.bloat.bytes` |
+| `sqlquery/pg_connections` | 30 s | `postgresql.backends` (count), `postgresql.backends.age` (max state age) |
+| `sqlquery/pg_locks` | 30 s | `postgresql.lock.count`, `postgresql.lock.blocking_queries`, `postgresql.connection.idle_in_transaction`, `postgresql.connection.idle_in_transaction.age` |
+| `sqlquery/pg_replication` | 30 s | `postgresql.replication.slot.lag` |
+| `sqlquery/pg_wal` | 60 s | `postgresql.wal.file_count`, `postgresql.wal.bytes` |
+| `sqlquery/pg_vacuum_progress` | 60 s | `postgresql.vacuum.heap_blks_total`, `.heap_blks_scanned`, `.heap_blks_vacuumed`, `postgresql.vacuum.age` |
+
+All metrics are batched (max 5000 per batch) and exported via OTLP/gRPC to `$K8S_NODE_IP:4317`.
+
+## Security notes
+
+- The superuser credentials (`user`/`pwd`) are used only by the setup Job and are not stored in any long-lived secret.
+- The sidecar uses the auto-generated `otel_monitor` password from the Secret, rotated on every `helm upgrade`.
+- The Secret is created with `lookup` to preserve the existing password across upgrades — a new random 24-character password is only generated on first install.
+- The `otel_monitor` user holds `pg_monitor` (read-only system views) and `EXECUTE` on the `otel.*` functions. It has no write access to application data.
+- All SQL connections from the sidecar use `sslmode=disable`. Enable TLS by overriding `assets/pg-monitoring-config.yaml` if your PostgreSQL requires it.
+
+## Upgrading
+
+The setup Job runs on both `post-install` and `post-upgrade` hooks with `before-hook-creation` deletion policy, so it re-runs on every `helm upgrade`. This is safe: all SQL statements are idempotent and the password rotation uses the existing Secret value.
+
+## Troubleshooting
+
+**Job fails immediately**
+
+Check that the `otel` database exists and the superuser credentials are correct:
+```bash
+kubectl logs job/<name>-postgresql-monitoring-setup
+```
+
+**No metrics in the collector**
+
+Verify the `OpenTelemetryCollector` CR was injected as a sidecar into the target Pod. The OTel Operator must be running and the Pod must have the `sidecar.opentelemetry.io/inject` annotation or the operator must be configured for namespace-wide injection.
+
+**`pg_stat_statements` not available**
+
+The extension must be listed in `shared_preload_libraries` in `postgresql.conf` and PostgreSQL must be restarted before it can be created. Add `shared_preload_libraries = 'pg_stat_statements'` to your PostgreSQL configuration and restart the server before installing the chart.
+
+**Top queries missing**
+
+Queries run by the collector itself are excluded via the `/* otel-collector-ignore */` comment prefix. If `otel.pg_top_queries()` returns no rows, check that `pg_stat_statements.track` is not set to `none`.
+
+{{ template "chart.valuesSection" . }}
