@@ -1,4 +1,17 @@
 ---
+dbm:
+  enabled: true
+  postgres:
+    enabled: true
+    image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+    databases:
+      - name: postgresql
+        sidecar-name: postgres-dbm-sidecar
+        user: root
+        pwd: otel
+        port: 5432
+        host: postgresql
+
 opentelemetry-demo:
   enabled: true
 
@@ -126,14 +139,10 @@ opentelemetry-demo:
           mountPath: "/docker-entrypoint-initdb.d/init.sql"
           subPath: "init.sql"
           existingConfigMap: "postgresql-init"
-        - name: "extensions"
-          mountPath: "/docker-entrypoint-initdb.d/00-extensions.sql"
-          subPath: "00-extensions.sql"
-          data:
-            "00-extensions.sql": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
+        sidecar.opentelemetry.io/inject: postgres-dbm-sidecar
         io.opentelemetry.discovery.logs/enabled: "true"
         io.opentelemetry.discovery.logs/config: |
           include_file_path: true
@@ -155,6 +164,13 @@ opentelemetry-demo:
               force_flush_period: 2s
               max_log_size: 2MiB
               preserve_leading_whitespaces: true
+      additionalVolumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-persistent-volume-claim
+      additionalVolumeMounts:
+        - mountPath: /var/lib/postgres/data
+          name: db-data
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -266,137 +282,6 @@ opentelemetry-kube-stack:
           watch_observers: [k8s_observer]
           discovery:
             enabled: true
-        sqlquery/postgresql_top_queries:
-          driver: postgres
-          datasource: "host=postgresql port=5432 user=root password=otel sslmode=disable"
-          queries:
-            - sql: |
-                SELECT
-                  queryid::TEXT AS queryid,
-                  datname,
-                  COALESCE(rolname, '') AS rolname,
-                  'postgresql' AS host,
-                  current_setting('server_version') AS server_version,
-                  LEFT(query, 200) AS query_text,
-                  calls,
-                  rows,
-                  total_exec_time,
-                  total_plan_time,
-                  shared_blks_hit,
-                  shared_blks_read,
-                  shared_blks_dirtied,
-                  shared_blks_written,
-                  temp_blks_read,
-                  temp_blks_written
-                FROM pg_stat_statements
-                LEFT JOIN pg_roles ON pg_stat_statements.userid = pg_roles.oid
-                LEFT JOIN pg_database ON pg_stat_statements.dbid = pg_database.oid
-                WHERE datname IS NOT NULL
-                  AND query != '<insufficient privilege>'
-                  AND query NOT LIKE '/* otel-collector-ignore */%'
-                ORDER BY calls DESC
-                LIMIT 20
-              metrics:
-                - metric_name: db.query.calls
-                  value_column: calls
-                  attribute_columns:
-                    [
-                      queryid,
-                      datname,
-                      rolname,
-                      host,
-                      server_version,
-                      query_text,
-                    ]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{query}"
-                - metric_name: db.query.rows
-                  value_column: rows
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{row}"
-                - metric_name: db.query.total_exec_time
-                  value_column: total_exec_time
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: double
-                  data_type: gauge
-                  unit: ms
-                - metric_name: db.query.total_plan_time
-                  value_column: total_plan_time
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: double
-                  data_type: gauge
-                  unit: ms
-                - metric_name: db.query.shared_blks_hit
-                  value_column: shared_blks_hit
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-                - metric_name: db.query.shared_blks_read
-                  value_column: shared_blks_read
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-                - metric_name: db.query.shared_blks_dirtied
-                  value_column: shared_blks_dirtied
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-                - metric_name: db.query.shared_blks_written
-                  value_column: shared_blks_written
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-                - metric_name: db.query.temp_blks_read
-                  value_column: temp_blks_read
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-                - metric_name: db.query.temp_blks_written
-                  value_column: temp_blks_written
-                  attribute_columns:
-                    [queryid, datname, rolname, host, server_version]
-                  value_type: int
-                  data_type: gauge
-                  unit: "{block}"
-        postgresql:
-          endpoint: postgresql:5432
-          metrics:
-            postgresql.blks_hit:
-              enabled: true
-            postgresql.blks_read:
-              enabled: true
-            postgresql.deadlocks:
-              enabled: true
-            postgresql.tup_deleted:
-              enabled: true
-            postgresql.tup_fetched:
-              enabled: true
-            postgresql.tup_inserted:
-              enabled: true
-            postgresql.tup_returned:
-              enabled: true
-            postgresql.tup_updated:
-              enabled: true
-          password: otel
-          tls:
-            insecure: true
-          username: root
       extraProcessors:
         resourcedetection:
           detectors: [env, eks]
@@ -410,9 +295,7 @@ opentelemetry-kube-stack:
             extraProcessors:
               - resourcedetection
             extraReceivers:
-              - postgresql
               - receiver_creator/metrics
-              - sqlquery/postgresql_top_queries
           logs:
             extraProcessors:
               - resourcedetection

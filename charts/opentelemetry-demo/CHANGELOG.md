@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [opentelemetry-demo-0.9.3] - 2026-06-08
 
 ### Added
+- Add PostgreSQL top queries metrics via sqlquery receiver
+- Add pg monitoring setup via stored functions and receiver_creator
 - Add PostgreSQL top queries metrics via sqlquery receiver (#88) by @abruneau in [#88](https://github.com/tsuga-dev/helm-charts/pull/88)
 
 ## [opentelemetry-demo-0.9.2] - 2026-06-05

@@ -1,0 +1,462 @@
+---
+# Source: opentelemetry-demo/charts/dbm/templates/postgres-dbm-sidecar.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: postgres-dbm-sidecar
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+spec:
+  mode: sidecar
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  env:
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_MONITOR_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-pg-monitor-credentials
+          key: password
+  config:
+    receivers:
+      postgresql:
+        endpoint: ${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME}:5432
+        metrics:
+          postgresql.bgwriter.buffers.allocated:
+            enabled: true
+          postgresql.bgwriter.buffers.writes:
+            enabled: true
+          postgresql.bgwriter.checkpoint.count:
+            enabled: true
+          postgresql.bgwriter.duration:
+            enabled: true
+          postgresql.bgwriter.maxwritten:
+            enabled: true
+          postgresql.blks_hit:
+            enabled: true
+          postgresql.blks_read:
+            enabled: true
+          postgresql.connection.max:
+            enabled: true
+          postgresql.database.locks:
+            enabled: true
+          postgresql.deadlocks:
+            enabled: true
+          postgresql.replication.data_delay:
+            enabled: true
+          postgresql.sequential_scans:
+            enabled: true
+          postgresql.temp_files:
+            enabled: true
+          postgresql.tup_deleted:
+            enabled: true
+          postgresql.tup_fetched:
+            enabled: true
+          postgresql.tup_inserted:
+            enabled: true
+          postgresql.tup_returned:
+            enabled: true
+          postgresql.tup_updated:
+            enabled: true
+          postgresql.wal.age:
+            enabled: true
+          postgresql.wal.lag:
+            enabled: true
+        password: ${env:OTEL_MONITOR_PASSWORD}
+        tls:
+          insecure: true
+        username: otel_monitor
+      sqlquery/pg_bloat:
+        collection_interval: 3600s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.bloat.ratio
+                unit: "1"
+                value_column: tbloat
+                value_type: double
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.bloat.bytes
+                unit: By
+                value_column: wastedbytes
+                value_type: int
+            sql: SELECT * FROM otel.pg_bloat()
+      sqlquery/pg_connections:
+        collection_interval: 30s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.namespace
+                  - db.client.connection.state
+                data_type: gauge
+                metric_name: postgresql.backends
+                unit: "{connection}"
+                value_column: connection_count
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.client.connection.state
+                data_type: gauge
+                metric_name: postgresql.backends.age
+                unit: s
+                value_column: max_state_age_seconds
+                value_type: int
+            sql: SELECT * FROM otel.pg_connections()
+      sqlquery/pg_locks:
+        collection_interval: 30s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.postgresql.lock.type
+                  - db.postgresql.lock.mode
+                  - db.postgresql.lock.granted
+                data_type: gauge
+                metric_name: postgresql.lock.count
+                unit: "{lock}"
+                value_column: lock_count
+                value_type: int
+            sql: SELECT * FROM otel.pg_lock_counts()
+          - metrics:
+              - data_type: gauge
+                metric_name: postgresql.lock.blocking_queries
+                unit: "{query}"
+                value_column: blocking_count
+                value_type: int
+            sql: SELECT * FROM otel.pg_blocking_queries()
+          - metrics:
+              - attribute_columns:
+                  - db.namespace
+                data_type: gauge
+                metric_name: postgresql.connection.idle_in_transaction
+                unit: "{connection}"
+                value_column: idle_in_transaction_count
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                data_type: gauge
+                metric_name: postgresql.connection.idle_in_transaction.age
+                unit: s
+                value_column: max_idle_tx_age_seconds
+                value_type: int
+            sql: SELECT * FROM otel.pg_idle_in_transaction()
+      sqlquery/pg_replication:
+        collection_interval: 30s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.postgresql.replication.slot.name
+                  - db.postgresql.replication.slot.type
+                  - db.postgresql.replication.slot.active
+                data_type: gauge
+                metric_name: postgresql.replication.slot.lag
+                unit: By
+                value_column: replication_lag_bytes
+                value_type: int
+            sql: SELECT * FROM otel.pg_replication_slots()
+      sqlquery/pg_table_stats:
+        collection_interval: 300s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.vacuum.age
+                unit: s
+                value_column: seconds_since_last_vacuum
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.autovacuum.age
+                unit: s
+                value_column: seconds_since_last_autovacuum
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.analyze.age
+                unit: s
+                value_column: seconds_since_last_analyze
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.autoanalyze.age
+                unit: s
+                value_column: seconds_since_last_autoanalyze
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.autovacuum.count
+                unit: "{operation}"
+                value_column: autovacuum_count
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.analyze.count
+                unit: "{operation}"
+                value_column: analyze_count
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.autoanalyze.count
+                unit: "{operation}"
+                value_column: autoanalyze_count
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.table.rows.modified.since.analyze
+                unit: "{row}"
+                value_column: n_mod_since_analyze
+                value_type: int
+            sql: SELECT * FROM otel.pg_table_stats()
+      sqlquery/pg_vacuum_progress:
+        collection_interval: 60s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                  - db.postgresql.vacuum.phase
+                data_type: gauge
+                metric_name: postgresql.vacuum.heap_blks_total
+                unit: "{block}"
+                value_column: heap_blks_total
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                  - db.postgresql.vacuum.phase
+                data_type: gauge
+                metric_name: postgresql.vacuum.heap_blks_scanned
+                unit: "{block}"
+                value_column: heap_blks_scanned
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                  - db.postgresql.vacuum.phase
+                data_type: gauge
+                metric_name: postgresql.vacuum.heap_blks_vacuumed
+                unit: "{block}"
+                value_column: heap_blks_vacuumed
+                value_type: int
+              - attribute_columns:
+                  - db.schema
+                  - db.collection.name
+                data_type: gauge
+                metric_name: postgresql.vacuum.age
+                unit: s
+                value_column: vacuum_age_seconds
+                value_type: int
+            sql: SELECT * FROM otel.pg_vacuum_progress()
+      sqlquery/pg_wal:
+        collection_interval: 60s
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - data_type: gauge
+                metric_name: postgresql.wal.file_count
+                unit: "{file}"
+                value_column: wal_file_count
+                value_type: int
+              - data_type: gauge
+                metric_name: postgresql.wal.bytes
+                unit: By
+                value_column: wal_bytes
+                value_type: int
+            sql: SELECT * FROM otel.pg_wal()
+      sqlquery/postgresql_top_queries:
+        datasource:
+          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
+          sslmode=disable
+        driver: postgres
+        queries:
+          - metrics:
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.calls
+                unit: "{query}"
+                value_column: calls
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.rows
+                unit: "{row}"
+                value_column: rows
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.exec_time
+                unit: ms
+                value_column: total_exec_time
+                value_type: double
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.plan_time
+                unit: ms
+                value_column: total_plan_time
+                value_type: double
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.shared.hit
+                unit: "{block}"
+                value_column: shared_blks_hit
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.shared.read
+                unit: "{block}"
+                value_column: shared_blks_read
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.shared.dirtied
+                unit: "{block}"
+                value_column: shared_blks_dirtied
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.shared.written
+                unit: "{block}"
+                value_column: shared_blks_written
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.temp.read
+                unit: "{block}"
+                value_column: temp_blks_read
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.user.name
+                  - server.address
+                  - db.version
+                  - db.query.text
+                data_type: gauge
+                metric_name: postgresql.query.blocks.temp.written
+                unit: "{block}"
+                value_column: temp_blks_written
+                value_type: int
+            sql: SELECT * FROM otel.pg_top_queries()
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
+    exporters:
+      otlp:
+        compression: gzip
+        endpoint: ${env:K8S_NODE_IP}:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp
+          processors:
+            - batch
+          receivers:
+            - postgresql
+            - sqlquery/postgresql_top_queries
+            - sqlquery/pg_table_stats
+            - sqlquery/pg_bloat
+            - sqlquery/pg_connections
+            - sqlquery/pg_locks
+            - sqlquery/pg_replication
+            - sqlquery/pg_wal
+            - sqlquery/pg_vacuum_progress
+    
