@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.9.3](https://img.shields.io/badge/Version-0.9.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.9.4](https://img.shields.io/badge/Version-0.9.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -9,13 +9,23 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
-| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.7.0 |
+| https://tsuga-dev.github.io/helm-charts | dbm(opentelemetry-database-monitoring) | 0.1.0 |
+| https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.7.1 |
 | https://tsuga-dev.github.io/helm-charts | tsuga-spicy-gremlin | 0.1.2 |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| dbm.enabled | bool | `true` |  |
+| dbm.postgres.databases[0].host | string | `"postgresql"` |  |
+| dbm.postgres.databases[0].name | string | `"postgresql"` |  |
+| dbm.postgres.databases[0].port | int | `5432` |  |
+| dbm.postgres.databases[0].pwd | string | `"otel"` |  |
+| dbm.postgres.databases[0].sidecar-name | string | `"postgres-dbm-sidecar"` |  |
+| dbm.postgres.databases[0].user | string | `"root"` |  |
+| dbm.postgres.enabled | bool | `true` |  |
+| dbm.postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-demo.components.accounting.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.ad.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.cart.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
@@ -39,6 +49,10 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.kafka.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.load-generator.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.payment.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].mountPath | string | `"/var/lib/postgres/data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].name | string | `"db-data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumes[0].name | string | `"db-data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumes[0].persistentVolumeClaim.claimName | string | `"db-persistent-volume-claim"` |  |
 | opentelemetry-demo.components.postgresql.command[0] | string | `"docker-entrypoint.sh"` |  |
 | opentelemetry-demo.components.postgresql.command[1] | string | `"-c"` |  |
 | opentelemetry-demo.components.postgresql.command[2] | string | `"log_destination=stderr"` |  |
@@ -52,14 +66,11 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[0].mountPath | string | `"/docker-entrypoint-initdb.d/init.sql"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[0].name | string | `"postgresql-init"` |  |
 | opentelemetry-demo.components.postgresql.mountedConfigMaps[0].subPath | string | `"init.sql"` |  |
-| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].data."00-extensions.sql" | string | `"CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"` |  |
-| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].mountPath | string | `"/docker-entrypoint-initdb.d/00-extensions.sql"` |  |
-| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].name | string | `"extensions"` |  |
-| opentelemetry-demo.components.postgresql.mountedConfigMaps[1].subPath | string | `"00-extensions.sql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Drop Postgres DETAIL logs\n  - type: filter\n    id: drop-postgres-detail\n    expr: 'body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} .*\\\\bDETAIL:\"'\n\n  # Recombine Postgres multi-line statements (SQL blocks, wrapped lines, etc.)\n  - type: recombine\n    id: postgres-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\d{4}-\\\\d{2}-\\\\d{2} \"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/service.name" | string | `"postgresql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
+| opentelemetry-demo.components.postgresql.podAnnotations."sidecar.opentelemetry.io/inject" | string | `"postgres-dbm-sidecar"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.product-reviews.imageOverride.repository | string | `"014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"` |  |
 | opentelemetry-demo.components.product-reviews.imageOverride.tag | string | `"2.2.0-product-reviews"` |  |
@@ -93,133 +104,15 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.agent.config.extraProcessors.resourcedetection.detectors[1] | string | `"eks"` |  |
 | opentelemetry-kube-stack.agent.config.extraProcessors.resourcedetection.override | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraProcessors.resourcedetection.timeout | string | `"15s"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.endpoint | string | `"postgresql:5432"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_hit".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.blks_read".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.deadlocks".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_deleted".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_fetched".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_inserted".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_returned".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.metrics."postgresql.tup_updated".enabled | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.password | string | `"otel"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.tls.insecure | bool | `true` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.postgresql.username | string | `"root"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.discovery.enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/logs.watch_observers[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/metrics.discovery.enabled | bool | `true` |  |
 | opentelemetry-kube-stack.agent.config.extraReceivers.receiver_creator/metrics.watch_observers[0] | string | `"k8s_observer"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.datasource | string | `"host=postgresql port=5432 user=root password=otel sslmode=disable"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.driver | string | `"postgres"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].attribute_columns[5] | string | `"query_text"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].metric_name | string | `"db.query.calls"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].unit | string | `"{query}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].value_column | string | `"calls"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[0].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].metric_name | string | `"db.query.rows"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].unit | string | `"{row}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].value_column | string | `"rows"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[1].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].metric_name | string | `"db.query.total_exec_time"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].unit | string | `"ms"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].value_column | string | `"total_exec_time"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[2].value_type | string | `"double"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].metric_name | string | `"db.query.total_plan_time"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].unit | string | `"ms"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].value_column | string | `"total_plan_time"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[3].value_type | string | `"double"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].metric_name | string | `"db.query.shared_blks_hit"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].value_column | string | `"shared_blks_hit"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[4].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].metric_name | string | `"db.query.shared_blks_read"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].value_column | string | `"shared_blks_read"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[5].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].metric_name | string | `"db.query.shared_blks_dirtied"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].value_column | string | `"shared_blks_dirtied"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[6].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].metric_name | string | `"db.query.shared_blks_written"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].value_column | string | `"shared_blks_written"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[7].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].metric_name | string | `"db.query.temp_blks_read"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].value_column | string | `"temp_blks_read"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[8].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].attribute_columns[0] | string | `"queryid"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].attribute_columns[1] | string | `"datname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].attribute_columns[2] | string | `"rolname"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].attribute_columns[3] | string | `"host"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].attribute_columns[4] | string | `"server_version"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].data_type | string | `"gauge"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].metric_name | string | `"db.query.temp_blks_written"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].unit | string | `"{block}"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].value_column | string | `"temp_blks_written"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].metrics[9].value_type | string | `"int"` |  |
-| opentelemetry-kube-stack.agent.config.extraReceivers.sqlquery/postgresql_top_queries.queries[0].sql | string | `"SELECT\n  queryid::TEXT AS queryid,\n  datname,\n  COALESCE(rolname, '') AS rolname,\n  'postgresql' AS host,\n  current_setting('server_version') AS server_version,\n  LEFT(query, 200) AS query_text,\n  calls,\n  rows,\n  total_exec_time,\n  total_plan_time,\n  shared_blks_hit,\n  shared_blks_read,\n  shared_blks_dirtied,\n  shared_blks_written,\n  temp_blks_read,\n  temp_blks_written\nFROM pg_stat_statements\nLEFT JOIN pg_roles ON pg_stat_statements.userid = pg_roles.oid\nLEFT JOIN pg_database ON pg_stat_statements.dbid = pg_database.oid\nWHERE datname IS NOT NULL\n  AND query != '<insufficient privilege>'\n  AND query NOT LIKE '/* otel-collector-ignore */%'\nORDER BY calls DESC\nLIMIT 20\n"` |  |
 | opentelemetry-kube-stack.agent.config.service.extraExtensions[0] | string | `"k8s_observer"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.logs.extraProcessors[0] | string | `"resourcedetection"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.logs.extraReceivers[0] | string | `"receiver_creator/logs"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraProcessors[0] | string | `"resourcedetection"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[0] | string | `"postgresql"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[1] | string | `"receiver_creator/metrics"` |  |
-| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[2] | string | `"sqlquery/postgresql_top_queries"` |  |
+| opentelemetry-kube-stack.agent.config.service.pipelines.metrics.extraReceivers[0] | string | `"receiver_creator/metrics"` |  |
 | opentelemetry-kube-stack.agent.config.service.pipelines.traces.extraProcessors[0] | string | `"resourcedetection"` |  |
 | opentelemetry-kube-stack.agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-kube-stack.cluster.config.extraProcessors.resourcedetection.detectors[0] | string | `"env"` |  |
