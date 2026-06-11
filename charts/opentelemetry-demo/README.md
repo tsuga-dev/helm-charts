@@ -49,6 +49,10 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.kafka.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.load-generator.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.payment.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].mountPath | string | `"/var/lib/postgres/data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].name | string | `"db-data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumes[0].name | string | `"db-data"` |  |
+| opentelemetry-demo.components.postgresql.additionalVolumes[0].persistentVolumeClaim.claimName | string | `"db-persistent-volume-claim"` |  |
 | opentelemetry-demo.components.postgresql.command[0] | string | `"docker-entrypoint.sh"` |  |
 | opentelemetry-demo.components.postgresql.command[1] | string | `"-c"` |  |
 | opentelemetry-demo.components.postgresql.command[2] | string | `"log_destination=stderr"` |  |

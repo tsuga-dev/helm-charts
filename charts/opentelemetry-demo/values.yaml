@@ -164,6 +164,13 @@ opentelemetry-demo:
               force_flush_period: 2s
               max_log_size: 2MiB
               preserve_leading_whitespaces: true
+      additionalVolumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-persistent-volume-claim
+      additionalVolumeMounts:
+        - mountPath: /var/lib/postgres/data
+          name: db-data
     valkey-cart:
       podAnnotations:
         resource.opentelemetry.io/team: platform
