@@ -1,0 +1,28 @@
+{{- if .Values.postgres.enabled}}
+{{- $root := . }}
+{{- range $db := .Values.postgres.databases }}
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{index $db "sidecar-name"}}
+  annotations:
+    meta.helm.sh/release-name: {{ $root.Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ $root.Release.Namespace | quote }}
+spec:
+  mode: sidecar
+  image: {{ $root.Values.postgres.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
+  env:
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_MONITOR_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ printf "%s-pg-monitor-credentials" $db.name }}
+          key: password
+  config:
+{{ $root.Files.Get "assets/pg-monitoring-config.yaml" | indent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,10 @@
+postgres:
+  enabled: false
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+  databases:
+    - name: postgresql
+      sidecar-name: postgres-dbm-sidecar
+      user: ""
+      pwd: ""
+      port: 5432
+      host: ""
