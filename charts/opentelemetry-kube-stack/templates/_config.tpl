@@ -36,6 +36,11 @@ Generate environment variables for OpenTelemetry Collector
     fieldRef:
       apiVersion: v1
       fieldPath: metadata.uid
+- name: K8S_NODE_NAME
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: spec.nodeName
 {{- end }}
 
 {{/*
