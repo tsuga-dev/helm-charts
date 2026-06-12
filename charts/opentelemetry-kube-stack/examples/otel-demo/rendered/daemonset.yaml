@@ -77,6 +77,11 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: metadata.uid
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
   config:
     receivers:
       host_metrics:
@@ -104,7 +109,7 @@ spec:
             metrics:
               system.paging.utilization:
                 enabled: true
-      kubeletstats:
+      kubelet_stats:
         auth_type: serviceAccount
         collection_interval: 20s
         endpoint: ${env:NODE_IP}:10250
@@ -120,29 +125,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      postgresql:
-        endpoint: postgresql:5432
-        metrics:
-          postgresql.blks_hit:
-            enabled: true
-          postgresql.blks_read:
-            enabled: true
-          postgresql.deadlocks:
-            enabled: true
-          postgresql.tup_deleted:
-            enabled: true
-          postgresql.tup_fetched:
-            enabled: true
-          postgresql.tup_inserted:
-            enabled: true
-          postgresql.tup_returned:
-            enabled: true
-          postgresql.tup_updated:
-            enabled: true
-        password: otel
-        tls:
-          insecure: true
-        username: root
       prometheus/self:
         config:
           scrape_configs:
@@ -286,10 +268,9 @@ spec:
           - batch
           receivers:
           - otlp
-          - kubeletstats
+          - kubelet_stats
           - spanmetrics
           - host_metrics
-          - postgresql
           - receiver_creator/redis
           - receiver_creator/nginx
         metrics/collector:

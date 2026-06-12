@@ -77,6 +77,11 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: metadata.uid
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
   config:
     receivers:
       filelog:
@@ -116,7 +121,7 @@ spec:
             metrics:
               system.paging.utilization:
                 enabled: true
-      kubeletstats:
+      kubelet_stats:
         auth_type: serviceAccount
         collection_interval: 20s
         endpoint: ${env:NODE_IP}:10250
@@ -241,7 +246,7 @@ spec:
           - batch
           receivers:
           - otlp
-          - kubeletstats
+          - kubelet_stats
           - spanmetrics
           - host_metrics
         metrics/collector:
