@@ -1,10 +1,47 @@
+---
 postgres:
   enabled: false
   image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
   databases:
     - name: postgresql
+      # Namespace where the annotated Postgres pod runs. Replicates the monitor secret there and
+      # sets the expected inject annotation to "<releaseNamespace>/<sidecar-name>" when different.
+      namespace: ""
       sidecar-name: postgres-dbm-sidecar
       user: ""
       pwd: ""
       port: 5432
       host: ""
+
+# Installs the Argo Events controller when argoEvents.enabled is true.
+# CRDs are shipped in this chart's crds/ directory (installed before other resources).
+argo-events:
+  enabled: true
+  crds:
+    install: false
+
+argoEvents:
+  # When true, watch for pods with sidecar.opentelemetry.io/inject and trigger setup jobs.
+  enabled: true
+  # When true, Argo Events sensors create setup jobs instead of Helm post-install hooks.
+  triggerSetupJob: true
+  # Pod annotation key used by the OpenTelemetry Operator for sidecar injection.
+  sidecarInjectAnnotation: sidecar.opentelemetry.io/inject
+  eventBusName: default
+  eventBus:
+    # Argo Events requires an EventBus in the namespace; the controller subchart does not create one.
+    create: true
+    replicas: 1
+    auth: none
+  eventSource:
+    name: ""
+    watchNamespace: ""
+    serviceAccount:
+      create: true
+      name: ""
+  sensor:
+    serviceAccount:
+      create: true
+      name: ""
+  job:
+    generateNameSuffix: "setup-"

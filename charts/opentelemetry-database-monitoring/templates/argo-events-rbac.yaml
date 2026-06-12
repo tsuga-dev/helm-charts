@@ -1,0 +1,91 @@
+{{- if and .Values.postgres.enabled .Values.argoEvents.enabled }}
+{{- $root := . }}
+{{- $eventSourceSa := default (printf "%s-argo-eventsource" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.serviceAccount.name }}
+{{- $sensorSa := default (printf "%s-argo-sensor" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.sensor.serviceAccount.name }}
+{{- $watchNamespaces := list -}}
+{{- if .Values.argoEvents.eventSource.watchNamespace -}}
+{{- $watchNamespaces = append $watchNamespaces .Values.argoEvents.eventSource.watchNamespace -}}
+{{- else -}}
+{{- range $db := .Values.postgres.databases -}}
+{{- $ns := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
+{{- if not (has $ns $watchNamespaces) -}}
+{{- $watchNamespaces = append $watchNamespaces $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- if .Values.argoEvents.eventSource.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $eventSourceSa }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+---
+{{- end }}
+
+{{- if .Values.argoEvents.sensor.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $sensorSa }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+---
+{{- end }}
+
+{{- range $watchNamespaces }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-argo-eventsource
+  namespace: {{ . }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-argo-eventsource
+  namespace: {{ . }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $eventSourceSa }}
+    namespace: {{ $root.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-argo-eventsource
+  apiGroup: rbac.authorization.k8s.io
+---
+{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "opentelemetry-database-monitoring.fullname" . }}-argo-sensor
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "opentelemetry-database-monitoring.fullname" . }}-argo-sensor
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $sensorSa }}
+roleRef:
+  kind: Role
+  name: {{ include "opentelemetry-database-monitoring.fullname" . }}-argo-sensor
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

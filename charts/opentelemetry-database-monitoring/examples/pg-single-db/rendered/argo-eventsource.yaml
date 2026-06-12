@@ -1,0 +1,26 @@
+---
+# Source: opentelemetry-database-monitoring/templates/argo-eventsource.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: example-opentelemetry-database-monitoring-pod-created
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  eventBusName: default
+  template:
+    serviceAccountName: example-opentelemetry-database-monitoring-argo-eventsource
+  resource:
+    target-pod-created-default:
+      namespace: default
+      group: ""
+      version: v1
+      resource: pods
+      eventTypes:
+        - ADD
+      filter:
+        afterStart: true
