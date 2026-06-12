@@ -22,7 +22,7 @@ receivers:
       enabled: true
     start_at: end
   {{- end }}
-  kubeletstats:
+  kubelet_stats:
     auth_type: serviceAccount
     collection_interval: 20s
     endpoint: ${env:NODE_IP}:10250
@@ -202,7 +202,7 @@ service:
     metrics:
       receivers:
         - otlp
-        - kubeletstats
+        - kubelet_stats
         - spanmetrics
         - host_metrics
       processors:
