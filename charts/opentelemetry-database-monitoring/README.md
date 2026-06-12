@@ -1,10 +1,20 @@
 # opentelemetry-database-monitoring
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
 
 A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL using a sidecar collector pattern. It installs stored functions on the target database, creates a dedicated monitoring user, and runs an `OpenTelemetryCollector` sidecar that emits metrics via OTLP.
 
+When `argoEvents.enabled=true`, the chart also installs [Argo Events](https://argoproj.io/docs/events/) to run the database setup Job after the OTel Operator injects the sidecar into a target Pod.
+
+## Requirements
+
+| Repository | Name | Version |
+|------------|------|---------|
+| https://argoproj.github.io/argo-helm | argo-events | 2.x.x |
+
 ## How it works
+
+### Sidecar collector
 
 ```
 ┌───────────────────────────────────────────┐
@@ -24,10 +34,103 @@ A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL usi
 
 For each database entry in `values.yaml`, the chart creates:
 
-1. **Secret** — a `<name>-pg-monitor-credentials` Secret holding the auto-generated (or idempotently preserved) password for the `otel_monitor` user.
+1. **Secret** — a `<name>-pg-monitor-credentials` Secret holding the auto-generated (or idempotently preserved) password for the `otel_monitor` user. When `postgres.databases[*].namespace` differs from the Helm release namespace, the same Secret is replicated into the target namespace so the injected sidecar can resolve `secretKeyRef` in the Pod's namespace.
 2. **ConfigMap** — embeds `pg-monitoring-setup.sql` (the stored functions).
-3. **Job** (post-install/post-upgrade hook) — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret.
-4. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
+3. **Setup Job** — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret. See [Argo Events setup](#argo-events-setup) below for when and how this Job is created.
+4. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR in the **Helm release namespace** that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
+
+### Argo Events setup
+
+When `argoEvents.enabled=true` and `argoEvents.triggerSetupJob=true` (the default), the chart installs Argo Events and uses it to run the setup Job **after** the OTel Operator injects the sidecar into a target Pod. This avoids racing the database setup against sidecar startup and supports deploying DB monitoring in one namespace while Postgres runs in another.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Helm release namespace (e.g. observability)                            │
+│                                                                         │
+│  EventBus ──► EventSource ──► NATS ──► Sensor ──► Setup Job           │
+│                  │                              │                       │
+│  OpenTelemetryCollector CR ◄─────────────────────┘ (same release ns)   │
+│  Monitor Secret (for Job)                                               │
+│  ConfigMap (setup SQL)                                                  │
+│  Argo Events controller (argo-events subchart)                          │
+└─────────────────────────────────────────────────────────────────────────┘
+         ▲                                    │
+         │ cross-namespace inject             │ cross-namespace pod watch
+         │ annotation                         │ (RBAC in target namespace)
+         │                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Target namespace (e.g. demo)                                           │
+│                                                                         │
+│  PostgreSQL Pod  +  injected OTel sidecar                               │
+│  Monitor Secret (replica for sidecar secretKeyRef)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+The flow for each `postgres.databases` entry:
+
+1. **EventBus** — NATS-backed bus in the release namespace (`argoEvents.eventBusName`, default `default`).
+2. **EventSource** — watches Pod `ADD` events in the database target namespace(s). Uses `filter.afterStart: true`, so only Pods created **after** the EventSource starts trigger events (existing Pods are ignored).
+3. **Sensor** (one per database) — subscribes to the EventSource and filters on the `sidecar.opentelemetry.io/inject` annotation (`argoEvents.sidecarInjectAnnotation`). When the annotation matches the expected value, it creates the setup Job in the release namespace.
+4. **Setup Job** — same SQL setup as the Helm-hook path; connects to Postgres using cluster DNS (`<host>.<namespace>.svc.cluster.local`) when the database runs in another namespace.
+
+When `argoEvents.enabled=false`, or `argoEvents.triggerSetupJob=false`, the setup Job is created directly as a Helm `post-install` / `post-upgrade` hook instead.
+
+#### Sidecar inject annotation
+
+The OTel Operator must inject the sidecar before the Sensor fires. Annotate the target Pod (or its controller template) with `sidecar.opentelemetry.io/inject`:
+
+| Scenario | Expected annotation value |
+|----------|---------------------------|
+| Postgres in the same namespace as the Helm release | `postgres-dbm-sidecar` (the `sidecar-name`) |
+| Postgres in a different namespace | `<releaseNamespace>/<sidecar-name>` (e.g. `observability/postgres-dbm-sidecar`) |
+
+The Sensor filter is derived automatically from `postgres.databases[*].namespace` and `sidecar-name`. The `OpenTelemetryCollector` CR always lives in the release namespace; cross-namespace injection is driven by the annotation prefix.
+
+#### Cross-namespace example
+
+Install DB monitoring in `observability`, target Postgres in `demo`:
+
+```yaml
+# values.yaml for: helm install dbm … -n observability
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      namespace: demo
+      sidecar-name: postgres-dbm-sidecar
+      host: postgresql
+      user: root
+      pwd: otel
+      port: 5432
+
+argoEvents:
+  enabled: true
+  triggerSetupJob: true
+```
+
+On the Postgres Pod (in `demo`):
+
+```yaml
+podAnnotations:
+  sidecar.opentelemetry.io/inject: "observability/postgres-dbm-sidecar"
+```
+
+After install, restart the Postgres Pod so the EventSource emits a fresh `ADD` event:
+
+```bash
+kubectl delete pod -n demo -l app.kubernetes.io/name=postgresql
+kubectl get jobs -n observability -l app.kubernetes.io/component=db-monitoring-setup -w
+```
+
+#### Disabling Argo Events
+
+```yaml
+argoEvents:
+  enabled: false          # do not install the controller or EventBus/EventSource/Sensor
+  triggerSetupJob: false  # use Helm hook Jobs even when argoEvents.enabled=true
+```
+
+Argo Events CRDs are bundled under `crds/` and installed before other chart resources. The `argo-events` subchart is gated by `argoEvents.enabled`; its own CRD install is disabled (`argo-events.crds.install: false`) because this chart ships the CRDs.
 
 ## Prerequisites
 
@@ -36,6 +139,7 @@ For each database entry in `values.yaml`, the chart creates:
 - PostgreSQL 10+ (for `pg_stat_progress_vacuum`)
 - A superuser (or a role with `CREATEROLE` and `CREATEDB`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
 - An `otel` database must exist on each target PostgreSQL instance before install (the Job connects to it: `psql … -d otel`)
+- When using Argo Events (`argoEvents.enabled=true`): Argo Events CRDs must be available (installed from this chart's `crds/` directory on first install)
 
 ## Installation
 
@@ -51,9 +155,11 @@ helm install pg-monitoring tsuga-charts/opentelemetry-database-monitoring \
   --set postgres.databases[0].pwd=<superuser-password>
 ```
 
+With Argo Events enabled (default), install into the namespace where you want the sidecar CRs, EventBus, and setup Jobs to live. Set `postgres.databases[*].namespace` when Postgres runs elsewhere.
+
 ## Examples
 
-### Single database
+### Single database (same namespace)
 
 ```yaml
 postgres:
@@ -65,23 +171,52 @@ postgres:
       pwd: otel
       port: 5432
       host: postgresql
+
+argoEvents:
+  enabled: true
+  triggerSetupJob: true
 ```
 
-### Multiple databases
+Annotate the Postgres Pod with `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
-Each entry produces an independent set of resources (Secret, Job, sidecar CR).
+### Cross-namespace database
 
 ```yaml
 postgres:
   enabled: true
   databases:
     - name: postgresql
+      namespace: demo
+      sidecar-name: postgres-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql
+
+argoEvents:
+  enabled: true
+  triggerSetupJob: true
+```
+
+Annotate the Postgres Pod in `demo` with `sidecar.opentelemetry.io/inject: <releaseNamespace>/postgres-dbm-sidecar`.
+
+### Multiple databases
+
+Each entry produces an independent set of resources (Secret, Sensor, sidecar CR, and setup Job trigger).
+
+```yaml
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      namespace: demo
       sidecar-name: postgres-dbm-sidecar
       user: root
       pwd: otel
       port: 5432
       host: postgresql
     - name: postgresql2
+      namespace: staging
       sidecar-name: postgres2-dbm-sidecar
       user: root
       pwd: otel
@@ -91,7 +226,7 @@ postgres:
 
 ## Database setup
 
-The setup Job runs `assets/pg-monitoring-setup.sql` idempotently on every install and upgrade. It:
+The setup Job runs `assets/pg-monitoring-setup.sql` idempotently. It:
 
 1. Creates the `otel_monitor` user (if absent) and grants it `pg_monitor` + `SELECT` on `pg_stat_database`.
 2. Enables the `pg_stat_statements` extension.
@@ -161,27 +296,53 @@ All metrics are batched (max 5000 per batch) and exported via OTLP/gRPC to `$K8S
 ## Security notes
 
 - The superuser credentials (`user`/`pwd`) are used only by the setup Job and are not stored in any long-lived secret.
-- The sidecar uses the auto-generated `otel_monitor` password from the Secret, rotated on every `helm upgrade`.
+- The sidecar uses the auto-generated `otel_monitor` password from the Secret. With Helm hook Jobs, the password is rotated on every `helm upgrade`. With Argo Events, rotation happens each time a new setup Job completes.
 - The Secret is created with `lookup` to preserve the existing password across upgrades — a new random 24-character password is only generated on first install.
 - The `otel_monitor` user holds `pg_monitor` (read-only system views) and `EXECUTE` on the `otel.*` functions. It has no write access to application data.
 - All SQL connections from the sidecar use `sslmode=disable`. Enable TLS by overriding `assets/pg-monitoring-config.yaml` if your PostgreSQL requires it.
 
 ## Upgrading
 
-The setup Job runs on both `post-install` and `post-upgrade` hooks with `before-hook-creation` deletion policy, so it re-runs on every `helm upgrade`. This is safe: all SQL statements are idempotent and the password rotation uses the existing Secret value.
+**Without Argo Events** (`argoEvents.enabled=false` or `argoEvents.triggerSetupJob=false`): the setup Job runs on both `post-install` and `post-upgrade` Helm hooks with a `before-hook-creation` deletion policy, so it re-runs on every `helm upgrade`.
+
+**With Argo Events** (default): the setup Job is created by a Sensor when a new target Pod is added with the correct inject annotation. Upgrading the chart updates EventSource/Sensor configuration but does not re-run setup on existing Pods. Restart the target Postgres Pod after upgrade if you need setup to run again.
+
+All SQL statements are idempotent and the password rotation uses the existing Secret value.
 
 ## Troubleshooting
+
+**Setup Job never created (Argo Events enabled)**
+
+1. Confirm EventBus, EventSource, and Sensor exist in the **Helm release namespace**:
+   ```bash
+   kubectl get eventbus,eventsource,sensor -n <release-namespace>
+   ```
+2. Verify the Sensor filter matches the Pod annotation (same namespace → `sidecar-name`; cross-namespace → `<releaseNamespace>/<sidecar-name>`):
+   ```bash
+   kubectl get sensor -n <release-namespace> -o yaml | rg 'value:|eventName:'
+   kubectl get pod -n <target-namespace> <postgres-pod> -o jsonpath='{.metadata.annotations.sidecar\.opentelemetry\.io/inject}{"\n"}'
+   ```
+3. The EventSource ignores Pods that existed before it started (`afterStart: true`). Restart the Postgres Pod after install or upgrade:
+   ```bash
+   kubectl delete pod -n <target-namespace> -l app.kubernetes.io/name=postgresql
+   kubectl get jobs -n <release-namespace> -l app.kubernetes.io/component=db-monitoring-setup -w
+   ```
+4. Remove stale EventBus/EventSource/Sensor objects left over from an install in a different release namespace.
 
 **Job fails immediately**
 
 Check that the `otel` database exists and the superuser credentials are correct:
 ```bash
-kubectl logs job/<name>-postgresql-monitoring-setup
+kubectl logs -l app.kubernetes.io/component=db-monitoring-setup -n <release-namespace>
 ```
+
+**Sidecar init container fails with secret not found**
+
+The monitor Secret must exist in the **Pod's namespace**. Set `postgres.databases[*].namespace` so the chart replicates the Secret into the target namespace.
 
 **No metrics in the collector**
 
-Verify the `OpenTelemetryCollector` CR was injected as a sidecar into the target Pod. The OTel Operator must be running and the Pod must have the `sidecar.opentelemetry.io/inject` annotation or the operator must be configured for namespace-wide injection.
+Verify the `OpenTelemetryCollector` CR was injected as a sidecar into the target Pod. The OTel Operator must be running and the Pod must have the `sidecar.opentelemetry.io/inject` annotation (or the operator must be configured for namespace-wide injection).
 
 **`pg_stat_statements` not available**
 
@@ -195,8 +356,25 @@ Queries run by the collector itself are excluded via the `/* otel-collector-igno
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| argo-events.crds.install | bool | `false` |  |
+| argo-events.enabled | bool | `true` |  |
+| argoEvents.enabled | bool | `true` |  |
+| argoEvents.eventBus.auth | string | `"none"` |  |
+| argoEvents.eventBus.create | bool | `true` |  |
+| argoEvents.eventBus.replicas | int | `1` |  |
+| argoEvents.eventBusName | string | `"default"` |  |
+| argoEvents.eventSource.name | string | `""` |  |
+| argoEvents.eventSource.serviceAccount.create | bool | `true` |  |
+| argoEvents.eventSource.serviceAccount.name | string | `""` |  |
+| argoEvents.eventSource.watchNamespace | string | `""` |  |
+| argoEvents.job.generateNameSuffix | string | `"setup-"` |  |
+| argoEvents.sensor.serviceAccount.create | bool | `true` |  |
+| argoEvents.sensor.serviceAccount.name | string | `""` |  |
+| argoEvents.sidecarInjectAnnotation | string | `"sidecar.opentelemetry.io/inject"` |  |
+| argoEvents.triggerSetupJob | bool | `true` |  |
 | postgres.databases[0].host | string | `""` |  |
 | postgres.databases[0].name | string | `"postgresql"` |  |
+| postgres.databases[0].namespace | string | `""` |  |
 | postgres.databases[0].port | int | `5432` |  |
 | postgres.databases[0].pwd | string | `""` |  |
 | postgres.databases[0].sidecar-name | string | `"postgres-dbm-sidecar"` |  |

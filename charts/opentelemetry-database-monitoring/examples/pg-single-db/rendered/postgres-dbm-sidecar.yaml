@@ -7,6 +7,13 @@ metadata:
   annotations:
     meta.helm.sh/release-name: "example"
     meta.helm.sh/release-namespace: "default"
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    opentelemetry-database-monitoring/database: postgresql
 spec:
   mode: sidecar
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
@@ -71,9 +78,7 @@ spec:
         username: otel_monitor
       sqlquery/pg_bloat:
         collection_interval: 3600s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -96,9 +101,7 @@ spec:
             sql: SELECT * FROM otel.pg_bloat()
       sqlquery/pg_connections:
         collection_interval: 30s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -121,9 +124,7 @@ spec:
             sql: SELECT * FROM otel.pg_connections()
       sqlquery/pg_locks:
         collection_interval: 30s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -162,9 +163,7 @@ spec:
             sql: SELECT * FROM otel.pg_idle_in_transaction()
       sqlquery/pg_replication:
         collection_interval: 30s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -180,9 +179,7 @@ spec:
             sql: SELECT * FROM otel.pg_replication_slots()
       sqlquery/pg_table_stats:
         collection_interval: 300s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -253,9 +250,7 @@ spec:
             sql: SELECT * FROM otel.pg_table_stats()
       sqlquery/pg_vacuum_progress:
         collection_interval: 60s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -297,9 +292,7 @@ spec:
             sql: SELECT * FROM otel.pg_vacuum_progress()
       sqlquery/pg_wal:
         collection_interval: 60s
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -315,9 +308,7 @@ spec:
                 value_type: int
             sql: SELECT * FROM otel.pg_wal()
       sqlquery/postgresql_top_queries:
-        datasource:
-          host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-          sslmode=disable
+        datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
         driver: postgres
         queries:
           - metrics:
@@ -459,4 +450,3 @@ spec:
             - sqlquery/pg_replication
             - sqlquery/pg_wal
             - sqlquery/pg_vacuum_progress
-    

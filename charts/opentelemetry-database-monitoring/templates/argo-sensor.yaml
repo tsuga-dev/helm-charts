@@ -1,0 +1,45 @@
+{{- if and .Values.postgres.enabled .Values.argoEvents.enabled .Values.argoEvents.triggerSetupJob }}
+{{- $root := . }}
+{{- $eventSourceName := default (printf "%s-pod-created" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.name }}
+{{- $sensorSa := default (printf "%s-argo-sensor" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.sensor.serviceAccount.name }}
+{{- $annotationKey := .Values.argoEvents.sidecarInjectAnnotation }}
+{{- $annotationPath := $annotationKey | replace "." "\\." | replace "/" "\\/" }}
+{{- range $db := .Values.postgres.databases }}
+{{- $sidecarInjectValue := include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $root "db" $db) }}
+{{- $targetNamespace := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) }}
+{{- $eventName := printf "target-pod-created-%s" (include "opentelemetry-database-monitoring.argoResourceSuffix" $targetNamespace) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-{{ $db.name }}-setup
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: argo-sensor
+    opentelemetry-database-monitoring/database: {{ $db.name }}
+spec:
+  {{- with $root.Values.argoEvents.eventBusName }}
+  eventBusName: {{ . }}
+  {{- end }}
+  template:
+    serviceAccountName: {{ $sensorSa }}
+  dependencies:
+    - name: {{ $eventName }}
+      eventSourceName: {{ $eventSourceName }}
+      eventName: {{ $eventName }}
+      filters:
+        data:
+          - path: body.metadata.annotations.{{ $annotationPath }}
+            type: string
+            value:
+              - {{ $sidecarInjectValue | quote }}
+  triggers:
+    - template:
+        name: create-{{ $db.name }}-monitoring-setup-job
+        k8s:
+          operation: create
+          source:
+            resource:
+{{ include "opentelemetry-database-monitoring.setupJob" (dict "root" $root "db" $db "useName" false "useGenerateName" true) | indent 14 }}
+{{- end }}
+{{- end }}

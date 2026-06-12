@@ -1,0 +1,39 @@
+{{- if and .Values.postgres.enabled .Values.argoEvents.enabled }}
+{{- $eventSourceName := default (printf "%s-pod-created" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.name }}
+{{- $eventSourceSa := default (printf "%s-argo-eventsource" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.serviceAccount.name }}
+{{- $watchNamespaces := list -}}
+{{- if .Values.argoEvents.eventSource.watchNamespace -}}
+{{- $watchNamespaces = append $watchNamespaces .Values.argoEvents.eventSource.watchNamespace -}}
+{{- else -}}
+{{- range $db := .Values.postgres.databases -}}
+{{- $ns := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $.Release)) -}}
+{{- if not (has $ns $watchNamespaces) -}}
+{{- $watchNamespaces = append $watchNamespaces $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: {{ $eventSourceName }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.argoEvents.eventBusName }}
+  eventBusName: {{ . }}
+  {{- end }}
+  template:
+    serviceAccountName: {{ $eventSourceSa }}
+  resource:
+    {{- range $watchNamespaces }}
+    target-pod-created-{{ include "opentelemetry-database-monitoring.argoResourceSuffix" . }}:
+      namespace: {{ . }}
+      group: ""
+      version: v1
+      resource: pods
+      eventTypes:
+        - ADD
+      filter:
+        afterStart: true
+    {{- end }}
+{{- end }}

@@ -1,0 +1,13 @@
+{{- if and .Values.postgres.enabled .Values.argoEvents.enabled .Values.argoEvents.eventBus.create }}
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: {{ .Values.argoEvents.eventBusName }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" . | nindent 4 }}
+spec:
+  nats:
+    native:
+      replicas: {{ .Values.argoEvents.eventBus.replicas }}
+      auth: {{ .Values.argoEvents.eventBus.auth }}
+{{- end }}

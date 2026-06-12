@@ -5,10 +5,13 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: {{index $db "sidecar-name"}}
+  name: {{ index $db "sidecar-name" }}
   annotations:
     meta.helm.sh/release-name: {{ $root.Release.Name | quote }}
     meta.helm.sh/release-namespace: {{ $root.Release.Namespace | quote }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+    opentelemetry-database-monitoring/database: {{ $db.name }}
 spec:
   mode: sidecar
   image: {{ $root.Values.postgres.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
@@ -20,9 +23,9 @@ spec:
     - name: OTEL_MONITOR_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: {{ printf "%s-pg-monitor-credentials" $db.name }}
+          name: {{ include "opentelemetry-database-monitoring.monitorSecretName" $db }}
           key: password
   config:
-{{ $root.Files.Get "assets/pg-monitoring-config.yaml" | indent 4 }}
+{{ $root.Files.Get "assets/pg-monitoring-config.yaml" | trimPrefix "---" | trim | indent 4 }}
 {{- end }}
 {{- end }}

@@ -1,3 +1,4 @@
+---
 postgres:
   enabled: true
   databases:
