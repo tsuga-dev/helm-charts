@@ -5,9 +5,24 @@ PostgreSQL monitoring deployed for {{ len .Values.postgres.databases }} database
   Database : {{ .name }} ({{ .host }}:{{ .port }})
   Secret   : {{ .name }}-pg-monitor-credentials
   Sidecar  : {{ index . "sidecar-name" }}
+  Inject   : {{ include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $ "db" .) }}
 {{ end }}
+
+{{- if and .Values.argoEvents.enabled .Values.argoEvents.triggerSetupJob }}
+Argo Events will create setup Jobs when a new Pod is added with the inject annotation above.
+Existing Pods are ignored (afterStart filter). Restart the target Postgres Pod after install:
+
+  kubectl delete pod -n <target-namespace> -l app.kubernetes.io/name=postgresql
+
+Argo Events resources live in the release namespace ({{ .Release.Namespace }}).
+Remove stale EventBus/EventSource/Sensor objects from other namespaces if a previous install used a different release namespace.
+
+Check that setup Jobs were created:
+  kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=db-monitoring-setup
+{{- else }}
 Check that the setup Jobs completed successfully:
   kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/managed-by=Helm
+{{- end }}
 
 If a Job failed, inspect its logs:
   kubectl logs job/<db-name>-postgresql-monitoring-setup -n {{ .Release.Namespace }}

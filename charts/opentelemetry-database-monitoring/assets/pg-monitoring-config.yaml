@@ -48,9 +48,7 @@ receivers:
     username: otel_monitor
   sqlquery/pg_bloat:
     collection_interval: 3600s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -73,9 +71,7 @@ receivers:
         sql: SELECT * FROM otel.pg_bloat()
   sqlquery/pg_connections:
     collection_interval: 30s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -98,9 +94,7 @@ receivers:
         sql: SELECT * FROM otel.pg_connections()
   sqlquery/pg_locks:
     collection_interval: 30s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -139,9 +133,7 @@ receivers:
         sql: SELECT * FROM otel.pg_idle_in_transaction()
   sqlquery/pg_replication:
     collection_interval: 30s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -157,9 +149,7 @@ receivers:
         sql: SELECT * FROM otel.pg_replication_slots()
   sqlquery/pg_table_stats:
     collection_interval: 300s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -230,9 +220,7 @@ receivers:
         sql: SELECT * FROM otel.pg_table_stats()
   sqlquery/pg_vacuum_progress:
     collection_interval: 60s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -274,9 +262,7 @@ receivers:
         sql: SELECT * FROM otel.pg_vacuum_progress()
   sqlquery/pg_wal:
     collection_interval: 60s
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
@@ -292,9 +278,7 @@ receivers:
             value_type: int
         sql: SELECT * FROM otel.pg_wal()
   sqlquery/postgresql_top_queries:
-    datasource:
-      host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD}
-      sslmode=disable
+    datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=otel user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
       - metrics:
