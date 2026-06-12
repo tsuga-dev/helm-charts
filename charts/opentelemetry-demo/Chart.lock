@@ -10,6 +10,6 @@ dependencies:
   version: 0.40.0
 - name: opentelemetry-database-monitoring
   repository: https://tsuga-dev.github.io/helm-charts
-  version: 0.1.0
-digest: sha256:266117b31df2dc271e419ca8a27d6e971decdb459dc6332d25aa0924a56e1ce9
-generated: "2026-06-11T17:59:49.107648+02:00"
+  version: 0.1.1
+digest: sha256:74a396ab3fb7f9fa37ef905e908b510f9ea93c242831aabb3c075a355c99ecfc
+generated: "2026-06-12T17:52:03.594131+02:00"

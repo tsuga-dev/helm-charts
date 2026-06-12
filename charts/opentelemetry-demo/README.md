@@ -9,7 +9,7 @@ A Helm chart for Tsuga Observability Demo
 | Repository | Name | Version |
 |------------|------|---------|
 | https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-demo(opentelemetry-demo) | 0.40.0 |
-| https://tsuga-dev.github.io/helm-charts | dbm(opentelemetry-database-monitoring) | 0.1.0 |
+| https://tsuga-dev.github.io/helm-charts | dbm(opentelemetry-database-monitoring) | 0.1.1 |
 | https://tsuga-dev.github.io/helm-charts | opentelemetry-kube-stack | 0.7.2 |
 | https://tsuga-dev.github.io/helm-charts | tsuga-spicy-gremlin | 0.1.2 |
 
@@ -17,6 +17,16 @@ A Helm chart for Tsuga Observability Demo
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| dbm.enabled | bool | `true` |  |
+| dbm.postgres.databases[0].host | string | `"postgresql"` |  |
+| dbm.postgres.databases[0].name | string | `"postgresql"` |  |
+| dbm.postgres.databases[0].namespace | string | `"demo"` |  |
+| dbm.postgres.databases[0].port | int | `5432` |  |
+| dbm.postgres.databases[0].pwd | string | `"otel"` |  |
+| dbm.postgres.databases[0].sidecar-name | string | `"postgres-dbm-sidecar"` |  |
+| dbm.postgres.databases[0].user | string | `"root"` |  |
+| dbm.postgres.enabled | bool | `true` |  |
+| dbm.postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
 | opentelemetry-demo.components.accounting.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | opentelemetry-demo.components.accounting.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.accounting.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
@@ -85,7 +95,7 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.postgresql.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/service.name" | string | `"postgresql"` |  |
 | opentelemetry-demo.components.postgresql.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
-| opentelemetry-demo.components.postgresql.podAnnotations."sidecar.opentelemetry.io/inject" | string | `"observability/postgres-dbm-sidecar"` |  |
+| opentelemetry-demo.components.postgresql.podAnnotations."sidecar.opentelemetry.io/inject" | string | `"postgres-dbm-sidecar"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
@@ -173,8 +183,8 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraProcessors[0] | string | `"resource_detection"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.logs.extraReceivers[0] | string | `"k8s_objects"` |  |
 | opentelemetry-kube-stack.cluster.config.service.pipelines.metrics.extraProcessors[0] | string | `"resource_detection"` |  |
-| opentelemetry-kube-stack.enabled | bool | `false` |  |
-| tsuga-spicy-gremlin.enabled | bool | `false` |  |
+| opentelemetry-kube-stack.enabled | bool | `true` |  |
+| tsuga-spicy-gremlin.enabled | bool | `true` |  |
 | tsuga-spicy-gremlin.env.maxIntervalSec | int | `600` |  |
 | tsuga-spicy-gremlin.env.minIntervalSec | int | `120` |  |
 | tsuga-spicy-gremlin.extraEnv[0].name | string | `"OTEL_EXPORTER_OTLP_PROTOCOL"` |  |

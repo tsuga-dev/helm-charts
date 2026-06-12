@@ -18,12 +18,24 @@ repos:
     rev: v2.3.1
     hooks:
       - id: helm-schema
-        args: ["--values", "./charts/opentelemetry-kube-stack/values.yaml", "-o", "./charts/opentelemetry-kube-stack/values.schema.json"]
+        args:
+          [
+            "--values",
+            "./charts/opentelemetry-kube-stack/values.yaml",
+            "-o",
+            "./charts/opentelemetry-kube-stack/values.schema.json",
+          ]
   - repo: https://github.com/losisin/helm-values-schema-json
     rev: v2.3.1
     hooks:
       - id: helm-schema
-        args: ["--values", "./charts/opentelemetry-database-monitoring/values.yaml", "-o", "./charts/opentelemetry-database-monitoring/values.schema.json"]
+        args:
+          [
+            "--values",
+            "./charts/opentelemetry-database-monitoring/values.yaml",
+            "-o",
+            "./charts/opentelemetry-database-monitoring/values.schema.json",
+          ]
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.23
     hooks:

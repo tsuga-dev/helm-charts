@@ -1,4 +1,18 @@
 ---
+dbm:
+  enabled: true
+  postgres:
+    enabled: true
+    image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+    databases:
+      - name: postgresql
+        namespace: demo
+        sidecar-name: postgres-dbm-sidecar
+        user: "root"
+        pwd: "otel"
+        port: 5432
+        host: "postgresql"
+
 opentelemetry-demo:
   enabled: true
 
@@ -231,7 +245,7 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
-        sidecar.opentelemetry.io/inject: "observability/postgres-dbm-sidecar"
+        sidecar.opentelemetry.io/inject: "postgres-dbm-sidecar"
         io.opentelemetry.discovery.logs/enabled: "true"
         io.opentelemetry.discovery.logs/config: |
           include_file_path: true
@@ -298,7 +312,7 @@ opentelemetry-demo:
     enabled: false
 
 opentelemetry-kube-stack:
-  enabled: false
+  enabled: true
   cluster:
     config:
       extraReceivers:
@@ -397,7 +411,7 @@ opentelemetry-kube-stack:
 # Optional subchart: vanilla spicy-gremlin for synthetic failures in the OTel demo.
 # Set enabled=true to run with image defaults (randomized scenarios and built-in OFF baseline).
 tsuga-spicy-gremlin:
-  enabled: false
+  enabled: true
   env:
     minIntervalSec: 120
     maxIntervalSec: 600
