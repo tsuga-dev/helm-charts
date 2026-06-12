@@ -2,7 +2,6 @@
 name: Test OpenTelemetry Helm Chart
 
 permissions: {}
-
 on:
   push:
     branches: [main]

@@ -1,0 +1,97 @@
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: example-dbm-argo-eventsource
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: example-dbm-argo-sensor
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: example-dbm-argo-eventsource
+  namespace: demo
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: example-dbm-argo-sensor
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create"]
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: example-dbm-argo-eventsource
+  namespace: demo
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+subjects:
+  - kind: ServiceAccount
+    name: example-dbm-argo-eventsource
+    namespace: default
+roleRef:
+  kind: Role
+  name: example-dbm-argo-eventsource
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: opentelemetry-demo/charts/dbm/templates/argo-events-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: example-dbm-argo-sensor
+  labels:
+    helm.sh/chart: dbm-0.1.1
+    app.kubernetes.io/name: dbm
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+subjects:
+  - kind: ServiceAccount
+    name: example-dbm-argo-sensor
+roleRef:
+  kind: Role
+  name: example-dbm-argo-sensor
+  apiGroup: rbac.authorization.k8s.io
