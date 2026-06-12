@@ -1,0 +1,81 @@
+---
+# Source: opentelemetry-database-monitoring/charts/argo-events/templates/argo-events-controller/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-argo-events-controller-manager
+  namespace: "default"
+  labels:
+    helm.sh/chart: argo-events-2.4.21
+    app.kubernetes.io/name: argo-events-controller-manager
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: argo-events
+    app.kubernetes.io/version: "v1.9.10"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argo-events-controller-manager
+      app.kubernetes.io/instance: example
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        checksum/config: 01ce187b3292165e6c77edb03e1c8718bda1798e28d39fc11cbd940ecbbec4bb
+      labels:
+        helm.sh/chart: argo-events-2.4.21
+        app.kubernetes.io/name: argo-events-controller-manager
+        app.kubernetes.io/instance: example
+        app.kubernetes.io/component: controller-manager
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: argo-events
+        app.kubernetes.io/version: "v1.9.10"
+    spec:
+      containers:
+      - name: controller-manager
+        image: quay.io/argoproj/argo-events:v1.9.10
+        imagePullPolicy: IfNotPresent
+        args:
+        - controller
+        env:
+        - name: ARGO_EVENTS_IMAGE
+          value: quay.io/argoproj/argo-events:v1.9.10
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: config
+          mountPath: /etc/argo-events
+        ports:
+        - name: metrics
+          containerPort: 7777
+          protocol: TCP
+        - name: probe
+          containerPort: 8081
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            port: probe
+            path: /healthz
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            port: probe
+            path: /readyz
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+      serviceAccountName: example-argo-events-controller-manager
+      volumes:
+      - name: config
+        configMap:
+          name: example-argo-events-controller-manager

@@ -1,0 +1,17 @@
+---
+# Source: opentelemetry-database-monitoring/templates/argo-eventbus.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  nats:
+    native:
+      replicas: 1
+      auth: none
