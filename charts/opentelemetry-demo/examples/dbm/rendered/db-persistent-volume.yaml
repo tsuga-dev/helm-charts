@@ -8,7 +8,7 @@ metadata:
     type: local
     app: postgresdb
 spec:
-  storageClassName: manual
+  storageClassName: standard
   capacity:
     storage: 8Gi
   accessModes:
