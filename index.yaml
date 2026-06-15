@@ -29,6 +29,35 @@ entries:
   opentelemetry-demo:
   - apiVersion: v2
     appVersion: 0.40.0
+    created: "2026-06-15T07:16:11.727738784Z"
+    dependencies:
+    - condition: opentelemetry-kube-stack.enabled
+      name: opentelemetry-kube-stack
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.7.2
+    - condition: tsuga-spicy-gremlin.enabled
+      name: tsuga-spicy-gremlin
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.1.2
+    - alias: opentelemetry-demo
+      condition: opentelemetry-demo.enabled
+      name: opentelemetry-demo
+      repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+      version: 0.40.0
+    - alias: dbm
+      condition: dbm.enabled
+      name: opentelemetry-database-monitoring
+      repository: https://tsuga-dev.github.io/helm-charts
+      version: 0.1.1
+    description: A Helm chart for Tsuga Observability Demo
+    digest: 1412aff133792bdd05d7ea6715219235cc41937b50d778c5b01da9094674b348
+    name: opentelemetry-demo
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-demo-0.9.5/opentelemetry-demo-0.9.5.tgz
+    version: 0.9.5
+  - apiVersion: v2
+    appVersion: 0.40.0
     created: "2026-06-11T11:18:06.260050555Z"
     dependencies:
     - condition: opentelemetry-kube-stack.enabled
@@ -1472,4 +1501,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-06-12T15:49:43.400245935Z"
+generated: "2026-06-15T07:16:11.947701815Z"
