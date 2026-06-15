@@ -6,11 +6,12 @@ dbm:
     image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
     databases:
       - name: postgresql
+        namespace: demo
         sidecar-name: postgres-dbm-sidecar
-        user: root
-        pwd: otel
+        user: "root"
+        pwd: "otel"
         port: 5432
-        host: postgresql
+        host: "postgresql"
 
 opentelemetry-demo:
   enabled: true
@@ -27,24 +28,66 @@ opentelemetry-demo:
     accounting:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     ad:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     cart:
       podAnnotations:
         resource.opentelemetry.io/team: app
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     checkout:
       podAnnotations:
         resource.opentelemetry.io/team: app
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     currency:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     email:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     fraud-detection:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     frontend:
       podAnnotations:
         resource.opentelemetry.io/team: app
@@ -68,6 +111,12 @@ opentelemetry-demo:
     frontend-proxy:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     image-provider:
       podAnnotations:
         resource.opentelemetry.io/team: platform
@@ -96,33 +145,87 @@ opentelemetry-demo:
     load-generator:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     payment:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     product-catalog:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     product-reviews:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
       imageOverride:
         repository: "014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"
         tag: "2.2.0-product-reviews"
     quote:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     recommendation:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     shipping:
       podAnnotations:
         resource.opentelemetry.io/team: services
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     flagd:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     kafka:
       podAnnotations:
         resource.opentelemetry.io/team: platform
+        io.opentelemetry.discovery.logs/enabled: "true"
+        io.opentelemetry.discovery.logs/config: |
+          include_file_path: true
+          operators:
+            - type: container
+              id: container-parser
     postgresql:
       command:
         - docker-entrypoint.sh
@@ -142,7 +245,7 @@ opentelemetry-demo:
       podAnnotations:
         resource.opentelemetry.io/team: platform
         resource.opentelemetry.io/service.name: postgresql
-        sidecar.opentelemetry.io/inject: postgres-dbm-sidecar
+        sidecar.opentelemetry.io/inject: "postgres-dbm-sidecar"
         io.opentelemetry.discovery.logs/enabled: "true"
         io.opentelemetry.discovery.logs/config: |
           include_file_path: true
@@ -213,7 +316,7 @@ opentelemetry-kube-stack:
   cluster:
     config:
       extraReceivers:
-        k8sobjects:
+        k8_sobjects:
           auth_type: serviceAccount
           include_initial_state: true
           objects:
@@ -247,7 +350,7 @@ opentelemetry-kube-stack:
             k8s.container.status.reason:
               enabled: true
       extraProcessors:
-        resourcedetection:
+        resource_detection:
           detectors: [env, eks]
           timeout: 15s
           override: true
@@ -255,12 +358,12 @@ opentelemetry-kube-stack:
         pipelines:
           metrics:
             extraProcessors:
-              - resourcedetection
+              - resource_detection
           logs:
             extraProcessors:
-              - resourcedetection
+              - resource_detection
             extraReceivers:
-              - k8sobjects
+              - k8s_objects
 
   agent:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
@@ -283,7 +386,7 @@ opentelemetry-kube-stack:
           discovery:
             enabled: true
       extraProcessors:
-        resourcedetection:
+        resource_detection:
           detectors: [env, eks]
           timeout: 15s
           override: true
@@ -293,17 +396,17 @@ opentelemetry-kube-stack:
         pipelines:
           metrics:
             extraProcessors:
-              - resourcedetection
+              - resource_detection
             extraReceivers:
               - receiver_creator/metrics
           logs:
             extraProcessors:
-              - resourcedetection
+              - resource_detection
             extraReceivers:
               - receiver_creator/logs
           traces:
             extraProcessors:
-              - resourcedetection
+              - resource_detection
 
 # Optional subchart: vanilla spicy-gremlin for synthetic failures in the OTel demo.
 # Set enabled=true to run with image defaults (randomized scenarios and built-in OFF baseline).

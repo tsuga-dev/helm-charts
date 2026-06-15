@@ -57,25 +57,7 @@ spec:
           fieldPath: metadata.uid
   config:
     receivers:
-      k8s_cluster:
-        allocatable_types_to_report:
-        - cpu
-        - memory
-        - storage
-        collection_interval: 10s
-        metrics:
-          k8s.container.status.reason:
-            enabled: true
-          k8s.container.status.state:
-            enabled: true
-          k8s.pod.status_reason:
-            enabled: true
-        node_conditions_to_report:
-        - Ready
-        - MemoryPressure
-        - DiskPressure
-        - PIDPressure
-      k8sobjects:
+      k8_sobjects:
         auth_type: serviceAccount
         include_initial_state: true
         objects:
@@ -100,6 +82,24 @@ spec:
         - group: apps
           mode: watch
           name: statefulsets
+      k8s_cluster:
+        allocatable_types_to_report:
+        - cpu
+        - memory
+        - storage
+        collection_interval: 10s
+        metrics:
+          k8s.container.status.reason:
+            enabled: true
+          k8s.container.status.state:
+            enabled: true
+          k8s.pod.status_reason:
+            enabled: true
+        node_conditions_to_report:
+        - Ready
+        - MemoryPressure
+        - DiskPressure
+        - PIDPressure
       prometheus/self:
         config:
           scrape_configs:
@@ -113,7 +113,7 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
       cumulativetodelta: {}
-      k8sattributes:
+      k8s_attributes:
         extract:
           annotations:
           - from: pod
@@ -167,14 +167,14 @@ spec:
         - action: upsert
           key: service.instance.id
           value: ${POD_UID}
-      resourcedetection:
+      resource_detection:
         detectors:
         - env
         - eks
         override: true
         timeout: 15s
     exporters:
-      otlphttp/tsuga:
+      otlp_http/tsuga:
         compression: gzip
         encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -185,26 +185,26 @@ spec:
       pipelines:
         logs:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
-          - resourcedetection
+          - resource_detection
           receivers:
           - k8s_cluster
-          - k8sobjects
+          - k8s_objects
         metrics:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - batch
-          - resourcedetection
+          - resource_detection
           receivers:
           - k8s_cluster
         metrics/collector:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
           - cumulativetodelta
           - resource/collector

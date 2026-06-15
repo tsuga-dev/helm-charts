@@ -125,29 +125,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      postgresql:
-        endpoint: postgresql:5432
-        metrics:
-          postgresql.blks_hit:
-            enabled: true
-          postgresql.blks_read:
-            enabled: true
-          postgresql.deadlocks:
-            enabled: true
-          postgresql.tup_deleted:
-            enabled: true
-          postgresql.tup_fetched:
-            enabled: true
-          postgresql.tup_inserted:
-            enabled: true
-          postgresql.tup_returned:
-            enabled: true
-          postgresql.tup_updated:
-            enabled: true
-        password: otel
-        tls:
-          insecure: true
-        username: root
       prometheus/self:
         config:
           scrape_configs:
@@ -294,7 +271,6 @@ spec:
           - kubelet_stats
           - spanmetrics
           - host_metrics
-          - postgresql
           - receiver_creator/redis
           - receiver_creator/nginx
         metrics/collector:

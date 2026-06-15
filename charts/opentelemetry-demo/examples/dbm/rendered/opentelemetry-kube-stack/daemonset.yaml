@@ -79,7 +79,7 @@ spec:
           fieldPath: metadata.uid
   config:
     receivers:
-      hostmetrics:
+      host_metrics:
         collection_interval: 10s
         root_path: /hostfs
         scrapers:
@@ -143,7 +143,7 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
       cumulativetodelta: {}
-      k8sattributes:
+      k8s_attributes:
         extract:
           annotations:
           - from: pod
@@ -203,14 +203,14 @@ spec:
         - action: upsert
           key: service.instance.id
           value: ${POD_UID}
-      resourcedetection:
+      resource_detection:
         detectors:
         - env
         - eks
         override: true
         timeout: 15s
     exporters:
-      otlphttp/tsuga:
+      otlp_http/tsuga:
         compression: gzip
         encoding: json
         endpoint: ${TSUGA_OTLP_ENDPOINT}
@@ -237,33 +237,33 @@ spec:
       pipelines:
         logs:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - batch
-          - resourcedetection
+          - resource_detection
           receivers:
           - otlp
           - receiver_creator/logs
         metrics:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - cumulativetodelta
           - batch
-          - resourcedetection
+          - resource_detection
           receivers:
           - otlp
           - kubeletstats
           - spanmetrics
-          - hostmetrics
+          - host_metrics
           - receiver_creator/metrics
         metrics/collector:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           processors:
           - memory_limiter
           - cumulativetodelta
@@ -273,13 +273,13 @@ spec:
           - prometheus/self
         traces:
           exporters:
-          - otlphttp/tsuga
+          - otlp_http/tsuga
           - spanmetrics
           processors:
-          - k8sattributes
+          - k8s_attributes
           - memory_limiter
           - batch
-          - resourcedetection
+          - resource_detection
           receivers:
           - otlp
       telemetry:
