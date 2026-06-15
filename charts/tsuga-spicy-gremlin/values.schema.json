@@ -1,0 +1,139 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "type": "object"
+        },
+        "commonLabels": {
+            "type": "object"
+        },
+        "enabled": {
+            "type": "boolean"
+        },
+        "env": {
+            "type": "object",
+            "properties": {
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "flagSchema": {
+                    "type": "string"
+                },
+                "flagdApiBaseUrl": {
+                    "type": "string"
+                },
+                "maxActiveFlags": {
+                    "type": "integer"
+                },
+                "maxIntervalSec": {
+                    "type": "integer"
+                },
+                "minIntervalSec": {
+                    "type": "integer"
+                },
+                "offDefaultsJson": {
+                    "type": "string"
+                },
+                "randomSeed": {
+                    "type": "string"
+                },
+                "requestTimeoutSec": {
+                    "type": "integer"
+                },
+                "runOnStart": {
+                    "type": "boolean"
+                },
+                "scenariosJson": {
+                    "type": "string"
+                },
+                "warnUnknownFlags": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "environment": {
+            "type": "string"
+        },
+        "extraEnv": {
+            "type": "array"
+        },
+        "fullnameOverride": {
+            "type": "string"
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "pullPolicy": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "type": "array"
+        },
+        "nameOverride": {
+            "type": "string"
+        },
+        "nodeSelector": {
+            "type": "object"
+        },
+        "podAnnotations": {
+            "type": "object"
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "properties": {
+                "fsGroup": {
+                    "type": "integer"
+                },
+                "runAsGroup": {
+                    "type": "integer"
+                },
+                "runAsNonRoot": {
+                    "type": "boolean"
+                },
+                "runAsUser": {
+                    "type": "integer"
+                }
+            }
+        },
+        "replicaCount": {
+            "type": "integer"
+        },
+        "resources": {
+            "type": "object"
+        },
+        "securityContext": {
+            "type": "object",
+            "properties": {
+                "allowPrivilegeEscalation": {
+                    "type": "boolean"
+                },
+                "capabilities": {
+                    "type": "object",
+                    "properties": {
+                        "drop": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "readOnlyRootFilesystem": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "tolerations": {
+            "type": "array"
+        }
+    }
+}

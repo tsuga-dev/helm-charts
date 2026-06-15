@@ -13,7 +13,28 @@ repos:
         args:
           # Make the tool search for charts only under the `charts` directory
           - --chart-search-root=charts
-
+  - repo: https://github.com/losisin/helm-values-schema-json
+    rev: v2.3.1
+    hooks:
+      - id: helm-schema
+        args:
+          [
+            "--values",
+            "./charts/opentelemetry-database-monitoring/values.yaml",
+            "-o",
+            "./charts/opentelemetry-database-monitoring/values.schema.json",
+          ]
+  - repo: https://github.com/losisin/helm-values-schema-json
+    rev: v2.3.1
+    hooks:
+      - id: helm-schema
+        args:
+          [
+            "--values",
+            "./charts/opentelemetry-demo/values.yaml",
+            "-o",
+            "./charts/opentelemetry-demo/values.schema.json",
+          ]
   - repo: https://github.com/losisin/helm-values-schema-json
     rev: v2.3.1
     hooks:
@@ -32,10 +53,11 @@ repos:
         args:
           [
             "--values",
-            "./charts/opentelemetry-database-monitoring/values.yaml",
+            "./charts/tsuga-spicy-gremlin/values.yaml",
             "-o",
-            "./charts/opentelemetry-database-monitoring/values.schema.json",
+            "./charts/tsuga-spicy-gremlin/values.schema.json",
           ]
+
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.23
     hooks:
