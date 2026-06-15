@@ -27,6 +27,7 @@ generate-examples:
 		done; \
 	done
 	find charts -path '*/examples/*/rendered/*.yaml' -type f -exec perl -0pi -e 's/\n+\z/\n/' {} +
+	find charts -path '*/examples/*/rendered/*.yaml' -type f -exec perl -pi -e 's/^(\s*password:\s*)"[^"]*"/$$1"<your-password>"/' {} +
 
 .PHONY: check-examples
 check-examples:
@@ -47,6 +48,7 @@ check-examples:
 				done; \
 			done; \
 			find "$${EXAMPLES_DIR}/$${example}/rendered" "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates" -name '*.yaml' -type f -exec perl -0pi -e 's/\n+\z/\n/' {} +; \
+			find "$${EXAMPLES_DIR}/$${example}/rendered" "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates" -name '*.yaml' -type f -exec perl -pi -e 's/^(\s*password:\s*)"[^"]*"/$$1"<your-password>"/' {} +; \
 			if diff -r "$${EXAMPLES_DIR}/$${example}/rendered" "${TMP_DIRECTORY}/$${example}/$${chart_name}/templates" > /dev/null; then \
 				echo "Passed $${example}"; \
 			else \
