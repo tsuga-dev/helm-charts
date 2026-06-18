@@ -211,6 +211,47 @@
                         "frontend": {
                             "type": "object",
                             "properties": {
+                                "envOverrides": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "value": {
+                                                "type": "string"
+                                            },
+                                            "valueFrom": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "fieldRef": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "apiVersion": {
+                                                                "type": "string"
+                                                            },
+                                                            "fieldPath": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "imageOverride": {
+                                    "type": "object",
+                                    "properties": {
+                                        "repository": {
+                                            "type": "string"
+                                        },
+                                        "tag": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
                                 "podAnnotations": {
                                     "type": "object",
                                     "properties": {
