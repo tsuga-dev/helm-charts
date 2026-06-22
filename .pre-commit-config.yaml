@@ -85,19 +85,19 @@ repos:
         pass_filenames: false
       - id: changelog-kube-stack
         name: Update CHANGELOG.md for opentelemetry-kube-stack
-        entry: bash -c 'git cliff -c charts/opentelemetry-kube-stack/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-kube-stack/CHANGELOG.md'
+        entry: bash -c 'GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}" git cliff -c charts/opentelemetry-kube-stack/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-kube-stack/CHANGELOG.md'
         language: system
         files: ^charts/opentelemetry-kube-stack/
         pass_filenames: false
       - id: changelog-demo
         name: Update CHANGELOG.md for opentelemetry-demo
-        entry: bash -c 'git cliff -c charts/opentelemetry-demo/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-demo/CHANGELOG.md'
+        entry: bash -c 'GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}" git cliff -c charts/opentelemetry-demo/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-demo/CHANGELOG.md'
         language: system
         files: ^charts/opentelemetry-demo/
         pass_filenames: false
       - id: changelog-gremlin
         name: Update CHANGELOG.md for tsuga-spicy-gremlin
-        entry: bash -c 'git cliff -c charts/tsuga-spicy-gremlin/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/tsuga-spicy-gremlin/CHANGELOG.md'
+        entry: bash -c 'GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}" git cliff -c charts/tsuga-spicy-gremlin/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/tsuga-spicy-gremlin/CHANGELOG.md'
         language: system
         files: ^charts/tsuga-spicy-gremlin/
         pass_filenames: false
