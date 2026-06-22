@@ -212,34 +212,7 @@
                             "type": "object",
                             "properties": {
                                 "envOverrides": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "value": {
-                                                "type": "string"
-                                            },
-                                            "valueFrom": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "fieldRef": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "apiVersion": {
-                                                                "type": "string"
-                                                            },
-                                                            "fieldPath": {
-                                                                "type": "string"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    "type": "array"
                                 },
                                 "imageOverride": {
                                     "type": "object",

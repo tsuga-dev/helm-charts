@@ -10,7 +10,7 @@ When `argoEvents.enabled=true`, the chart also installs [Argo Events](https://ar
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://argoproj.github.io/argo-helm | argo-events | 2.x.x |
+| https://argoproj.github.io/argo-helm | argo-events | 2.4.22 |
 
 ## How it works
 

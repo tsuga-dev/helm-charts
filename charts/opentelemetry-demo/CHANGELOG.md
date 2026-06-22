@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [opentelemetry-demo-0.9.7] - 2026-06-17
+## [opentelemetry-demo-0.9.7] - 2026-06-18
 
 ### Added
-- Use the custom frontend image by default and expose frontend environment overrides for Faro configuration
+- Add Faro frontend image and env overrides by @dussault-antoine
+
+### New Contributors
+* @dussault-antoine made their first contribution in [#102](https://github.com/tsuga-dev/helm-charts/pull/102)
+
+## [opentelemetry-demo-0.9.6] - 2026-06-15
+
+### Changed
+- Generate values.schema.json for demo and spicy-gremlin (#99) by @abruneau in [#99](https://github.com/tsuga-dev/helm-charts/pull/99)
+- Change storage class to `standard` (#100) by @abruneau in [#100](https://github.com/tsuga-dev/helm-charts/pull/100)
+- Bump otel demo 0.9.6 (#101) by @abruneau in [#101](https://github.com/tsuga-dev/helm-charts/pull/101)
 
 ## [opentelemetry-demo-0.9.5] - 2026-06-15
 
@@ -163,6 +173,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump versions by @abruneau
 - Revert "Otel-demo-improvement" by @abruneau
 - Enhance OpenTelemetry demo chart and CI/CD configuration by @abruneau
+[opentelemetry-demo-0.9.7]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.6...opentelemetry-demo-0.9.7
+
+[opentelemetry-demo-0.9.6]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.5...opentelemetry-demo-0.9.6
+
 [opentelemetry-demo-0.9.5]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.4...opentelemetry-demo-0.9.5
 
 [opentelemetry-demo-0.9.4]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.3...opentelemetry-demo-0.9.4

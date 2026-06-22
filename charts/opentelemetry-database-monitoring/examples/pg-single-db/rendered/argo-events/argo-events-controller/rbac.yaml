@@ -5,7 +5,7 @@ kind: ClusterRole
 metadata:
   name: example-argo-events-controller-manager
   labels:
-    helm.sh/chart: argo-events-2.4.21
+    helm.sh/chart: argo-events-2.4.22
     app.kubernetes.io/name: argo-events-controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
@@ -99,7 +99,7 @@ kind: ClusterRoleBinding
 metadata:
   name: example-argo-events-controller-manager
   labels:
-    helm.sh/chart: argo-events-2.4.21
+    helm.sh/chart: argo-events-2.4.22
     app.kubernetes.io/name: argo-events-controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
