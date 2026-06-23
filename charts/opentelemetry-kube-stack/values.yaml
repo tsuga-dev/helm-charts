@@ -237,21 +237,21 @@ cluster:
   #     processors:
   #       batch: {}
   #     exporters:
-  #       otlphttp/tsuga:
+  #       otlp_http/tsuga:
   #         endpoint: ${TSUGA_OTLP_ENDPOINT}
   #     service:
   #       pipelines:
   #         metrics:
   #           receivers: [k8s_cluster]
   #           processors: [batch]
-  #           exporters: [otlphttp/tsuga]
+  #           exporters: [otlp_http/tsuga]
   # @default -- {}
   customConfig: {}
   # This is used in the Kubernetes view to show pod configuration
   collectk8sobjects: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default config includes: k8s_cluster receiver, k8sattributes processor, resource processor
+  # Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry
@@ -268,11 +268,11 @@ cluster:
     # @default -- {}
     extraReceivers: {}
     # -- Additional processors to merge into the collector configuration
-    # These are merged with default processors (k8sattributes, resource)
+    # These are merged with default processors (k8s_attributes, resource)
     # @default -- {}
     extraProcessors: {}
     # -- Additional exporters to merge into the collector configuration
-    # These are merged with default exporters (otlphttp/tsuga)
+    # These are merged with default exporters (otlp_http/tsuga)
     # @default -- {}
     extraExporters: {}
     # -- Additional connectors to merge into the collector configuration
@@ -290,7 +290,7 @@ cluster:
         # -- Logs pipeline configuration
         logs:
           # -- Additional exporters to add to the logs pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline
@@ -304,7 +304,7 @@ cluster:
         # -- Metrics pipeline configuration
         metrics:
           # -- Additional exporters to add to the metrics pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
@@ -318,7 +318,7 @@ cluster:
         # -- Traces pipeline configuration
         traces:
           # -- Additional exporters to add to the traces pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline
@@ -429,8 +429,8 @@ agent:
   customConfig: {}
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default config includes: filelog, jaeger, kubeletstats, hostmetrics, otlp, prometheus, zipkin receivers
-  # Default processors: k8sattributes, memory_limiter, batch, cumulativetodelta, resource
+  # Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers
+  # Default processors: k8s_attributes, memory_limiter, batch, cumulativetodelta, resource
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -445,7 +445,7 @@ agent:
     # @default -- {}
     extraProcessors: {}
     # -- Additional exporters to merge into the collector configuration
-    # These are merged with default exporters (otlphttp/tsuga)
+    # These are merged with default exporters (otlp_http/tsuga)
     # @default -- {}
     extraExporters: {}
     # -- Additional extensions to merge into the collector configuration
@@ -467,11 +467,11 @@ agent:
         # -- Logs pipeline configuration
         logs:
           # -- Additional exporters to add to the logs pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline
-          # Added to default processors (k8sattributes, memory_limiter, batch, resource)
+          # Added to default processors (k8s_attributes, memory_limiter, batch, resource)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
@@ -481,29 +481,29 @@ agent:
         # -- Metrics pipeline configuration
         metrics:
           # -- Additional exporters to add to the metrics pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (k8sattributes, memory_limiter, batch, cumulativetodelta, resource)
+          # Added to default processors (k8s_attributes, memory_limiter, batch, cumulativetodelta, resource)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
-          # Added to default receivers (otlp, prometheus, kubeletstats, spanmetrics, hostmetrics)
+          # Added to default receivers (otlp, kubelet_stats, spanmetrics, host_metrics)
           # @default -- []
           extraReceivers: []
         # -- Traces pipeline configuration
         traces:
           # -- Additional exporters to add to the traces pipeline
-          # Added to default exporters (otlphttp/tsuga, spanmetrics)
+          # Added to default exporters (otlp_http/tsuga, spanmetrics)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline
-          # Added to default processors (k8sattributes, memory_limiter, batch, resource)
+          # Added to default processors (k8s_attributes, memory_limiter, batch, resource)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the traces pipeline
-          # Added to default receivers (otlp, jaeger, zipkin)
+          # Added to default receivers (otlp)
           # @default -- []
           extraReceivers: []
         extraPipelines: {}
@@ -680,11 +680,11 @@ statefulset:
         # -- Metrics pipeline configuration
         metrics:
           # -- Additional exporters to add to the metrics pipeline
-          # Added to default exporter (otlphttp/tsuga)
+          # Added to default exporter (otlp_http/tsuga)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (k8sattributes, batch)
+          # Added to default processors (k8s_attributes, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline

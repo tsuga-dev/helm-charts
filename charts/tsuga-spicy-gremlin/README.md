@@ -28,6 +28,8 @@ A minimal Helm chart to run spicy-gremlin against OpenTelemetry Demo feature fla
 | env.maxIntervalSec | int | `900` | Maximum random interval between scenario applications. |
 | env.minIntervalSec | int | `120` | Minimum random interval between scenario applications. |
 | env.offDefaultsJson | string | `""` | Optional JSON override for OFF defaults. Empty uses image defaults. |
+| env.otelServiceName | string | `""` | OTel service name written to the resource.opentelemetry.io/service.name pod annotation. |
+| env.otelServiceVersion | string | `""` | OTel service version for the resource.opentelemetry.io/service.version annotation. Defaults to image.tag when empty. |
 | env.randomSeed | string | `""` | Optional deterministic random seed. |
 | env.requestTimeoutSec | int | `20` | HTTP timeout for read/write API calls. |
 | env.runOnStart | bool | `true` | Apply one scenario immediately after startup. |

@@ -13,6 +13,8 @@ Located in `tests/` directory, these tests validate individual template renderin
 - **rbac_test.yaml** - Tests RBAC resources and permissions
 - **daemonset_test.yaml** - Tests agent daemonset configuration
 - **cluster-receiver_test.yaml** - Tests cluster receiver deployment
+- **statefulset_test.yaml** - Tests statefulset collector configuration (target allocator)
+- **target-allocator_test.yaml** - Tests target allocator configuration
 - **instrumentation_test.yaml** - Tests auto-instrumentation resource creation and configuration
 
 #### Running Unit Tests
