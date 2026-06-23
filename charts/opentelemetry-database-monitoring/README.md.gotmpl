@@ -36,12 +36,11 @@ When `argoEvents.enabled=true`, the chart also installs [Argo Events](https://ar
                   or any OTLP endpoint)
 ```
 
-For each database entry in `values.yaml`, the chart creates:
+The chart creates a single shared **ConfigMap** (`postgresql-monitoring-setup`) that embeds `pg-monitoring-setup.sql` (the stored functions), and then for each database entry in `values.yaml`:
 
 1. **Secret** — a `<name>-pg-monitor-credentials` Secret holding the auto-generated (or idempotently preserved) password for the `otel_monitor` user. When `postgres.databases[*].namespace` differs from the Helm release namespace, the same Secret is replicated into the target namespace so the injected sidecar can resolve `secretKeyRef` in the Pod's namespace.
-2. **ConfigMap** — embeds `pg-monitoring-setup.sql` (the stored functions).
-3. **Setup Job** — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret. See [Argo Events setup](#argo-events-setup) below for when and how this Job is created.
-4. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR in the **Helm release namespace** that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
+2. **Setup Job** — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret. See [Argo Events setup](#argo-events-setup) below for when and how this Job is created.
+3. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR in the **Helm release namespace** that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
 
 ### Argo Events setup
 
@@ -286,7 +285,7 @@ Polls the PostgreSQL stats system views directly. Default collection interval.
 
 | Receiver | Interval | Metrics |
 |----------|----------|---------|
-| `sqlquery/postgresql_top_queries` | default | `postgresql.query.calls`, `.rows`, `.exec_time`, `.plan_time`, `.blocks.shared.*`, `.blocks.temp.*` — attributed by `db.namespace`, `db.user.name`, `db.query.text`, `db.version` |
+| `sqlquery/postgresql_top_queries` | default | `postgresql.query.calls`, `.rows`, `.exec_time`, `.plan_time`, `.blocks.shared.*`, `.blocks.temp.*` — attributed by `db.namespace`, `db.user.name`, `server.address`, `db.query.text`, `db.version` |
 | `sqlquery/pg_table_stats` | 5 min | `postgresql.table.vacuum.age`, `.autovacuum.age`, `.analyze.age`, `.autoanalyze.age`, `.autovacuum.count`, `.analyze.count`, `.autoanalyze.count`, `.rows.modified.since.analyze` |
 | `sqlquery/pg_bloat` | 1 hour | `postgresql.table.bloat.ratio`, `postgresql.table.bloat.bytes` |
 | `sqlquery/pg_connections` | 30 s | `postgresql.backends` (count), `postgresql.backends.age` (max state age) |

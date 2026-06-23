@@ -42,7 +42,7 @@ Before installing the opentelemetry-kube-stack chart, you need to install:
 
 **cert-manager** (required by the OpenTelemetry Operator):
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 ```
 
 ### OpenTelemetry Operator
@@ -95,7 +95,7 @@ To uninstall the chart:
 helm uninstall my-opentelemetry-kube-stack
 ```
 
-You can check the [examples](./charts/opentelemetry-kube-stack/examples) folder for more details.
+You can check the [examples](https://github.com/tsuga-dev/helm-charts/tree/main/charts/opentelemetry-kube-stack/examples) folder for more details.
 
 ## Available Charts
 

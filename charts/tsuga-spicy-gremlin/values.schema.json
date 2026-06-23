@@ -35,6 +35,12 @@
                 "offDefaultsJson": {
                     "type": "string"
                 },
+                "otelServiceName": {
+                    "type": "string"
+                },
+                "otelServiceVersion": {
+                    "type": "string"
+                },
                 "randomSeed": {
                     "type": "string"
                 },

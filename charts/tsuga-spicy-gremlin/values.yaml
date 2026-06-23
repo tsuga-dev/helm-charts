@@ -69,6 +69,10 @@ env:
   offDefaultsJson: ""
   # -- Optional JSON override for scenarios. Empty uses image defaults.
   scenariosJson: ""
+  # -- OTel service name written to the resource.opentelemetry.io/service.name pod annotation.
+  otelServiceName: ""
+  # -- OTel service version for the resource.opentelemetry.io/service.version annotation. Defaults to image.tag when empty.
+  otelServiceVersion: ""
 
 # -- Additional env vars appended to the container.
 extraEnv: []

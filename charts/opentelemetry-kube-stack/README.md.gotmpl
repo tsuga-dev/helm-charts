@@ -41,27 +41,32 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - Uses host networking for optimal performance (configurable)
 
 **Default Receivers:**
-- **Host Metrics**: CPU, memory, disk, filesystem, load, optional network and process metrics
+- **Host Metrics**: CPU, memory, disk, filesystem, load, paging, optional network and process metrics
 - **Kubelet Stats**: Node and pod metrics via kubelet
-- **Prometheus**: Scrapes application metrics from pods with `prometheus.io/scrape: true` annotation
-- **OTLP**: Receives traces, metrics, and logs
-- **Jaeger** and **Zipkin**: Receive traces via Jaeger and Zipkin protocols
+- **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
+- **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 - **File Logs**: Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
 
 **Default Processors:**
-- **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels
+- **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
-- **Batch**: Batches telemetry for efficient processing
+- **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000)
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
-- **Resource**: Adds attributes including `k8s.cluster.name` (from `clusterName`)
+- **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
+
+**Default Connectors:**
+- **Spanmetrics**: Generates RED metrics from spans (see dimensions below)
 
 **Default Exporters:**
-- **OTLP/Tsuga**: Forwards all telemetry to Tsuga endpoint with authentication
+- **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp`, `filelog` → `k8sattributes`, `memory_limiter`, `batch`, `resource` → `otlphttp/tsuga`
-- **Metrics**: `otlp`, `prometheus`, `kubeletstats`, `spanmetrics`, `hostmetrics` → `k8sattributes`, `memory_limiter`, `batch`, `cumulativetodelta`, `resource` → `otlphttp/tsuga`
-- **Traces**: `otlp`, `jaeger`, `zipkin` → `k8sattributes`, `memory_limiter`, `batch`, `resource` → `otlphttp/tsuga`, `spanmetrics`
+- **Logs**: `otlp` (+`filelog` when `agent.collectLogs`) → `k8s_attributes`, `memory_limiter`, `batch`, `resource`¹ → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, `spanmetrics`, `host_metrics` → `k8s_attributes`, `memory_limiter`, `cumulativetodelta`, `resource`¹, `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `k8s_attributes`, `memory_limiter`, `resource`¹, `batch` → `otlp_http/tsuga`, `spanmetrics`
+- **Metrics (collector self-telemetry)**: `prometheus/self` → `memory_limiter`, `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
+
+¹ The `resource` processor is only present when `clusterName` is set.
 
 **Default Spanmetrics Dimensions:**
 - `http.request.method`
@@ -107,18 +112,24 @@ agent:
 - Collects cluster metrics and events using the Kubernetes API server
 
 **Default Receivers:**
-- **Kubernetes Cluster**: Collects cluster-level metrics and entity events via `k8s_cluster`
+- **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
+- **Kubernetes Objects** (`k8s_objects`): Watches pods (only when `cluster.collectk8sobjects=true`)
+- **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 
 **Default Processors:**
-- **Resource**: Adds deployment/cluster attributes (defaults include `k8s.cluster.name`)
-- **K8s Attributes**: Optional Kubernetes metadata extraction
+- **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
+- **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **Batch**: Batches telemetry for efficient processing
 
 **Default Exporters:**
-- **OTLP**: Forwards to Tsuga endpoint
+- **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `resource` → `otlphttp/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` → `resource` → `otlphttp/tsuga`
+- **Metrics**: `k8s_cluster` → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics (collector self-telemetry)**: `prometheus/self` → `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
+
+¹ The `resource` processor is only present when `clusterName` is set.
 
 ## Quick Start
 
@@ -137,7 +148,7 @@ Before installing this chart, you need the following components:
 The OpenTelemetry Operator requires cert-manager to be installed in your cluster.
 
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 ```
 
 Verify cert-manager is running:
@@ -303,8 +314,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 # Run unit tests
 make unittest
 
-# Run specific test
-helm test my-otel-stack
+# Run a specific test file
+helm unittest -f 'tests/secret_test.yaml' .
 ```
 
 #### Integration Tests
@@ -348,10 +359,8 @@ helm template test . --set tsuga.otlpEndpoint="test" --set tsuga.apiKey="test"
 To update the parameter documentation in the README:
 
 ```bash
-# Generate documentation using helm-docs
-make docs
-# or
-helm-docs
+# Generate documentation using helm-docs (run from the repo root)
+helm-docs --chart-search-root=charts/opentelemetry-kube-stack
 ```
 
 This will automatically update the parameter reference section in the README based on comments in `values.yaml`.
