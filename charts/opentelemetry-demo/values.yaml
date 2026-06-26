@@ -90,11 +90,8 @@ opentelemetry-demo:
               id: container-parser
     frontend:
       envOverrides: []
-      imageOverride:
-        repository: "014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"
-        tag: "2.2.0.2-frontend"
       podAnnotations:
-        resource.opentelemetry.io/team: app
+        resource.opentelemetry.io/team: frontend
         resource.opentelemetry.io/service.name: frontend
         io.opentelemetry.discovery.logs/enabled: "true"
         io.opentelemetry.discovery.logs/config: |
@@ -182,9 +179,6 @@ opentelemetry-demo:
           operators:
             - type: container
               id: container-parser
-      imageOverride:
-        repository: "014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"
-        tag: "2.2.0-product-reviews"
     quote:
       podAnnotations:
         resource.opentelemetry.io/team: services

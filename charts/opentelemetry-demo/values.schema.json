@@ -214,17 +214,6 @@
                                 "envOverrides": {
                                     "type": "array"
                                 },
-                                "imageOverride": {
-                                    "type": "object",
-                                    "properties": {
-                                        "repository": {
-                                            "type": "string"
-                                        },
-                                        "tag": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
                                 "podAnnotations": {
                                     "type": "object",
                                     "properties": {
@@ -457,17 +446,6 @@
                         "product-reviews": {
                             "type": "object",
                             "properties": {
-                                "imageOverride": {
-                                    "type": "object",
-                                    "properties": {
-                                        "repository": {
-                                            "type": "string"
-                                        },
-                                        "tag": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
                                 "podAnnotations": {
                                     "type": "object",
                                     "properties": {
