@@ -1,6 +1,6 @@
 # opentelemetry-demo
 
-![Version: 0.9.7](https://img.shields.io/badge/Version-0.9.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
+![Version: 0.9.8](https://img.shields.io/badge/Version-0.9.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.40.0](https://img.shields.io/badge/AppVersion-0.40.0-informational?style=flat-square)
 
 A Helm chart for Tsuga Observability Demo
 
@@ -55,12 +55,10 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.frontend-proxy.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.frontend-proxy.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
 | opentelemetry-demo.components.frontend.envOverrides | list | `[]` |  |
-| opentelemetry-demo.components.frontend.imageOverride.repository | string | `"014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"` |  |
-| opentelemetry-demo.components.frontend.imageOverride.tag | string | `"2.2.0.2-frontend"` |  |
 | opentelemetry-demo.components.frontend.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Next.js multi-line errors (stack traces)\n  - type: recombine\n    id: nextjs-multiline\n    combine_field: body\n    is_first_entry: body matches \"^Error:\"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.frontend.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.frontend.podAnnotations."resource.opentelemetry.io/service.name" | string | `"frontend"` |  |
-| opentelemetry-demo.components.frontend.podAnnotations."resource.opentelemetry.io/team" | string | `"app"` |  |
+| opentelemetry-demo.components.frontend.podAnnotations."resource.opentelemetry.io/team" | string | `"frontend"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n\n  # Recombine Envoy/nginx multi-line logs (continuation lines without timestamp)\n  - type: recombine\n    id: envoy-multiline\n    combine_field: body\n    is_first_entry: body matches \"^\\\\[\\\\d{4}-\\\\d{2}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{3}\\\\]\"\n    source_identifier: attributes[\"log.file.path\"]\n    force_flush_period: 2s\n    max_log_size: 2MiB\n    preserve_leading_whitespaces: true\n"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.image-provider.podAnnotations."io.opentelemetry.discovery.metrics.8081/config" | string | `"endpoint: \"http://`endpoint`/status\"\ncollection_interval: 10s\n"` |  |
@@ -102,8 +100,6 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.product-catalog.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.product-catalog.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
-| opentelemetry-demo.components.product-reviews.imageOverride.repository | string | `"014498635196.dkr.ecr.eu-central-1.amazonaws.com/tsuga-dev/otel-demo"` |  |
-| opentelemetry-demo.components.product-reviews.imageOverride.tag | string | `"2.2.0-product-reviews"` |  |
 | opentelemetry-demo.components.product-reviews.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | opentelemetry-demo.components.product-reviews.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.product-reviews.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
