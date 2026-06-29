@@ -327,12 +327,6 @@
                                 "podAnnotations": {
                                     "type": "object",
                                     "properties": {
-                                        "io.opentelemetry.discovery.logs/config": {
-                                            "type": "string"
-                                        },
-                                        "io.opentelemetry.discovery.logs/enabled": {
-                                            "type": "string"
-                                        },
                                         "resource.opentelemetry.io/team": {
                                             "type": "string"
                                         }

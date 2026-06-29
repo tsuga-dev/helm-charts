@@ -155,12 +155,6 @@ opentelemetry-demo:
     payment:
       podAnnotations:
         resource.opentelemetry.io/team: services
-        io.opentelemetry.discovery.logs/enabled: "true"
-        io.opentelemetry.discovery.logs/config: |
-          include_file_path: true
-          operators:
-            - type: container
-              id: container-parser
     product-catalog:
       podAnnotations:
         resource.opentelemetry.io/team: services
