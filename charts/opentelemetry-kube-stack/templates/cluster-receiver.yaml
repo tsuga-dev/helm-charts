@@ -18,7 +18,7 @@ metadata:
     meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
   mode: deployment
-  image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
   {{- if or .Values.cluster.resources .Values.resources }}
   resources:
     {{- if .Values.cluster.resources }}

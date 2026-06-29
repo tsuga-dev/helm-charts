@@ -72,8 +72,6 @@ A Helm chart for Tsuga Observability Demo
 | opentelemetry-demo.components.load-generator.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
 | opentelemetry-demo.components.load-generator.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.load-generator.podAnnotations."resource.opentelemetry.io/team" | string | `"platform"` |  |
-| opentelemetry-demo.components.payment.podAnnotations."io.opentelemetry.discovery.logs/config" | string | `"include_file_path: true\noperators:\n  - type: container\n    id: container-parser\n"` |  |
-| opentelemetry-demo.components.payment.podAnnotations."io.opentelemetry.discovery.logs/enabled" | string | `"true"` |  |
 | opentelemetry-demo.components.payment.podAnnotations."resource.opentelemetry.io/team" | string | `"services"` |  |
 | opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].mountPath | string | `"/var/lib/postgres/data"` |  |
 | opentelemetry-demo.components.postgresql.additionalVolumeMounts[0].name | string | `"db-data"` |  |

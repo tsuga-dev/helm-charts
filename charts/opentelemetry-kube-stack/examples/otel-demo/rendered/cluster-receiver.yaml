@@ -15,7 +15,7 @@ metadata:
     meta.helm.sh/release-namespace: "default"
 spec:
   mode: deployment
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
   resources:
     limits:
       cpu: 500m
