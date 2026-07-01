@@ -125,7 +125,22 @@ jobs:
           failed=""
           for v in $(jq -r '.[]' <<<"$MATRIX"); do
             echo "===== testing collector $v ====="
-            if ! run_version "$v"; then failed="$failed $v"; fi
+            ns="otel-${v//./-}"
+            if ! run_version "$v"; then
+              failed="$failed $v"
+              echo "::group::debug $v"
+              kubectl -n "$ns" get pods -o wide || true
+              kubectl -n "$ns" describe pods || true
+              kubectl -n "$ns" logs -l "$sel" --all-containers --tail=200 || true
+              echo "::endgroup::"
+            fi
+            # Tear down before the next version. The agent DaemonSet uses
+            # hostNetwork, so a second agent on the same (single-node kind)
+            # cluster cannot rebind its host ports (13133/4317/4318/8888).
+            # Only one stack may be alive at a time; delete the namespace and
+            # wait for pods to terminate so the ports are freed.
+            helm uninstall "$ns" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
+            kubectl delete ns "$ns" --wait=true --timeout=3m >/dev/null 2>&1 || true
           done
           if [ -n "$failed" ]; then
             echo "::error::integration failed for version(s):$failed"
@@ -173,14 +188,14 @@ jobs:
           body-path: comment-body.md
           edit-mode: replace
 
+      # Per-version namespaces are torn down inside the loop above (with
+      # per-version debug on failure), so this only dumps cluster-wide and
+      # operator state.
       - name: Debug dump on failure
         if: failure()
         run: |
           kubectl get pods -A
           kubectl get opentelemetrycollectors -A || true
-          for ns in $(kubectl get ns -o name | sed 's|namespace/||' | grep -E '^otel'); do
-            echo "== namespace $ns =="
-            kubectl -n "$ns" describe pods || true
-            kubectl -n "$ns" logs -l app.kubernetes.io/managed-by=opentelemetry-operator \
-              --all-containers --tail=200 || true
-          done
+          kubectl -n otel-operator describe pods || true
+          kubectl -n otel-operator logs -l app.kubernetes.io/name=opentelemetry-operator \
+            --tail=200 || true
