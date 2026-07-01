@@ -25,21 +25,22 @@ spec:
       memory: 128Mi
   serviceAccount: example-opentelemetry-kube-stack
   env:
+    
     - name: TSUGA_OTLP_ENDPOINT
       valueFrom:
         secretKeyRef:
           name: otel-secret
           key: TSUGA_OTLP_ENDPOINT
-    - name: MY_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
     - name: TSUGA_API_KEY
       valueFrom:
         secretKeyRef:
           name: otel-secret
           key: TSUGA_API_KEY
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
     - name: NODE_IP
       valueFrom:
         fieldRef:

@@ -6,21 +6,23 @@ OpenTelemetry Collector Configuration Helper Templates
 Generate environment variables for OpenTelemetry Collector
 */}}
 {{- define "opentelemetry-kube-stack.collectorEnv" -}}
+{{- if include "opentelemetry-kube-stack.tsugaEnabled" . }}
 - name: TSUGA_OTLP_ENDPOINT
   valueFrom:
     secretKeyRef:
       name: {{ include "opentelemetry-kube-stack.secretName" . }}
       key: {{ include "opentelemetry-kube-stack.secretKey" (dict "keyName" "TSUGA_OTLP_ENDPOINT" "Values" .Values) }}
-- name: MY_POD_IP
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: status.podIP
 - name: TSUGA_API_KEY
   valueFrom:
     secretKeyRef:
       name: {{ include "opentelemetry-kube-stack.secretName" . }}
       key: {{ include "opentelemetry-kube-stack.secretKey" (dict "keyName" "TSUGA_API_KEY" "Values" .Values) }}
+{{- end }}
+- name: MY_POD_IP
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: status.podIP
 - name: NODE_IP
   valueFrom:
     fieldRef:
@@ -87,6 +89,7 @@ resource:
     {{- end}}
     - name: service.instance.id
       value: ${POD_UID}
+{{- if include "opentelemetry-kube-stack.tsugaEnabled" . }}
 metrics:
     readers:
     - periodic:
@@ -97,4 +100,5 @@ metrics:
                     - name: Authorization
                       value: Bearer ${TSUGA_API_KEY}
                 endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+{{- end }}
 {{- end }}

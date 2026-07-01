@@ -62,3 +62,36 @@ tests:
           value: "http.route"
       - notExists:
           path: spec.config.connectors.span_metrics.calls_dimensions
+
+  - it: should not reference the Tsuga secret when the exporter is disabled everywhere
+    set:
+      agent.enabled: true
+      tsuga.enabledForClusterReceiver: false
+      tsuga.enabledForDaemonset: false
+      tsuga.enabledForStatefulset: false
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      # No secret-backed env is injected, so no secret is required to start.
+      - notContains:
+          path: spec.env
+          content:
+            name: TSUGA_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: otel-secret
+                key: TSUGA_API_KEY
+      # Non-secret env is still present.
+      - contains:
+          path: spec.env
+          content:
+            name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+      # Internal-telemetry OTLP export (which needs the secret) is skipped.
+      - notExists:
+          path: spec.config.service.telemetry.metrics

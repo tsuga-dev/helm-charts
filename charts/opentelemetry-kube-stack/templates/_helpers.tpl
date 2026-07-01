@@ -69,6 +69,18 @@ Get the secret name to use
 {{- end }}
 
 {{/*
+Whether Tsuga is used by any collector. Returns "true" unless the Tsuga OTLP
+exporter is explicitly disabled for every component. When empty, the Tsuga
+secret is not referenced (env injection and internal-telemetry export are both
+skipped), so no secret is required.
+*/}}
+{{- define "opentelemetry-kube-stack.tsugaEnabled" -}}
+{{- if or (ne (index .Values "tsuga" "enabledForClusterReceiver") false) (ne (index .Values "tsuga" "enabledForDaemonset") false) (ne (index .Values "tsuga" "enabledForStatefulset") false) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Get the secret key for a given key name
 */}}
 {{- define "opentelemetry-kube-stack.secretKey" -}}
