@@ -75,7 +75,7 @@ spec:
           fieldPath: spec.nodeName
   config:
     receivers:
-      filelog:
+      file_log:
         exclude:
         - /var/log/pods/*/otc-container/*.log
         - /var/log/pods/*/otel-collector/*.log
@@ -220,7 +220,7 @@ spec:
           - batch
           receivers:
           - otlp
-          - filelog
+          - file_log
         metrics:
           exporters:
           - debug

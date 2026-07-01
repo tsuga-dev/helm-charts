@@ -4,7 +4,7 @@ extensions:
     endpoint: ${env:MY_POD_IP}:13133
 receivers:
 {{- if .Values.agent.collectLogs }}
-  filelog:
+  file_log:
   {{- if not .Values.agent.collectOtelLogs }}
     # Exclude the collector's own container logs to avoid a self-ingestion
     # feedback loop (the operator names the collector container "otc-container").
@@ -182,7 +182,7 @@ service:
       receivers:
         - otlp
 {{- if .Values.agent.collectLogs }}
-        - filelog
+        - file_log
 {{- end }}
       processors:
         - k8s_attributes
