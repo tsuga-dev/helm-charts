@@ -99,7 +99,7 @@ jobs:
               -f charts/opentelemetry-kube-stack/values_ci_test.yaml \
               --set opentelemetry-operator.enabled=false \
               --set agent.image="$CONTRIB:$v" \
-              --set cluster.image="$CONTRIB:$v" \
+              --set cluster.image="$K8S:$v" \
               --set statefulset.image="$K8S:$v" \
               --wait --timeout 5m
             # Collector pods are created by the operator, not the release, so
