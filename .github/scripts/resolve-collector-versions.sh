@@ -29,6 +29,12 @@ if [[ "$count" -lt 3 ]]; then
   matrix="$(printf '%s\n' ${FALLBACK_VERSIONS:-} | jq -R . | jq -s -c 'map(select(length > 0))')"
 fi
 
+final_count="$(printf '%s' "$matrix" | jq 'length' 2>/dev/null || echo 0)"
+if [[ "$final_count" -lt 1 ]]; then
+  echo "resolve-collector-versions: no versions resolved (matrix empty); failing" >&2
+  exit 1
+fi
+
 echo "$matrix"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   echo "matrix=$matrix" >> "$GITHUB_OUTPUT"

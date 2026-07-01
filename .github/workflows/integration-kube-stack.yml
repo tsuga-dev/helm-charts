@@ -140,10 +140,8 @@ jobs:
           pattern: collector-warns-*
           path: warns
       - name: Assemble comment body
-        id: body
         run: |
           {
-            echo "body<<GHWARNS_EOF"
             echo "<!-- integration-kube-stack-warns -->"
             echo "### kube-stack integration — collector warnings"
             found=0
@@ -161,8 +159,7 @@ jobs:
               echo "</details>"
             done
             [ "$found" -eq 0 ] && echo "No warnings detected ✅"
-            echo "GHWARNS_EOF"
-          } >> "$GITHUB_OUTPUT"
+          } > comment-body.md
       - name: Find existing comment
         id: fc
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
@@ -175,5 +172,5 @@ jobs:
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.body.outputs.body }}
+          body-path: comment-body.md
           edit-mode: replace

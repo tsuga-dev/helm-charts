@@ -3,7 +3,7 @@ set -uo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 script="$here/resolve-collector-versions.sh"
 
-fixture="$(mktemp)"
+fixture="${TMPDIR:-/tmp}/collector-releases-fixture.$$"
 cat > "$fixture" <<'JSON'
 [
   {"tag_name":"v0.155.0","prerelease":false,"draft":false},
@@ -22,5 +22,10 @@ out="$(RELEASES_JSON_FILE="$fixture" FALLBACK_VERSIONS="0.1.0 0.2.0 0.3.0" bash 
 # Case 2: lookup failure falls back to FALLBACK_VERSIONS.
 out="$(RELEASES_JSON_FILE="/no/such/file" FALLBACK_VERSIONS="0.155.0 0.154.0 0.153.0" bash "$script")"
 [[ "$out" == '["0.155.0","0.154.0","0.153.0"]' ]] || { echo "FAIL fallback: $out"; exit 1; }
+
+# Case 3: empty result (lookup fails AND fallback empty) exits non-zero.
+if RELEASES_JSON_FILE="/no/such/file" FALLBACK_VERSIONS="" bash "$script" >/dev/null 2>&1; then
+  echo "FAIL: empty matrix should exit non-zero"; exit 1
+fi
 
 echo "PASS"
