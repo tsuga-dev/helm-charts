@@ -167,7 +167,7 @@ jobs:
               echo ""
               echo "</details>"
             done
-            [ "$found" -eq 0 ] && echo "No warnings detected ✅"
+            if [ "$found" -eq 0 ]; then echo "No warnings detected ✅"; fi
           } > comment-body.md
 
       - name: Find existing comment
