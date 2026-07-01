@@ -76,7 +76,8 @@ spec:
   config:
     receivers:
       filelog:
-        exclude: []
+        exclude:
+        - /var/log/pods/*/otc-container/*.log
         include:
         - /var/log/pods/*/*/*.log
         include_file_name: false

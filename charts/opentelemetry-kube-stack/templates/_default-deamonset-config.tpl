@@ -5,13 +5,16 @@ extensions:
 receivers:
 {{- if .Values.agent.collectLogs }}
   filelog:
+  {{- if .Values.agent.collectOtelLogs }}
     exclude: []
+  {{- else }}
+    # Exclude the collector's own container logs to avoid a self-ingestion
+    # feedback loop (the operator names the collector container "otc-container").
+    exclude:
+      - /var/log/pods/*/otc-container/*.log
+  {{- end }}
     include:
       - /var/log/pods/*/*/*.log
-  {{- if eq .Values.agent.collectOtelLogs false}}
-    exclude:
-    - /var/log/pods/*/otel-collector/*.log
-  {{- end }}
     include_file_name: false
     include_file_path: true
     operators:
