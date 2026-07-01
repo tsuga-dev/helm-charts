@@ -78,6 +78,7 @@ spec:
       filelog:
         exclude:
         - /var/log/pods/*/otc-container/*.log
+        - /var/log/pods/*/otel-collector/*.log
         include:
         - /var/log/pods/*/*/*.log
         include_file_name: false
