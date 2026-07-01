@@ -49,16 +49,16 @@ tests:
       - isKind:
           of: OpenTelemetryCollector
       - equal:
-          path: spec.config.connectors.spanmetrics.dimensions[0].name
+          path: spec.config.connectors.span_metrics.dimensions[0].name
           value: "http.request.method"
       - equal:
-          path: spec.config.connectors.spanmetrics.dimensions[0].default
+          path: spec.config.connectors.span_metrics.dimensions[0].default
           value: "GET"
       - equal:
-          path: spec.config.connectors.spanmetrics.dimensions[1].name
+          path: spec.config.connectors.span_metrics.dimensions[1].name
           value: "http.response.status_code"
       - equal:
-          path: spec.config.connectors.spanmetrics.dimensions[2].name
+          path: spec.config.connectors.span_metrics.dimensions[2].name
           value: "http.route"
       - notExists:
-          path: spec.config.connectors.spanmetrics.calls_dimensions
+          path: spec.config.connectors.span_metrics.calls_dimensions
