@@ -13,13 +13,7 @@ receivers:
       endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
       interval: 30s
       collector_id: ${POD_NAME}
-  prometheus/self:
-    config:
-      scrape_configs:
-        - job_name: otel-collector
-          scrape_interval: 10s
-          static_configs:
-            - targets: ['localhost:8888']
+
 processors:
   memory_limiter:
     check_interval: 5s
@@ -122,18 +116,6 @@ service:
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
-        - batch
-      exporters:
-        {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
-        - otlp_http/tsuga
-        {{- end }}
-    metrics/collector:
-      receivers:
-        - prometheus/self
-      processors:
-        - memory_limiter
-        - cumulativetodelta
-        - resource/collector
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}

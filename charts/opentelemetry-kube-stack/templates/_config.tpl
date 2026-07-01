@@ -56,9 +56,29 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
+Fail the render if a pinned collector image is older than v0.119.0, where the
+service::telemetry headers schema switched from map to list. Only images with a
+parseable semver tag can be checked; untagged/":latest"/operator-default images
+resolve at runtime and cannot be verified here.
+*/}}
+{{- define "opentelemetry-kube-stack.assertCollectorVersion" -}}
+{{- range list .Values.image .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
+{{- if . -}}
+{{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
+{{- if regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
+{{- if semverCompare "< 0.119.0" $tag -}}
+{{- fail (printf "collector image %q is < v0.119.0; service::telemetry headers require the v0.119+ config schema (list-form headers)" .) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Generate Otel telemetry export
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
+{{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}
 resource:
   {{- if .Values.clusterName }}
   k8s.cluster.name: {{ .Values.clusterName }}
@@ -71,14 +91,7 @@ metrics:
             otlp:
                 protocol: http/protobuf
                 headers:
-                    Authorization: Bearer ${TSUGA_API_KEY}
+                    - name: Authorization
+                      value: Bearer ${TSUGA_API_KEY}
                 endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
-    - pull:
-        exporter:
-          prometheus:
-            host: 0.0.0.0
-            port: 8888
-            without_scope_info: false
-            without_type_suffix: false
-            without_units: false
 {{- end }}
