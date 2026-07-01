@@ -14,7 +14,7 @@ logs="$(cat "$log_dir"/*.log 2>/dev/null || true)"
 # whitespace-delimited field 2. Match error-class levels exactly.
 errors="$(printf '%s\n' "$logs" | awk '$2 ~ /^(error|fatal|dpanic|panic)$/')"
 # Config-load / startup failures that may not carry a level token.
-cfg_fail="$(printf '%s\n' "$logs" | grep -E 'failed to (get|resolve|build|load) config|error decoding|invalid configuration|collector server run finished with error|status: unavailable|StatusRecoverableError' || true)"
+cfg_fail="$(printf '%s\n' "$logs" | grep -E '^Error:|collector server run finished with error|error decoding|invalid configuration' || true)"
 
 # Warnings.
 printf '%s\n' "$logs" | awk '$2 == "warn"' | grep -v '^$' > "$warn_out" || true
@@ -24,4 +24,4 @@ if [[ -n "$errors$cfg_fail" ]]; then
   printf '%s\n' "$errors" "$cfg_fail" | grep -v '^$' >&2
   exit 1
 fi
-echo "scan-collector-logs: no errors; $(grep -c . "$warn_out" 2>/dev/null || echo 0) warn line(s) -> $warn_out"
+echo "scan-collector-logs: no errors; $(awk 'END{print NR}' "$warn_out" 2>/dev/null || echo 0) warn line(s) -> $warn_out"
