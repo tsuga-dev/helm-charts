@@ -43,10 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+      pull-requests: write
+    env:
+      MATRIX: ${{ needs.resolve-versions.outputs.matrix }}
+      CONTRIB: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+      K8S: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -71,84 +72,77 @@ jobs:
           helm repo update
           helm dependency build charts/opentelemetry-kube-stack
 
-      - name: Install kube-stack
+      # The operator + CRDs are cluster-scoped singletons, so install them once
+      # (collectors disabled). Each version's collectors are then deployed into
+      # their own namespace below and reconciled by this shared operator.
+      - name: Install operator (once)
         run: |
-          helm install otel charts/opentelemetry-kube-stack \
-            --namespace otel --create-namespace \
+          helm install otel-operator charts/opentelemetry-kube-stack \
+            --namespace otel-operator --create-namespace \
             -f charts/opentelemetry-kube-stack/values_ci_test.yaml \
-            --set agent.image=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${{ matrix.version }} \
-            --set cluster.image=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${{ matrix.version }} \
-            --set statefulset.image=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:${{ matrix.version }} \
+            --set opentelemetry-operator.enabled=true \
+            --set agent.enabled=false \
+            --set cluster.enabled=false \
+            --set targetAllocator.enabled=false \
             --wait --timeout 5m
+          kubectl -n otel-operator rollout status deploy \
+            -l app.kubernetes.io/name=opentelemetry-operator --timeout=3m
 
-      - name: Wait for collector workloads
+      - name: Deploy and scan each collector version
         run: |
-          kubectl -n otel rollout status deploy -l app.kubernetes.io/name=opentelemetry-operator --timeout=3m
-          for _ in $(seq 1 24); do
-            n=$(kubectl -n otel get pods -l app.kubernetes.io/managed-by=opentelemetry-operator --no-headers 2>/dev/null | wc -l)
-            [ "$n" -gt 0 ] && break
-            sleep 5
+          sel=app.kubernetes.io/managed-by=opentelemetry-operator
+          run_version() {
+            v="$1"; rel="otel-${v//./-}"; ns="$rel"
+            echo "::group::deploy collector $v (ns=$ns)"
+            helm install "$rel" charts/opentelemetry-kube-stack \
+              --namespace "$ns" --create-namespace \
+              -f charts/opentelemetry-kube-stack/values_ci_test.yaml \
+              --set opentelemetry-operator.enabled=false \
+              --set agent.image="$CONTRIB:$v" \
+              --set cluster.image="$CONTRIB:$v" \
+              --set statefulset.image="$K8S:$v" \
+              --wait --timeout 5m
+            # Collector pods are created by the operator, not the release, so
+            # poll until they exist before waiting on readiness.
+            for _ in $(seq 1 24); do
+              n=$(kubectl -n "$ns" get pods -l "$sel" --no-headers 2>/dev/null | wc -l)
+              [ "$n" -gt 0 ] && break
+              sleep 5
+            done
+            kubectl -n "$ns" wait --for=condition=Ready pod -l "$sel" --timeout=4m
+            sleep 20
+            bad=$(kubectl -n "$ns" get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[*].restartCount}{"\n"}{end}' \
+              | awk '$2 > 0 {print}')
+            if [ -n "$bad" ]; then echo "::error::[$v] pods with restarts:"; echo "$bad"; return 1; fi
+            dir="collector-logs-$v"; mkdir -p "$dir"
+            for pod in $(kubectl -n "$ns" get pods -l "$sel" -o name); do
+              kubectl -n "$ns" logs "$pod" --all-containers --tail=-1 \
+                > "$dir/$(basename "$pod").log" 2>/dev/null || true
+            done
+            WARN_OUT="collector-warns-$v.txt" bash .github/scripts/scan-collector-logs.sh "$dir"
+            echo "::endgroup::"
+          }
+          failed=""
+          for v in $(jq -r '.[]' <<<"$MATRIX"); do
+            echo "===== testing collector $v ====="
+            if ! run_version "$v"; then failed="$failed $v"; fi
           done
-          kubectl -n otel wait --for=condition=Ready pod \
-            -l app.kubernetes.io/managed-by=opentelemetry-operator --timeout=4m
-
-      - name: Readiness gate (no restarts)
-        run: |
-          sleep 20
-          bad=$(kubectl -n otel get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[*].restartCount}{"\n"}{end}' \
-            | awk '$2 > 0 {print}')
-          if [ -n "$bad" ]; then
-            echo "::error::pods with restarts detected:"; echo "$bad"; exit 1
+          if [ -n "$failed" ]; then
+            echo "::error::integration failed for version(s):$failed"
+            exit 1
           fi
 
-      - name: Collect logs and scan
-        run: |
-          mkdir -p collector-logs
-          for pod in $(kubectl -n otel get pods -l app.kubernetes.io/managed-by=opentelemetry-operator -o name); do
-            name=$(basename "$pod")
-            kubectl -n otel logs "$pod" --all-containers --tail=-1 > "collector-logs/${name}.log" 2>/dev/null || true
-          done
-          WARN_OUT="collector-warns-${{ matrix.version }}.txt" \
-            bash .github/scripts/scan-collector-logs.sh collector-logs
-
-      - name: Upload warnings
-        if: always()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
-        with:
-          name: collector-warns-${{ matrix.version }}
-          path: collector-warns-${{ matrix.version }}.txt
-          if-no-files-found: ignore
-
-      - name: Debug dump on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          kubectl -n otel describe pods
-          kubectl -n otel logs -l app.kubernetes.io/managed-by=opentelemetry-operator --all-containers --tail=200 || true
-
-  report-warns:
-    needs: integration
-    if: always() && github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Download warn artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-        with:
-          pattern: collector-warns-*
-          path: warns
-      - name: Assemble comment body
+      - name: Assemble warn comment
+        if: always() && github.event_name == 'pull_request'
         run: |
           {
             echo "<!-- integration-kube-stack-warns -->"
             echo "### kube-stack integration — collector warnings"
             found=0
-            for f in warns/*/*.txt; do
+            for f in collector-warns-*.txt; do
               [ -s "$f" ] || continue
               found=1
-              ver=$(basename "$(dirname "$f")" | sed 's/^collector-warns-//')
+              ver=$(basename "$f" .txt | sed 's/^collector-warns-//')
               echo ""
               echo "<details><summary>collector ${ver}</summary>"
               echo ""
@@ -160,17 +154,33 @@ jobs:
             done
             [ "$found" -eq 0 ] && echo "No warnings detected ✅"
           } > comment-body.md
+
       - name: Find existing comment
         id: fc
+        if: always() && github.event_name == 'pull_request'
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
           body-includes: "<!-- integration-kube-stack-warns -->"
+
       - name: Create or update comment
+        if: always() && github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body-path: comment-body.md
           edit-mode: replace
+
+      - name: Debug dump on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl get opentelemetrycollectors -A || true
+          for ns in $(kubectl get ns -o name | sed 's|namespace/||' | grep -E '^otel'); do
+            echo "== namespace $ns =="
+            kubectl -n "$ns" describe pods || true
+            kubectl -n "$ns" logs -l app.kubernetes.io/managed-by=opentelemetry-operator \
+              --all-containers --tail=200 || true
+          done
