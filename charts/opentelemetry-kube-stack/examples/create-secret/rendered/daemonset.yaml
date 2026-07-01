@@ -47,21 +47,22 @@ spec:
         path: /var/lib/docker/containers
   serviceAccount: example-opentelemetry-kube-stack
   env:
+    
     - name: TSUGA_OTLP_ENDPOINT
       valueFrom:
         secretKeyRef:
           name: otel-secret
           key: TSUGA_OTLP_ENDPOINT
-    - name: MY_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
     - name: TSUGA_API_KEY
       valueFrom:
         secretKeyRef:
           name: otel-secret
           key: TSUGA_API_KEY
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
     - name: NODE_IP
       valueFrom:
         fieldRef:
@@ -84,8 +85,10 @@ spec:
           fieldPath: spec.nodeName
   config:
     receivers:
-      filelog:
-        exclude: []
+      file_log:
+        exclude:
+        - /var/log/pods/*/otc-container/*.log
+        - /var/log/pods/*/otel-collector/*.log
         include:
         - /var/log/pods/*/*/*.log
         include_file_name: false
@@ -137,14 +140,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      prometheus/self:
-        config:
-          scrape_configs:
-          - job_name: otel-collector
-            scrape_interval: 10s
-            static_configs:
-            - targets:
-              - localhost:8888
     processors:
       batch:
         send_batch_max_size: 5000
@@ -221,7 +216,7 @@ spec:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
     connectors:
-      spanmetrics:
+      span_metrics:
         dimensions:
         - default: GET
           name: http.request.method
@@ -240,7 +235,7 @@ spec:
           - batch
           receivers:
           - otlp
-          - filelog
+          - file_log
         metrics:
           exporters:
           - otlp_http/tsuga
@@ -252,22 +247,12 @@ spec:
           receivers:
           - otlp
           - kubelet_stats
-          - spanmetrics
+          - span_metrics
           - host_metrics
-        metrics/collector:
-          exporters:
-          - otlp_http/tsuga
-          processors:
-          - memory_limiter
-          - cumulativetodelta
-          - resource/collector
-          - batch
-          receivers:
-          - prometheus/self
         traces:
           exporters:
           - otlp_http/tsuga
-          - spanmetrics
+          - span_metrics
           processors:
           - k8s_attributes
           - memory_limiter
@@ -282,15 +267,10 @@ spec:
                 otlp:
                   endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
                   headers:
-                    Authorization: Bearer ${TSUGA_API_KEY}
+                  - name: Authorization
+                    value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
-          - pull:
-              exporter:
-                prometheus:
-                  host: 0.0.0.0
-                  port: 8888
-                  without_scope_info: false
-                  without_type_suffix: false
-                  without_units: false
         resource:
-          service.instance.id: ${POD_UID}
+          attributes:
+          - name: service.instance.id
+            value: ${POD_UID}

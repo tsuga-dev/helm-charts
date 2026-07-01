@@ -400,10 +400,10 @@ agent:
   collectLogs: true
 
   # -- Collect OpenTelemetry collector logs
-  # When false, excludes OpenTelemetry collector logs from collection
-  # Useful to avoid log loops
-  # @default -- true
-  collectOtelLogs: true
+  # When false (default), excludes the collector's own container logs to avoid a
+  # self-ingestion feedback loop that produces container-parser errors
+  # @default -- false
+  collectOtelLogs: false
 
   # -- Add logs volumes to the agent
   # When true, adds volumes for log collection

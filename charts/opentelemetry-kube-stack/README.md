@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.7.2](https://img.shields.io/badge/Version-0.7.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.7.3](https://img.shields.io/badge/Version-0.7.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -303,7 +303,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.affinity | object | {} | Agent-specific affinity rules If not set, inherits from global affinity configuration |
 | agent.collectLogs | bool | true | Collect logs from the host and containers When true, enables filelog receiver to collect logs from /var/log/pods Also mounts required volumes for log collection |
 | agent.collectNetwork | bool | false | Collect host network metrics When true, enables network scraper in hostmetrics receiver |
-| agent.collectOtelLogs | bool | true | Collect OpenTelemetry collector logs When false, excludes OpenTelemetry collector logs from collection Useful to avoid log loops |
+| agent.collectOtelLogs | bool | false | Collect OpenTelemetry collector logs When false (default), excludes the collector's own container logs to avoid a self-ingestion feedback loop that produces container-parser errors |
 | agent.collectProcesses | bool | false | Collect host processes metrics When true, enables processes and process scrapers in hostmetrics receiver |
 | agent.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Agent collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers Default processors: k8s_attributes, memory_limiter, batch, cumulativetodelta, resource |
 | agent.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |

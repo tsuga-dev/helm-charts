@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-demo-0.9.9] - 2026-06-29
+
+### Changed
+- Remove payment log pod annotation and default to contrib image (#106) by @abruneau in [#106](https://github.com/tsuga-dev/helm-charts/pull/106)
+
 ## [opentelemetry-demo-0.9.8] - 2026-06-26
 
 ### Added
@@ -181,6 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump versions by @abruneau
 - Revert "Otel-demo-improvement" by @abruneau
 - Enhance OpenTelemetry demo chart and CI/CD configuration by @abruneau
+[opentelemetry-demo-0.9.9]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.8...opentelemetry-demo-0.9.9
+
 [opentelemetry-demo-0.9.8]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.7...opentelemetry-demo-0.9.8
 
 [opentelemetry-demo-0.9.7]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-demo-0.9.6...opentelemetry-demo-0.9.7

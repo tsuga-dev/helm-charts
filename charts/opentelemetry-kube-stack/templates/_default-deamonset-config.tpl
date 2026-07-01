@@ -4,14 +4,16 @@ extensions:
     endpoint: ${env:MY_POD_IP}:13133
 receivers:
 {{- if .Values.agent.collectLogs }}
-  filelog:
-    exclude: []
+  file_log:
+  {{- if not .Values.agent.collectOtelLogs }}
+    # Exclude the collector's own container logs to avoid a self-ingestion
+    # feedback loop (the operator names the collector container "otc-container").
+    exclude:
+      - /var/log/pods/*/otc-container/*.log
+      - /var/log/pods/*/otel-collector/*.log
+  {{- end }}
     include:
       - /var/log/pods/*/*/*.log
-  {{- if eq .Values.agent.collectOtelLogs false}}
-    exclude:
-    - /var/log/pods/*/otel-collector/*.log
-  {{- end }}
     include_file_name: false
     include_file_path: true
     operators:
@@ -72,13 +74,7 @@ receivers:
         endpoint: ${env:MY_POD_IP}:4317
       http:
         endpoint: ${env:MY_POD_IP}:4318
-  prometheus/self:
-    config:
-      scrape_configs:
-        - job_name: otel-collector
-          scrape_interval: 10s
-          static_configs:
-            - targets: ['localhost:8888']
+
 processors:
   batch:
     # Trigger a send when the batch reaches 1000 items.
@@ -172,7 +168,7 @@ exporters:
   {}
 {{- end }}
 connectors:
-  spanmetrics:
+  span_metrics:
     dimensions:
       - name: http.request.method
         default: GET
@@ -186,7 +182,7 @@ service:
       receivers:
         - otlp
 {{- if .Values.agent.collectLogs }}
-        - filelog
+        - file_log
 {{- end }}
       processors:
         - k8s_attributes
@@ -203,7 +199,7 @@ service:
       receivers:
         - otlp
         - kubelet_stats
-        - spanmetrics
+        - span_metrics
         - host_metrics
       processors:
         - k8s_attributes
@@ -222,7 +218,7 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
         {{- end }}
-        - spanmetrics
+        - span_metrics
       processors:
         - k8s_attributes
         - memory_limiter
@@ -232,18 +228,6 @@ service:
         - batch
       receivers:
         - otlp
-    metrics/collector:
-      receivers:
-        - prometheus/self
-      processors:
-        - memory_limiter
-        - cumulativetodelta
-        - resource/collector
-        - batch
-      exporters:
-        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
-        - otlp_http/tsuga
-        {{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
 {{- end}}
