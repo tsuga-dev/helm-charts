@@ -229,7 +229,7 @@ spec:
         observe_nodes: true
         observe_services: true
     connectors:
-      spanmetrics:
+      span_metrics:
         dimensions:
         - default: GET
           name: http.request.method
@@ -261,14 +261,14 @@ spec:
           receivers:
           - otlp
           - kubelet_stats
-          - spanmetrics
+          - span_metrics
           - host_metrics
           - receiver_creator/redis
           - receiver_creator/nginx
         traces:
           exporters:
           - otlp_http/tsuga
-          - spanmetrics
+          - span_metrics
           processors:
           - k8s_attributes
           - memory_limiter
@@ -287,4 +287,6 @@ spec:
                     value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
         resource:
-          service.instance.id: ${POD_UID}
+          attributes:
+          - name: service.instance.id
+            value: ${POD_UID}

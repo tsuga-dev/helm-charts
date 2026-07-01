@@ -208,7 +208,7 @@ spec:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
     connectors:
-      spanmetrics:
+      span_metrics:
         dimensions:
         - default: GET
           name: http.request.method
@@ -239,11 +239,11 @@ spec:
           receivers:
           - otlp
           - kubelet_stats
-          - spanmetrics
+          - span_metrics
           - host_metrics
         traces:
           exporters:
-          - spanmetrics
+          - span_metrics
           - debug
           processors:
           - k8s_attributes
@@ -263,4 +263,6 @@ spec:
                     value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
         resource:
-          service.instance.id: ${POD_UID}
+          attributes:
+          - name: service.instance.id
+            value: ${POD_UID}

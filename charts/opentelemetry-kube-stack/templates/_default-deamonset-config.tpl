@@ -166,7 +166,7 @@ exporters:
   {}
 {{- end }}
 connectors:
-  spanmetrics:
+  span_metrics:
     dimensions:
       - name: http.request.method
         default: GET
@@ -197,7 +197,7 @@ service:
       receivers:
         - otlp
         - kubelet_stats
-        - spanmetrics
+        - span_metrics
         - host_metrics
       processors:
         - k8s_attributes
@@ -216,7 +216,7 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
         {{- end }}
-        - spanmetrics
+        - span_metrics
       processors:
         - k8s_attributes
         - memory_limiter
