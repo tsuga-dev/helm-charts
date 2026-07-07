@@ -264,7 +264,7 @@ opentelemetry-demo:
           persistentVolumeClaim:
             claimName: db-persistent-volume-claim
       additionalVolumeMounts:
-        - mountPath: /var/lib/postgres/data
+        - mountPath: /var/lib/postgresql/data
           name: db-data
     valkey-cart:
       podAnnotations:
