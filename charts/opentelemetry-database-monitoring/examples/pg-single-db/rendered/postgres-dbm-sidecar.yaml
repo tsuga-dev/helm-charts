@@ -8,7 +8,7 @@ metadata:
     meta.helm.sh/release-name: "example"
     meta.helm.sh/release-namespace: "default"
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"

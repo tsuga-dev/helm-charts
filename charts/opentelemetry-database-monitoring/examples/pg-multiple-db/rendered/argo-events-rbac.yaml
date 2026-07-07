@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -17,7 +17,7 @@ kind: ServiceAccount
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -30,7 +30,7 @@ metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -46,7 +46,7 @@ kind: Role
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -63,7 +63,7 @@ metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -83,7 +83,7 @@ kind: RoleBinding
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"

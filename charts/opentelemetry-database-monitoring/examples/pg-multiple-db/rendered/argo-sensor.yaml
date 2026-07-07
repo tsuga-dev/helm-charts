@@ -5,7 +5,7 @@ kind: Sensor
 metadata:
   name: example-opentelemetry-database-monitoring-postgresql-setup
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -39,7 +39,7 @@ spec:
                 generateName: postgresql-postgresql-monitoring-setup-
                 namespace: default
                 labels:
-                  helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+                  helm.sh/chart: opentelemetry-database-monitoring-0.1.2
                   app.kubernetes.io/name: opentelemetry-database-monitoring
                   app.kubernetes.io/instance: example
                   app.kubernetes.io/version: "1.16.0"
@@ -64,9 +64,13 @@ spec:
                           - /bin/sh
                           - -c
                           - |
+                            set -e
                             until pg_isready -h postgresql -p 5432 -U root; do sleep 2; done
-                            PGPASSWORD=otel psql -h postgresql -p 5432 -U root -d otel -f /scripts/monitoring-setup.sql
-                            PGPASSWORD=otel psql -h postgresql -p 5432 -U root -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+                            PGPASSWORD=otel psql -v ON_ERROR_STOP=1 -h postgresql -p 5432 -U root -d otel -f /scripts/monitoring-setup.sql
+                            PGPASSWORD=otel psql -v ON_ERROR_STOP=1 -h postgresql -p 5432 -U root -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+                            # Confirm the monitoring role is actually usable on the endpoint we reached;
+                            # fail (and let backoffLimit retry) if the setup did not land where the collector connects.
+                            PGPASSWORD="$OTEL_MONITOR_PASSWORD" psql -v ON_ERROR_STOP=1 -h postgresql -p 5432 -U otel_monitor -d otel -c "SELECT 1" > /dev/null
                         env:
                           - name: OTEL_MONITOR_PASSWORD
                             valueFrom:
@@ -87,7 +91,7 @@ kind: Sensor
 metadata:
   name: example-opentelemetry-database-monitoring-postgresql2-setup
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -121,7 +125,7 @@ spec:
                 generateName: postgresql2-postgresql-monitoring-setup-
                 namespace: default
                 labels:
-                  helm.sh/chart: opentelemetry-database-monitoring-0.1.1
+                  helm.sh/chart: opentelemetry-database-monitoring-0.1.2
                   app.kubernetes.io/name: opentelemetry-database-monitoring
                   app.kubernetes.io/instance: example
                   app.kubernetes.io/version: "1.16.0"
@@ -146,9 +150,13 @@ spec:
                           - /bin/sh
                           - -c
                           - |
+                            set -e
                             until pg_isready -h postgresql2 -p 5432 -U root; do sleep 2; done
-                            PGPASSWORD=otel psql -h postgresql2 -p 5432 -U root -d otel -f /scripts/monitoring-setup.sql
-                            PGPASSWORD=otel psql -h postgresql2 -p 5432 -U root -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+                            PGPASSWORD=otel psql -v ON_ERROR_STOP=1 -h postgresql2 -p 5432 -U root -d otel -f /scripts/monitoring-setup.sql
+                            PGPASSWORD=otel psql -v ON_ERROR_STOP=1 -h postgresql2 -p 5432 -U root -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+                            # Confirm the monitoring role is actually usable on the endpoint we reached;
+                            # fail (and let backoffLimit retry) if the setup did not land where the collector connects.
+                            PGPASSWORD="$OTEL_MONITOR_PASSWORD" psql -v ON_ERROR_STOP=1 -h postgresql2 -p 5432 -U otel_monitor -d otel -c "SELECT 1" > /dev/null
                         env:
                           - name: OTEL_MONITOR_PASSWORD
                             valueFrom:
