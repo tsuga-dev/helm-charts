@@ -252,8 +252,8 @@ helm repo update
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 #### Option 2: Direct Installation
@@ -262,8 +262,8 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 #### Option 3: Using Values File
@@ -272,8 +272,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 # Create a values file
 cat > my-values.yaml << EOF
 tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
+  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  apiKey: "<TSUGA_API_KEY>"
 secret:
   create: true
 EOF
@@ -351,7 +351,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set tsuga.otlpEndpoint="test" --set tsuga.apiKey="test"
+helm template test . --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation

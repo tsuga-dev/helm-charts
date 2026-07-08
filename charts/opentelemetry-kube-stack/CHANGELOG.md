@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.7.3] - 2026-07-01
+
+### Added
+- Align demo and kube-stack with OTel naming conventions (#95) by @abruneau in [#95](https://github.com/tsuga-dev/helm-charts/pull/95)
+
+### Changed
+- Fix Old otel conventions (#98) by @abruneau in [#98](https://github.com/tsuga-dev/helm-charts/pull/98)
+- Docs/readme charts update (#104) by @abruneau in [#104](https://github.com/tsuga-dev/helm-charts/pull/104)
+- Remove payment log pod annotation and default to contrib image (#106) by @abruneau in [#106](https://github.com/tsuga-dev/helm-charts/pull/106)
+
+### Fixed
+- List-form telemetry headers + collector version guard (#107) by @abruneau in [#107](https://github.com/tsuga-dev/helm-charts/pull/107)
+
 ## [opentelemetry-kube-stack-0.7.2] - 2026-06-11
 
 ### Changed
@@ -229,6 +242,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - First commit by @abruneau
 - Add Makefile for example generation and validation; update Helm chart configurations by @abruneau
+[opentelemetry-kube-stack-0.7.3]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.7.2...opentelemetry-kube-stack-0.7.3
+
 [opentelemetry-kube-stack-0.7.2]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.7.1...opentelemetry-kube-stack-0.7.2
 
 [opentelemetry-kube-stack-0.7.1]: https://github.com/tsuga-dev/helm-charts/compare/opentelemetry-kube-stack-0.7.0...opentelemetry-kube-stack-0.7.1

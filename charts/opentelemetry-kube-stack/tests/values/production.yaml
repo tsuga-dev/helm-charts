@@ -1,8 +1,8 @@
 ---
 # Production configuration with resource limits and security
 tsuga:
-  otlpEndpoint: "https://prod-endpoint.com"
-  apiKey: "prod-api-key"
+  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  apiKey: "<TSUGA_API_KEY>"
 
 secret:
   create: true

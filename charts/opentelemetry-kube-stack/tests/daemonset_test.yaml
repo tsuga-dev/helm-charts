@@ -9,8 +9,8 @@ tests:
       agent.hostNetwork: true
       serviceAccount.create: true
       serviceAccount.name: ""
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -26,8 +26,8 @@ tests:
   - it: should not include tsuga exporter when enabledForDaemonset is false
     set:
       agent.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
       tsuga.enabledForDaemonset: false
     release:
       name: "test-release"
@@ -41,8 +41,8 @@ tests:
   - it: should configure spanmetrics with low-cardinality HTTP dimensions by default
     set:
       agent.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:

@@ -15,15 +15,15 @@
 #
 # Option 1: Generate new secret (default)
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-#   --set tsuga.apiKey="your-api-key-here"
+#   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+#   --set tsuga.apiKey="<TSUGA_API_KEY>"
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
 #   --set secret.create=false \
 #   --set secret.name="my-existing-secret" \
-#   --set secret.keyMapping.TSUGA_API_KEY="api-key" \
-#   --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
+#   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
+#   --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="<OTLP_ENDPOINT_SECRET_KEY>"
 #
 # Option 3: External secret management (recommended for production)
 # - Use Sealed Secrets: https://github.com/bitnami-labs/sealed-secrets
@@ -148,11 +148,11 @@ autoInstrumentation:
 # Provide these values via --set flags or external secrets management
 tsuga:
   # -- Tsuga OTLP endpoint for telemetry data
-  # Set via: --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com"
+  # Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
   # @default -- ""
   otlpEndpoint: ""
   # -- Tsuga API key for authentication
-  # Set via: --set tsuga.apiKey="your-api-key-here"
+  # Set via: --set tsuga.apiKey="<TSUGA_API_KEY>"
   # Or use external secrets: --set tsuga.apiKey=""
   # @default -- ""
   apiKey: ""
@@ -182,9 +182,9 @@ secret:
   name: "otel-secret"
   # -- Key mapping for existing secret (used when create=false)
   # Maps chart expected keys to keys in the existing secret
-  # Example: If your secret uses "api-key" instead of "TSUGA_API_KEY", set:
+  # Example: If your secret uses "<API_KEY_SECRET_KEY>" instead of "TSUGA_API_KEY", set:
   #   keyMapping:
-  #     TSUGA_API_KEY: "api-key"
+  #     TSUGA_API_KEY: "<API_KEY_SECRET_KEY>"
   keyMapping:
     # -- Key name in the secret for Tsuga API key
     # @default -- "TSUGA_API_KEY"

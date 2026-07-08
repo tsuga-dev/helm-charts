@@ -130,7 +130,7 @@ run_template_tests() {
     for values_file in tests/values/*.yaml; do
         if [ -f "$values_file" ]; then
             print_status "Testing with $(basename "$values_file")..."
-            if helm template otel-test . -f "$values_file" --set tsuga.otlpEndpoint="https://test.com" --set tsuga.apiKey="test-key" > /dev/null; then
+            if helm template otel-test . -f "$values_file" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>" > /dev/null; then
                 print_success "Template test passed for $(basename "$values_file")"
             else
                 print_error "Template test failed for $(basename "$values_file")"

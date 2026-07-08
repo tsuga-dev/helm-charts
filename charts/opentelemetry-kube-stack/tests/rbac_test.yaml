@@ -17,8 +17,8 @@ tests:
   - it: should not include monitoring.coreos.com rules by default
     set:
       rbac.create: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -33,8 +33,8 @@ tests:
       rbac.create: true
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -49,8 +49,8 @@ tests:
   - it: should not include endpointslices permission by default
     set:
       rbac.create: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     documentIndex: 0
@@ -64,8 +64,8 @@ tests:
     set:
       rbac.create: true
       targetAllocator.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     documentIndex: 0

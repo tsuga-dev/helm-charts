@@ -85,8 +85,8 @@ A comprehensive values file for manual testing and validation:
 # Test with auto-instrumentation values
 helm install my-test . \
   -f tests/values/auto-instrumentation.yaml \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 
 # Verify the Instrumentation resource
 kubectl get instrumentation
@@ -106,8 +106,8 @@ helm install otel-test . \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.exporter.endpoint="http://otel-test-opentelemetry-kube-stack-agent:4317" \
   --set autoInstrumentation.spec.java.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest" \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Step 2: Verify Instrumentation Resource
@@ -235,8 +235,8 @@ helm install otel-test . \
   --set autoInstrumentation.spec.propagators[2]=b3 \
   --set autoInstrumentation.spec.sampler.type="parentbased_traceidratio" \
   --set autoInstrumentation.spec.sampler.argument="0.5" \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Testing with Resource Attributes
@@ -247,8 +247,8 @@ helm install otel-test . \
   --set autoInstrumentation.spec.resource.addK8sUIDAttributes=true \
   --set "autoInstrumentation.spec.resource.resourceAttributes.service\.namespace=production" \
   --set "autoInstrumentation.spec.resource.resourceAttributes.deployment\.environment=staging" \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Testing Chart Upgrades
