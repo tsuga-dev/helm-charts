@@ -84,8 +84,8 @@ A complete values file for testing auto-instrumentation with realistic configura
 ```bash
 helm install otel-test charts/opentelemetry-kube-stack \
   -f charts/opentelemetry-kube-stack/tests/values/auto-instrumentation.yaml \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### 4. Example Applications
@@ -177,8 +177,8 @@ cd charts/opentelemetry-kube-stack
 # 1. Install chart with auto-instrumentation
 helm install otel-test charts/opentelemetry-kube-stack \
   -f charts/opentelemetry-kube-stack/tests/values/auto-instrumentation.yaml \
-  --set tsuga.otlpEndpoint="https://test.example.com" \
-  --set tsuga.apiKey="test-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 
 # 2. Verify Instrumentation resource
 kubectl get instrumentation

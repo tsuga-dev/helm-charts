@@ -6,8 +6,8 @@ tests:
   - it: should not render when targetAllocator disabled
     set:
       targetAllocator.enabled: false
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -20,8 +20,8 @@ tests:
       targetAllocator.spec.allocationStrategy: "consistent-hashing"
       serviceAccount.create: true
       serviceAccount.name: ""
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -38,8 +38,8 @@ tests:
     set:
       targetAllocator.enabled: true
       serviceAccount.create: false
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -53,8 +53,8 @@ tests:
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
       targetAllocator.spec.prometheusCR.serviceMonitorSelector.matchLabels.release: "test"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:

@@ -68,8 +68,8 @@ It is recommended to create a secret for the Tsuga API key and use it in the `va
 
 ```bash
 helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 **Option B: Use existing secret**
@@ -77,8 +77,8 @@ helm install my-otel-stack ./charts/opentelemetry-kube-stack \
 helm install my-otel-stack ./charts/opentelemetry-kube-stack \
   --set secret.create=false \
   --set secret.name="my-existing-secret" \
-  --set secret.keyMapping.TSUGA_API_KEY="api-key" \
-  --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="otlp-endpoint"
+  --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
+  --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="<OTLP_ENDPOINT_SECRET_KEY>"
 ```
 
 ### Basic Installation

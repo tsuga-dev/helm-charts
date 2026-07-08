@@ -6,8 +6,8 @@ tests:
   - it: should not create instrumentation resource when disabled
     set:
       autoInstrumentation.enabled: false
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -17,8 +17,8 @@ tests:
   - it: should create instrumentation resource when enabled with minimal config
     set:
       autoInstrumentation.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
       namespace: "test-namespace"
@@ -44,8 +44,8 @@ tests:
     set:
       autoInstrumentation.enabled: true
       autoInstrumentation.apiVersion: "opentelemetry.io/v1beta1"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -57,8 +57,8 @@ tests:
     set:
       autoInstrumentation.enabled: true
       autoInstrumentation.nameOverride: "my-custom-instrumentation"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -72,8 +72,8 @@ tests:
       autoInstrumentation.labels:
         environment: "production"
         team: "observability"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -90,8 +90,8 @@ tests:
       autoInstrumentation.annotations:
         description: "Auto-instrumentation for production cluster"
         contact: "ops-team@example.com"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -116,8 +116,8 @@ tests:
           env:
             - name: OTEL_JAVAAGENT_DEBUG
               value: "true"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -159,8 +159,8 @@ tests:
           image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest"
         dotnet:
           image: "ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -185,8 +185,8 @@ tests:
   - it: should include component labels
     set:
       autoInstrumentation.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     chart:
@@ -203,8 +203,8 @@ tests:
   - it: should truncate name to 63 characters for long release names
     set:
       autoInstrumentation.enabled: true
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "very-long-release-name-test"
     asserts:
@@ -224,8 +224,8 @@ tests:
           resourceAttributes:
             "service.name": "my-service"
             "deployment.environment": "production"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:
@@ -250,8 +250,8 @@ tests:
             value: "always_on"
           - name: OTEL_METRICS_EXPORTER
             value: "otlp"
-      tsuga.otlpEndpoint: "https://test-endpoint.com"
-      tsuga.apiKey: "test-api-key"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
     asserts:

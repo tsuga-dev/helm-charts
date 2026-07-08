@@ -25,14 +25,14 @@ kubectl create namespace "$NAMESPACE"
 # Deploy chart for security scanning
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
-    --set tsuga.otlpEndpoint="https://test-endpoint.com" \
-    --set tsuga.apiKey="test-api-key" \
+    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --wait --timeout=300s
 
 # Get rendered manifests
 helm template "$RELEASE_NAME" "$CHART_PATH" \
-    --set tsuga.otlpEndpoint="https://test-endpoint.com" \
-    --set tsuga.apiKey="test-api-key" > /tmp/otel-manifests.yaml
+    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.apiKey="<TSUGA_API_KEY>" > /tmp/otel-manifests.yaml
 
 echo "Running security scans..."
 

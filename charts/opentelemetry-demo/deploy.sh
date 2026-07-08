@@ -179,7 +179,7 @@ configure_tsuga_settings() {
     if [[ -z "$current_endpoint" ]] || [[ "$current_endpoint" == "null" ]] || [[ "$current_endpoint" == '""' ]] || [[ "$needs_configuration" == "true" ]]; then
         echo -e "${YELLOW}Tsuga endpoint is not configured.${NC}"
         echo -e "${BLUE}Please provide your OpenTelemetry endpoint URL:${NC}"
-        echo -e "${CYAN}Example: https://your-otel-endpoint.com:4318/v1/traces${NC}"
+        echo -e "${CYAN}Example: https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp${NC}"
         
         while true; do
             read -p "Enter OTLP endpoint URL: " -r otlp_endpoint
