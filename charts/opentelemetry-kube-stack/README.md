@@ -262,8 +262,8 @@ helm repo update
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 #### Option 2: Direct Installation
@@ -272,8 +272,8 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" \
-  --set tsuga.apiKey="your-api-key-here"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 #### Option 3: Using Values File
@@ -282,8 +282,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 # Create a values file
 cat > my-values.yaml << EOF
 tsuga:
-  otlpEndpoint: "https://your-tsuga-endpoint.com"
-  apiKey: "your-api-key-here"
+  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  apiKey: "<TSUGA_API_KEY>"
 secret:
   create: true
 EOF
@@ -394,7 +394,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | resources.requests.cpu | string | "100m" | CPU request |
 | resources.requests.memory | string | "128Mi" | Memory request |
 | secret.create | bool | false | Create a Kubernetes secret for OpenTelemetry configuration If true: creates a secret with values from tsuga configuration If false: uses an existing secret (must be created separately) |
-| secret.keyMapping | object | `{"TSUGA_API_KEY":"TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT":"TSUGA_OTLP_ENDPOINT"}` | Key mapping for existing secret (used when create=false) Maps chart expected keys to keys in the existing secret Example: If your secret uses "api-key" instead of "TSUGA_API_KEY", set:   keyMapping:     TSUGA_API_KEY: "api-key" |
+| secret.keyMapping | object | `{"TSUGA_API_KEY":"TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT":"TSUGA_OTLP_ENDPOINT"}` | Key mapping for existing secret (used when create=false) Maps chart expected keys to keys in the existing secret Example: If your secret uses "<API_KEY_SECRET_KEY>" instead of "TSUGA_API_KEY", set:   keyMapping:     TSUGA_API_KEY: "<API_KEY_SECRET_KEY>" |
 | secret.keyMapping.TSUGA_API_KEY | string | "TSUGA_API_KEY" | Key name in the secret for Tsuga API key |
 | secret.keyMapping.TSUGA_OTLP_ENDPOINT | string | "TSUGA_OTLP_ENDPOINT" | Key name in the secret for Tsuga OTLP endpoint |
 | secret.name | string | "otel-secret" | Name of the secret Used when create=true (name of secret to create) Used when create=false (name of existing secret to use) |
@@ -437,11 +437,11 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | targetAllocator.spec.prometheusCR.podMonitorSelector | object | {} | Selector for PodMonitor resources An empty selector ({}) matches all PodMonitors in all namespaces. |
 | targetAllocator.spec.prometheusCR.serviceMonitorSelector | object | {} | Selector for ServiceMonitor resources An empty selector ({}) matches all ServiceMonitors in all namespaces. |
 | tolerations | list | [] | Tolerations for daemonset mode (agent) Used as default when agent.tolerations is not set |
-| tsuga.apiKey | string | "" | Tsuga API key for authentication Set via: --set tsuga.apiKey="your-api-key-here" Or use external secrets: --set tsuga.apiKey="" |
+| tsuga.apiKey | string | "" | Tsuga API key for authentication Set via: --set tsuga.apiKey="<TSUGA_API_KEY>" Or use external secrets: --set tsuga.apiKey="" |
 | tsuga.enabledForClusterReceiver | bool | true | Enable Tsuga OTLP exporter for the cluster receiver (gateway) |
 | tsuga.enabledForDaemonset | bool | true | Enable Tsuga OTLP exporter for the agent DaemonSet |
 | tsuga.enabledForStatefulset | bool | true | Enable Tsuga OTLP exporter for the StatefulSet collector (when targetAllocator is enabled) |
-| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint for telemetry data Set via: --set tsuga.otlpEndpoint="https://your-tsuga-endpoint.com" |
+| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint for telemetry data Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" |
 | validation | object | `{"enabled":true,"enforceNamingConventions":true,"maxNameLength":63}` | Resource naming validation |
 | validation.enabled | bool | true | Enable resource name validation When enabled, validates resource names meet Kubernetes requirements |
 | validation.enforceNamingConventions | bool | true | Validate naming conventions Enforces Kubernetes naming conventions (lowercase alphanumeric and hyphens) |
@@ -512,7 +512,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set tsuga.otlpEndpoint="test" --set tsuga.apiKey="test"
+helm template test . --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation

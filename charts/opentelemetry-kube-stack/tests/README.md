@@ -81,8 +81,8 @@ Located in `tests/values/`, these files provide different configuration scenario
 # Test with specific values file
 helm install my-release ./charts/opentelemetry-kube-stack \
   -f tests/values/production.yaml \
-  --set tsuga.otlpEndpoint="https://your-endpoint.com" \
-  --set tsuga.apiKey="your-api-key"
+  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ## CI/CD Pipeline
@@ -153,7 +153,7 @@ helm unittest .
 
 # 5. Manual chart testing
 helm lint .
-helm template . --set tsuga.otlpEndpoint="https://test.com" --set tsuga.apiKey="test-key"
+helm template . --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ## Auto-Instrumentation Testing
@@ -179,7 +179,7 @@ This includes:
 
 ```bash
 # Debug template rendering
-helm template . --debug --set tsuga.otlpEndpoint="https://test.com" --set tsuga.apiKey="test-key"
+helm template . --debug --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 
 # Check resource status
 kubectl get all -n <namespace>
