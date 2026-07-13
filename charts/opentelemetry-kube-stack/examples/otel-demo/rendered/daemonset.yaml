@@ -288,6 +288,4 @@ spec:
                     value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
         resource:
-          attributes:
-          - name: service.instance.id
-            value: ${POD_UID}
+          service.instance.id: ${POD_UID}

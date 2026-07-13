@@ -82,13 +82,10 @@ Generate Otel telemetry export
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
 {{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}
 resource:
-  attributes:
-    {{- if .Values.clusterName }}
-    - name: k8s.cluster.name
-      value: {{ .Values.clusterName }}
-    {{- end}}
-    - name: service.instance.id
-      value: ${POD_UID}
+  {{- if .Values.clusterName }}
+  k8s.cluster.name: {{ .Values.clusterName }}
+  {{- end}}
+  service.instance.id: ${POD_UID}
 {{- if include "opentelemetry-kube-stack.tsugaEnabled" . }}
 metrics:
     readers:
