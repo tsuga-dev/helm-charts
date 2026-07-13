@@ -149,6 +149,4 @@ spec:
           - k8s_cluster
       telemetry:
         resource:
-          attributes:
-          - name: service.instance.id
-            value: ${POD_UID}
+          service.instance.id: ${POD_UID}
