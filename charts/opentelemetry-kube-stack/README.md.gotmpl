@@ -113,7 +113,7 @@ agent:
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pods (only when `cluster.collectk8sobjects=true`)
+- **Kubernetes Objects** (`k8s_objects`): Watches pods (enabled by default, disable with `cluster.collectk8sobjects=false`)
 - **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 
 **Default Processors:**
