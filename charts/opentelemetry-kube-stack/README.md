@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.7.4](https://img.shields.io/badge/Version-0.7.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -123,10 +123,11 @@ agent:
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pods (only when `cluster.collectk8sobjects=true`)
+- **Kubernetes Objects** (`k8s_objects`): Watches pods (enabled by default, disable with `cluster.collectk8sobjects=false`)
 - **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 
 **Default Processors:**
+- **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
 - **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
 - **Batch**: Batches telemetry for efficient processing
@@ -135,8 +136,8 @@ agent:
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 - **Metrics (collector self-telemetry)**: `prometheus/self` → `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
 
 ¹ The `resource` processor is only present when `clusterName` is set.
@@ -344,7 +345,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
-| cluster.collectk8sobjects | bool | `false` |  |
+| cluster.collectk8sobjects | bool | `true` |  |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
 | cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |

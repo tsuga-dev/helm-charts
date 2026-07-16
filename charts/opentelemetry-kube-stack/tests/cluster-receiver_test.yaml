@@ -33,3 +33,55 @@ tests:
       - equal:
           path: spec.config.service.pipelines.logs.exporters
           value: []
+
+  - it: should collect k8s objects by default
+    set:
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - isNotNull:
+          path: spec.config.receivers.k8s_objects
+      - contains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects
+
+  - it: should not collect k8s objects when disabled
+    set:
+      cluster.enabled: true
+      cluster.collectk8sobjects: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - isNull:
+          path: spec.config.receivers.k8s_objects
+      - notContains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects
+
+  - it: should guard logs and metrics pipelines with memory_limiter first
+    set:
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - isNotNull:
+          path: spec.config.processors.memory_limiter
+      - equal:
+          path: spec.config.service.pipelines.logs.processors[0]
+          value: memory_limiter
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors[0]
+          value: memory_limiter

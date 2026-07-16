@@ -67,6 +67,13 @@ spec:
         - MemoryPressure
         - DiskPressure
         - PIDPressure
+      k8s_objects:
+        auth_type: serviceAccount
+        include_initial_state: true
+        objects:
+        - group: ""
+          mode: watch
+          name: pods
     processors:
       batch:
         send_batch_max_size: 5000
@@ -121,6 +128,10 @@ spec:
             name: k8s.pod.uid
         - sources:
           - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
       resource/collector:
         attributes:
         - action: upsert
@@ -135,14 +146,17 @@ spec:
           exporters:
           - debug
           processors:
+          - memory_limiter
           - k8s_attributes
           - batch
           receivers:
           - k8s_cluster
+          - k8s_objects
         metrics:
           exporters:
           - debug
           processors:
+          - memory_limiter
           - k8s_attributes
           - batch
           receivers:

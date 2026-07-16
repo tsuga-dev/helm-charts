@@ -17,6 +17,10 @@ receivers:
         mode: watch
 {{- end }}
 processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
   batch:
     # Trigger a send when the batch reaches 1000 items.
     send_batch_size: 5000
@@ -111,6 +115,7 @@ service:
         - k8s_objects
 {{- end }}
       processors:
+        - memory_limiter
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
@@ -124,6 +129,7 @@ service:
       receivers:
         - k8s_cluster
       processors:
+        - memory_limiter
         {{- if .Values.clusterName }}
         - resource
         {{- end }}
