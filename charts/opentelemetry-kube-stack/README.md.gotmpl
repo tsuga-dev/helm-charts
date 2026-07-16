@@ -117,6 +117,7 @@ agent:
 - **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 
 **Default Processors:**
+- **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
 - **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
 - **Batch**: Batches telemetry for efficient processing
@@ -125,8 +126,8 @@ agent:
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 - **Metrics (collector self-telemetry)**: `prometheus/self` → `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
 
 ¹ The `resource` processor is only present when `clusterName` is set.

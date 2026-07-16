@@ -138,6 +138,10 @@ spec:
             name: k8s.pod.uid
         - sources:
           - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
       resource/collector:
         attributes:
         - action: upsert
@@ -157,6 +161,7 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
+          - memory_limiter
           - k8s_attributes
           - batch
           receivers:
@@ -166,6 +171,7 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
+          - memory_limiter
           - k8s_attributes
           - batch
           receivers:
