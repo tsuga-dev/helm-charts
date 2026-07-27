@@ -138,11 +138,6 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      resource/collector:
-        attributes:
-        - action: upsert
-          key: service.instance.id
-          value: ${POD_UID}
     exporters:
       otlp_http/tsuga:
         compression: gzip

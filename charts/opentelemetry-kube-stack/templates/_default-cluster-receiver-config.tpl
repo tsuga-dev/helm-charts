@@ -83,16 +83,6 @@ processors:
       - sources:
         - from: connection
   cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      {{- if .Values.clusterName }}
-      - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
-        action: upsert
-      {{- end }}
   {{- if .Values.clusterName }}
   resource:
     attributes:

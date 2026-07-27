@@ -23,16 +23,6 @@ processors:
     send_batch_size: 5000
     send_batch_max_size: 5000
   cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      {{- if .Values.clusterName }}
-      - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
-        action: upsert
-      {{- end }}
   k8s_attributes:
     extract:
       metadata:

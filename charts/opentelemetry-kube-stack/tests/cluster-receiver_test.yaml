@@ -85,3 +85,26 @@ tests:
       - equal:
           path: spec.config.service.pipelines.metrics.processors[0]
           value: memory_limiter
+
+  - it: should pin the cluster receiver to a single replica
+    set:
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should not define the unused resource/collector processor
+    set:
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.processors["resource/collector"]

@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -51,18 +51,17 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - Uses host networking for optimal performance (configurable)
 
 **Default Receivers:**
-- **Host Metrics**: CPU, memory, disk, filesystem, load, paging, optional network and process metrics
-- **Kubelet Stats**: Node and pod metrics via kubelet
+- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, optional network and process metrics. Pseudo filesystems (overlay, tmpfs, cgroup2, …) and container mount points are excluded to keep series counts sane.
+- **Kubelet Stats** (`kubelet_stats`): Node and pod metrics via kubelet
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
-- **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
-- **File Logs**: Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
+- **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
 
 **Default Processors:**
-- **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
-- **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
-- **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000)
+- **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
+- **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
-- **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
+- **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
 **Default Connectors:**
 - **Spanmetrics**: Generates RED metrics from spans (see dimensions below)
@@ -71,12 +70,11 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`filelog` when `agent.collectLogs`) → `k8s_attributes`, `memory_limiter`, `batch`, `resource`¹ → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, `spanmetrics`, `host_metrics` → `k8s_attributes`, `memory_limiter`, `cumulativetodelta`, `resource`¹, `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `k8s_attributes`, `memory_limiter`, `resource`¹, `batch` → `otlp_http/tsuga`, `spanmetrics`
-- **Metrics (collector self-telemetry)**: `prometheus/self` → `memory_limiter`, `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
-¹ The `resource` processor is only present when `clusterName` is set.
+Collector self-telemetry is exported through `service::telemetry`, not a pipeline.
 
 **Default Spanmetrics Dimensions:**
 - `http.request.method`
@@ -120,11 +118,11 @@ agent:
 ### Cluster Receiver (Deployment)
 
 - Collects cluster metrics and events using the Kubernetes API server
+- **Pinned to a single replica.** `k8s_cluster` and `k8s_objects` do not use leader election here, so a second replica would report the same cluster state again: every cluster metric counted twice and every object ingested twice. The replica count is set in the `OpenTelemetryCollector` resource, so a manual `kubectl scale` is reconciled back to 1.
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
 - **Kubernetes Objects** (`k8s_objects`): Watches pods (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Prometheus (self)**: Scrapes the collector's own metrics from `localhost:8888`
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
@@ -138,9 +136,8 @@ agent:
 **Service Pipelines:**
 - **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-- **Metrics (collector self-telemetry)**: `prometheus/self` → `cumulativetodelta`, `resource/collector`, `batch` → `otlp_http/tsuga`
 
-¹ The `resource` processor is only present when `clusterName` is set.
+¹ Only present when `clusterName` is set.
 
 ## Quick Start
 

@@ -95,3 +95,57 @@ tests:
       # Internal-telemetry OTLP export (which needs the secret) is skipped.
       - notExists:
           path: spec.config.service.telemetry.metrics
+
+  - it: should run memory_limiter first and batch last in every pipeline
+    set:
+      agent.enabled: true
+      clusterName: "test-cluster"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines.logs.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, k8s_attributes, resource, cumulativetodelta, batch]
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]
+
+  - it: should stamp node identity even without a cluster name
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # insert, so k8s_attributes' pod-derived node name is never clobbered.
+      - contains:
+          path: spec.config.processors.resource.attributes
+          content:
+            key: k8s.node.name
+            value: ${env:K8S_NODE_NAME}
+            action: insert
+      # The dead processor is gone: it stamped the collector's own pod UID as
+      # service.instance.id, and was referenced by no pipeline.
+      - isNull:
+          path: spec.config.processors["resource/collector"]
+
+  - it: should exclude pseudo filesystems from the filesystem scraper
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_fs_types.fs_types
+          content: overlay
+      - contains:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points.mount_points
+          content: ^/var/lib/kubelet($|/)

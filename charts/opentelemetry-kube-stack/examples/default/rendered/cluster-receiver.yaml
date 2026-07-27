@@ -15,6 +15,12 @@ metadata:
     meta.helm.sh/release-namespace: "default"
 spec:
   mode: deployment
+  # Pinned, and deliberately not configurable. k8s_cluster and k8s_objects have
+  # no leader election here, so every extra replica reports the same cluster
+  # state again: two replicas means every cluster metric counted twice and
+  # every Kubernetes object ingested twice. Setting it in the CR also means a
+  # manual `kubectl scale` is reconciled back to 1.
+  replicas: 1
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
   resources:
     limits:
@@ -142,11 +148,6 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      resource/collector:
-        attributes:
-        - action: upsert
-          key: service.instance.id
-          value: ${POD_UID}
     exporters:
       otlp_http/tsuga:
         compression: gzip

@@ -110,6 +110,42 @@ spec:
                 enabled: true
           disk: null
           filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - ^/dev($|/)
+              - ^/proc($|/)
+              - ^/sys($|/)
+              - ^/run/k3s/containerd($|/)
+              - ^/var/lib/docker($|/)
+              - ^/var/lib/kubelet($|/)
+              - ^/snap($|/)
             metrics:
               system.filesystem.utilization:
                 enabled: true
@@ -200,11 +236,11 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      resource/collector:
+      resource:
         attributes:
-        - action: upsert
-          key: service.instance.id
-          value: ${POD_UID}
+        - action: insert
+          key: k8s.node.name
+          value: ${env:K8S_NODE_NAME}
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -230,8 +266,9 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
-          - k8s_attributes
           - memory_limiter
+          - k8s_attributes
+          - resource
           - batch
           receivers:
           - otlp
@@ -240,8 +277,9 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
-          - k8s_attributes
           - memory_limiter
+          - k8s_attributes
+          - resource
           - cumulativetodelta
           - batch
           receivers:
@@ -254,8 +292,9 @@ spec:
           - otlp_http/tsuga
           - span_metrics
           processors:
-          - k8s_attributes
           - memory_limiter
+          - k8s_attributes
+          - resource
           - batch
           receivers:
           - otlp

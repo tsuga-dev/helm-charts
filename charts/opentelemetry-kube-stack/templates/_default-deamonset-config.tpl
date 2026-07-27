@@ -51,6 +51,45 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
+        # Without these every overlayfs and tmpfs mount on the node becomes its
+        # own series, which on a busy node is dozens per pod and tells you
+        # nothing. Same exclusion set as the upstream hostMetrics preset.
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+            - '^/dev($|/)'
+            - '^/proc($|/)'
+            - '^/sys($|/)'
+            - '^/run/k3s/containerd($|/)'
+            - '^/var/lib/docker($|/)'
+            - '^/var/lib/kubelet($|/)'
+            - '^/snap($|/)'
+        exclude_fs_types:
+          match_type: strict
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
       load:
       memory:
         metrics:
@@ -144,23 +183,20 @@ processors:
     limit_percentage: 80
     spike_limit_percentage: 25
   cumulativetodelta: {}
-  resource/collector:
+  resource:
     attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
+      # host_metrics never touches a pod, so k8s_attributes cannot associate it
+      # and it would otherwise arrive with no node identity at all, collapsing
+      # every node's host metrics together. insert (not upsert) leaves
+      # pod-derived values alone.
+      - key: k8s.node.name
+        value: ${env:K8S_NODE_NAME}
+        action: insert
       {{- if .Values.clusterName }}
       - key: k8s.cluster.name
         value: {{ .Values.clusterName }}
         action: upsert
       {{- end }}
-  {{- if .Values.clusterName }}
-  resource:
-    attributes:
-      - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
-        action: upsert
-  {{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -185,12 +221,13 @@ service:
         - file_log
 {{- end }}
       processors:
-        - k8s_attributes
+        # memory_limiter must be first so load is shed before the pipeline
+        # spends work enriching data it is about to reject; batch last so it
+        # groups the finished records.
         - memory_limiter
-        - batch
-        {{- if .Values.clusterName }}
+        - k8s_attributes
         - resource
-        {{- end }}
+        - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
@@ -202,12 +239,10 @@ service:
         - span_metrics
         - host_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
-        - cumulativetodelta
-        {{- if .Values.clusterName }}
+        - k8s_attributes
         - resource
-        {{- end }}
+        - cumulativetodelta
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -220,11 +255,9 @@ service:
         {{- end }}
         - span_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
-        {{- if .Values.clusterName }}
+        - k8s_attributes
         - resource
-        {{- end }}
         - batch
       receivers:
         - otlp
