@@ -1,5 +1,8 @@
 charts/opentelemetry-kube-stack/CHANGELOG.md
   s_3555f581ef25dc::t_bf47d0fbbba78f 8-35,41-43,135-138,146-148,176-178,273-278
+  s_3555f581ef25dc::t_da7bec7496783d 8-12,13-15,16-19,273-274
+  s_3555f581ef25dc::t_408621150fecaa 20-35,41-43,135-138,146-148,176-177,275-278
+  s_3555f581ef25dc::t_e4e7dca192d10d 178
 ---
 {
   "schema_version": "authorship/3.0.0",
