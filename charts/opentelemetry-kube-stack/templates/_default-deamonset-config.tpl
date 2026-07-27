@@ -160,6 +160,20 @@ processors:
       - key: k8s.cluster.name
         value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
+  # k8s.node.name for telemetry that arrives without one. insert, not upsert:
+  # whatever already carries a node name keeps it. kubelet_stats sets it on its
+  # node metric group, and k8s_attributes sets it for any pod it could
+  # associate. What is left is host_metrics, which touches no pod so
+  # k8s_attributes can never associate it, and records whose pod was not in the
+  # informer cache. Those are this node's either way: the operator gives
+  # daemonset collectors a Service with internalTrafficPolicy: Local, so OTLP
+  # reaches the agent on the sender's own node. Upstream's kube-stack chart
+  # does the same with resourcedetection(k8snode) and override: false.
+  resource/node:
+    attributes:
+      - key: k8s.node.name
+        value: ${env:K8S_NODE_NAME}
+        action: insert
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -191,6 +205,7 @@ service:
         - memory_limiter
         - k8s_attributes
         - resource
+        - resource/node
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -207,6 +222,7 @@ service:
         - cumulativetodelta
         - k8s_attributes
         - resource
+        - resource/node
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -222,6 +238,7 @@ service:
         - memory_limiter
         - k8s_attributes
         - resource
+        - resource/node
         - batch
       receivers:
         - otlp

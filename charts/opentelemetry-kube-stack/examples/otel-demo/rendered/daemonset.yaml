@@ -223,6 +223,11 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      resource/node:
+        attributes:
+        - action: insert
+          key: k8s.node.name
+          value: ${env:K8S_NODE_NAME}
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -256,6 +261,7 @@ spec:
           - memory_limiter
           - k8s_attributes
           - resource
+          - resource/node
           - batch
           receivers:
           - otlp
@@ -268,6 +274,7 @@ spec:
           - cumulativetodelta
           - k8s_attributes
           - resource
+          - resource/node
           - batch
           receivers:
           - otlp
@@ -284,6 +291,7 @@ spec:
           - memory_limiter
           - k8s_attributes
           - resource
+          - resource/node
           - batch
           receivers:
           - otlp

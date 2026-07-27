@@ -120,10 +120,34 @@ tests:
     asserts:
       - equal:
           path: spec.config.service.pipelines.logs.processors
-          value: [memory_limiter, k8s_attributes, resource, batch]
+          value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
+          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
-          value: [memory_limiter, k8s_attributes, resource, batch]
+          value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
+
+  - it: should stamp k8s.node.name with insert on every pipeline
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # insert, so a node name already on the record is never overwritten.
+      - equal:
+          path: spec.config.processors["resource/node"].attributes
+          value:
+            - key: k8s.node.name
+              value: ${env:K8S_NODE_NAME}
+              action: insert
+      - contains:
+          path: spec.config.service.pipelines.logs.processors
+          content: resource/node
+      - contains:
+          path: spec.config.service.pipelines.metrics.processors
+          content: resource/node
+      - contains:
+          path: spec.config.service.pipelines.traces.processors
+          content: resource/node

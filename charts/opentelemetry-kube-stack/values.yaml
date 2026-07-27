@@ -441,7 +441,7 @@ agent:
   # Use this to extend the default configuration
   # Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers
   # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
-  # resource, batch
+  # resource, resource/node, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -482,7 +482,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline
-          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
@@ -496,7 +496,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, batch)
+          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
@@ -510,7 +510,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline
-          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the traces pipeline
