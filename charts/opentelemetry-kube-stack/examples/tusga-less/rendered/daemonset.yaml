@@ -203,6 +203,11 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      resource/node:
+        attributes:
+        - action: upsert
+          key: k8s.node.name
+          value: ${env:K8S_NODE_NAME}
     exporters:
       debug: {}
     extensions:
@@ -229,6 +234,16 @@ spec:
           - batch
           receivers:
           - otlp
+        logs/node:
+          exporters:
+          - debug
+          processors:
+          - memory_limiter
+          - k8s_attributes
+          - resource
+          - resource/node
+          - batch
+          receivers:
           - file_log
         metrics:
           exporters:
@@ -241,9 +256,20 @@ spec:
           - batch
           receivers:
           - otlp
-          - kubelet_stats
           - span_metrics
+        metrics/node:
+          exporters:
+          - debug
+          processors:
+          - memory_limiter
+          - cumulativetodelta
+          - k8s_attributes
+          - resource
+          - resource/node
+          - batch
+          receivers:
           - host_metrics
+          - kubelet_stats
         traces:
           exporters:
           - span_metrics

@@ -73,7 +73,35 @@
                                                 }
                                             }
                                         },
+                                        "logs/node": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
                                         "metrics": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        },
+                                        "metrics/node": {
                                             "type": "object",
                                             "properties": {
                                                 "extraExporters": {

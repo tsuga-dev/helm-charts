@@ -155,6 +155,22 @@ processors:
       - key: k8s.cluster.name
         value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
+  # Only wired into the node-local pipelines (logs/node, metrics/node), whose
+  # receivers all read strictly local data: file_log reads this node's log files
+  # under /var/log/pods, host_metrics reads this node's kernel, kubelet_stats
+  # scrapes this node's kubelet. It is deliberately kept off the otlp pipelines:
+  # otlp arrives over a Service that load-balances across every agent, so a pod
+  # on another node reaches this collector and k8s_attributes cannot associate
+  # it (filter.node_from_env_var restricts the pod informer to local pods), and
+  # stamping there would label it with the receiving node. upsert because
+  # k8s_attributes may have failed to enrich (informer cache cold, or the pod
+  # already deleted), and where it did enrich the value is identical anyway:
+  # the informer only holds local pods.
+  resource/node:
+    attributes:
+      - key: k8s.node.name
+        value: ${env:K8S_NODE_NAME}
+        action: upsert
   resource:
     attributes:
       - key: k8s.cluster.name
@@ -180,9 +196,6 @@ service:
     logs:
       receivers:
         - otlp
-{{- if .Values.agent.collectLogs }}
-        - file_log
-{{- end }}
       processors:
         # memory_limiter must be first so load is shed before the pipeline
         # spends work enriching data it is about to reject; batch closes the
@@ -196,17 +209,47 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
         {{- end }}
+{{- if .Values.agent.collectLogs }}
+    logs/node:
+      receivers:
+        - file_log
+      processors:
+        - memory_limiter
+        - k8s_attributes
+        - resource
+        - resource/node
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlp_http/tsuga
+        {{- end }}
+{{- end }}
     metrics:
       receivers:
         - otlp
-        - kubelet_stats
         - span_metrics
-        - host_metrics
       processors:
         - memory_limiter
         - cumulativetodelta
         - k8s_attributes
         - resource
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlp_http/tsuga
+        {{- end }}
+    metrics/node:
+      receivers:
+        - host_metrics
+        # Only kubelet_stats' node metric group self-labels k8s.node.name; its
+        # pod metric group does not, so those need the resource/node stamp.
+        - kubelet_stats
+      processors:
+        - memory_limiter
+        - cumulativetodelta
+        - k8s_attributes
+        - resource
+        - resource/node
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}

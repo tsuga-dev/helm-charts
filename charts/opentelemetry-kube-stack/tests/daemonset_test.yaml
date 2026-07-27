@@ -113,11 +113,82 @@ tests:
           path: spec.config.service.pipelines.logs.processors
           value: [memory_limiter, k8s_attributes, resource, batch]
       - equal:
+          path: spec.config.service.pipelines["logs/node"].processors
+          value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
+      - equal:
           path: spec.config.service.pipelines.metrics.processors
           value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
       - equal:
+          path: spec.config.service.pipelines["metrics/node"].processors
+          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch]
+      - equal:
           path: spec.config.service.pipelines.traces.processors
           value: [memory_limiter, k8s_attributes, resource, batch]
+
+  - it: should stamp the node name only on node-local pipelines
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors["resource/node"].attributes
+          value:
+            - key: k8s.node.name
+              value: ${env:K8S_NODE_NAME}
+              action: upsert
+      # The shared resource processor only carries cluster identity.
+      - equal:
+          path: spec.config.processors.resource.attributes
+          value:
+            - key: k8s.cluster.name
+              value: test-cluster
+              action: upsert
+      # otlp arrives over a Service that fans out across every agent, so the
+      # receiving node is not the originating node: never stamp it there.
+      - notContains:
+          path: spec.config.service.pipelines.logs.processors
+          content: resource/node
+      - notContains:
+          path: spec.config.service.pipelines.metrics.processors
+          content: resource/node
+      - notContains:
+          path: spec.config.service.pipelines.traces.processors
+          content: resource/node
+      - contains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: otlp
+      - equal:
+          path: spec.config.service.pipelines.metrics.receivers
+          value: [otlp, span_metrics]
+      # file_log, host_metrics and kubelet_stats all read strictly node-local
+      # data, so they get the stamp and are the only receivers there.
+      # kubelet_stats self-labels k8s.node.name on its node metric group only,
+      # so its pod metric group still needs resource/node.
+      - equal:
+          path: spec.config.service.pipelines["metrics/node"].receivers
+          value: [host_metrics, kubelet_stats]
+      - equal:
+          path: spec.config.service.pipelines["logs/node"].receivers
+          value: [file_log]
+
+  - it: should drop the node log pipeline when collectLogs is disabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectLogs: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.file_log
+      - isNull:
+          path: spec.config.service.pipelines["logs/node"]
 
   - it: should fail to render when clusterName is not set
     set:

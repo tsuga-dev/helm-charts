@@ -441,7 +441,7 @@ agent:
   # Use this to extend the default configuration
   # Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers
   # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
-  # resource, batch
+  # resource, resource/node, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -475,7 +475,9 @@ agent:
       extraExtensions: []
       # -- Pipeline configuration
       pipelines:
-        # -- Logs pipeline configuration
+        # -- Logs pipeline configuration (otlp only). Container logs live in the
+        # logs/node pipeline, so extras set here do not reach them: repeat them
+        # under logs/node if you want them applied to container logs too.
         logs:
           # -- Additional exporters to add to the logs pipeline
           # Added to default exporter (otlp_http/tsuga)
@@ -486,10 +488,28 @@ agent:
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
-          # Added to default receivers (otlp, filelog)
+          # Added to default receivers (otlp)
           # @default -- []
           extraReceivers: []
-        # -- Metrics pipeline configuration
+        # -- Node-local logs pipeline configuration (rendered only when
+        # agent.collectLogs is true)
+        logs/node:
+          # -- Additional exporters to add to the logs/node pipeline
+          # Added to default exporter (otlp_http/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the logs/node pipeline
+          # Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the logs/node pipeline
+          # Added to default receivers (file_log)
+          # @default -- []
+          extraReceivers: []
+        # -- Metrics pipeline configuration (otlp and spanmetrics only). Host and
+        # kubelet metrics live in the metrics/node pipeline, so extras set here
+        # do not reach them: repeat them under metrics/node if you want them
+        # applied to host and kubelet metrics too.
         metrics:
           # -- Additional exporters to add to the metrics pipeline
           # Added to default exporter (otlp_http/tsuga)
@@ -500,7 +520,21 @@ agent:
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
-          # Added to default receivers (otlp, kubelet_stats, spanmetrics, host_metrics)
+          # Added to default receivers (otlp, span_metrics)
+          # @default -- []
+          extraReceivers: []
+        # -- Node-local metrics pipeline configuration
+        metrics/node:
+          # -- Additional exporters to add to the metrics/node pipeline
+          # Added to default exporter (otlp_http/tsuga)
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the metrics/node pipeline
+          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch)
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the metrics/node pipeline
+          # Added to default receivers (host_metrics, kubelet_stats)
           # @default -- []
           extraReceivers: []
         # -- Traces pipeline configuration
