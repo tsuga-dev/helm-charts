@@ -46,6 +46,36 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
+Shared resource_detection processor.
+
+Runs before k8s_attributes in every pipeline, with override disabled, so the
+order of precedence ends up: attributes the sender already set > cloud
+metadata > Kubernetes API. Where both can answer (cloud.region, from IMDS here
+or from the topology.kubernetes.io/region node label in k8s_attributes) the
+cloud answer wins on cloud and the node label covers everything else.
+*/}}
+{{- define "opentelemetry-kube-stack.resourceDetection" -}}
+resource_detection:
+  detectors:
+    {{- toYaml .Values.resourceDetection.detectors | nindent 4 }}
+  timeout: {{ .Values.resourceDetection.timeout }}
+  override: false
+  eks:
+    resource_attributes:
+      k8s.cluster.name:
+        # Opt-in: unlike every other EKS attribute this one is not served by
+        # IMDS, it costs an EC2:DescribeInstances call. Left on by default it
+        # would log an error on every EKS cluster that has not granted it.
+        enabled: {{ .Values.resourceDetection.detectEksClusterName }}
+  aks:
+    resource_attributes:
+      k8s.cluster.name:
+        # Free by comparison: derived from the Azure IMDS response, no
+        # additional permission and no extra API call.
+        enabled: true
+{{- end }}
+
+{{/*
 Shared k8s_attributes `extract` block.
 
 Kept in one place because the agent, cluster receiver and statefulset collector

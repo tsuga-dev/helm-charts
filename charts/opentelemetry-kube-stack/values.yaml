@@ -65,6 +65,62 @@
 # @default -- ""
 clusterName: ""
 
+# =============================================================================
+# CLOUD RESOURCE DETECTION
+# =============================================================================
+# Adds cloud identity to every signal from every collector: cloud.provider,
+# cloud.platform, cloud.account.id, cloud.region and host.id (the instance id,
+# which is what lets you pivot from telemetry to the cloud console).
+#
+# DISABLE THIS ON LOCAL AND BARE-METAL CLUSTERS (kind, minikube, k3s, Docker
+# Desktop, on-prem). The cloud detectors probe the link-local metadata service
+# at 169.254.169.254, and nothing answers that address off-cloud. Collectors
+# still start and telemetry still flows, but each one waits out `timeout` on
+# startup and logs a detector error, which is a confusing first impression:
+#
+#   --set resourceDetection.enabled=false
+#
+# On cloud, trimming `detectors` to just your provider is also worth doing: it
+# skips the other providers' probes entirely.
+resourceDetection:
+  # -- Run the resource_detection processor on all collectors
+  # @default -- true
+  enabled: true
+  # -- Detectors to run, in order. Earlier detectors win on conflict.
+  # `env` reads OTEL_RESOURCE_ATTRIBUTES and costs nothing on any cluster.
+  # Detected values never override attributes the sender already set.
+  # @default -- ["env", "eks", "aks", "gcp", "ec2", "azure"]
+  detectors:
+    - env
+    - eks
+    - aks
+    - gcp
+    - ec2
+    - azure
+  # -- Let the EKS detector resolve k8s.cluster.name (AWS only)
+  #
+  # Every other EKS attribute comes from the instance metadata service for
+  # free. This one does not: it costs an ec2:DescribeInstances API call, so
+  # leaving it on would log an error on every EKS cluster whose collector role
+  # lacks that permission. Most users should simply set `clusterName` instead.
+  #
+  # This is an AWS IAM permission, not Kubernetes RBAC, so the chart cannot
+  # grant it. Attach a role with the policy below via IRSA or EKS Pod Identity,
+  # then point the service account at it:
+  #
+  #   {"Version": "2012-10-17", "Statement": [{
+  #     "Effect": "Allow", "Action": "ec2:DescribeInstances", "Resource": "*"}]}
+  #
+  #   serviceAccount:
+  #     annotations:
+  #       eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE>
+  #
+  # @default -- false
+  detectEksClusterName: false
+  # -- How long each detector may take before it gives up.
+  # @default -- "2s"
+  timeout: 2s
+
 # -- Override the chart name used in resource naming
 # @default -- ""
 nameOverride: ""

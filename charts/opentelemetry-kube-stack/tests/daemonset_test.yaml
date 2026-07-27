@@ -107,13 +107,13 @@ tests:
     asserts:
       - equal:
           path: spec.config.service.pipelines.logs.processors
-          value: [memory_limiter, k8s_attributes, resource, batch]
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, k8s_attributes, resource, cumulativetodelta, batch]
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, cumulativetodelta, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
-          value: [memory_limiter, k8s_attributes, resource, batch]
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, batch]
 
   - it: should stamp node identity even without a cluster name
     set:
@@ -211,3 +211,65 @@ tests:
             tag_name: app.version
             key: app.version
             from: pod
+
+  - it: should detect cloud resources before enriching from kubernetes
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # Detection must never clobber what the sender already declared.
+      - equal:
+          path: spec.config.processors.resource_detection.override
+          value: false
+      # EKS cluster-name detection costs an IAM permission, so it must stay
+      # opt-in; AKS gets it from IMDS for free and stays on.
+      - equal:
+          path: spec.config.processors.resource_detection.eks.resource_attributes["k8s.cluster.name"].enabled
+          value: false
+      - equal:
+          path: spec.config.processors.resource_detection.aks.resource_attributes["k8s.cluster.name"].enabled
+          value: true
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, batch]
+
+  - it: should drop resource detection entirely when disabled for local clusters
+    set:
+      agent.enabled: true
+      resourceDetection.enabled: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.processors.resource_detection
+      - notContains:
+          path: spec.config.service.pipelines.metrics.processors
+          content: resource_detection
+      - notContains:
+          path: spec.config.service.pipelines.logs.processors
+          content: resource_detection
+      - notContains:
+          path: spec.config.service.pipelines.traces.processors
+          content: resource_detection
+
+  - it: should honour a trimmed detector list
+    set:
+      agent.enabled: true
+      resourceDetection.detectors: [env, ec2]
+      resourceDetection.timeout: 5s
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.resource_detection.detectors
+          value: [env, ec2]
+      - equal:
+          path: spec.config.processors.resource_detection.timeout
+          value: 5s

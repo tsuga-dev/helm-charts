@@ -168,6 +168,24 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      resource_detection:
+        aks:
+          resource_attributes:
+            k8s.cluster.name:
+              enabled: true
+        detectors:
+        - env
+        - eks
+        - aks
+        - gcp
+        - ec2
+        - azure
+        eks:
+          resource_attributes:
+            k8s.cluster.name:
+              enabled: false
+        override: false
+        timeout: 2s
     exporters:
       debug: {}
     service:
@@ -178,6 +196,7 @@ spec:
           - debug
           processors:
           - memory_limiter
+          - resource_detection
           - k8s_attributes
           - batch
           receivers:
@@ -188,6 +207,7 @@ spec:
           - debug
           processors:
           - memory_limiter
+          - resource_detection
           - k8s_attributes
           - batch
           receivers:

@@ -271,6 +271,24 @@ spec:
         - action: insert
           key: k8s.node.name
           value: ${env:K8S_NODE_NAME}
+      resource_detection:
+        aks:
+          resource_attributes:
+            k8s.cluster.name:
+              enabled: true
+        detectors:
+        - env
+        - eks
+        - aks
+        - gcp
+        - ec2
+        - azure
+        eks:
+          resource_attributes:
+            k8s.cluster.name:
+              enabled: false
+        override: false
+        timeout: 2s
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -297,6 +315,7 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
+          - resource_detection
           - k8s_attributes
           - resource
           - batch
@@ -308,6 +327,7 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
+          - resource_detection
           - k8s_attributes
           - resource
           - cumulativetodelta
@@ -323,6 +343,7 @@ spec:
           - span_metrics
           processors:
           - memory_limiter
+          - resource_detection
           - k8s_attributes
           - resource
           - batch

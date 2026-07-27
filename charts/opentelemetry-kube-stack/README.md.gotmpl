@@ -48,6 +48,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
+- **Resource Detection** (`resource_detection`): Cloud identity — provider, account, region, instance id (see [Cloud resource detection](#cloud-resource-detection))
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata, container image identity, semconv-derived `service.*`, and pod/namespace/node labels (see [Telemetry enrichment](#telemetry-enrichment))
 - **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
@@ -60,11 +61,13 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
 Collector self-telemetry is exported through `service::telemetry`, not a pipeline.
+
+¹ Only present when `resourceDetection.enabled` is true (the default).
 
 **Default Spanmetrics Dimensions:**
 - `http.request.method`
@@ -116,6 +119,7 @@ agent:
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
+- **Resource Detection** (`resource_detection`): Cloud identity (see [Cloud resource detection](#cloud-resource-detection))
 - **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata (see [Telemetry enrichment](#telemetry-enrichment))
 - **Batch**: Batches telemetry for efficient processing
@@ -124,10 +128,11 @@ agent:
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource_detection`¹, `resource`², `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource_detection`¹, `resource`², `k8s_attributes`, `batch` → `otlp_http/tsuga`
 
-¹ Only present when `clusterName` is set.
+¹ Only present when `resourceDetection.enabled` is true (the default).
+² Only present when `clusterName` is set.
 
 ### Telemetry enrichment
 
@@ -147,6 +152,51 @@ Deliberately **not** extracted, despite being available: `k8s.pod.ip`, `k8s.pod.
 Add your own mappings with `agent.extraLabelMapping` / `agent.extraAnnotationsMapping` (and the `cluster.*` / `statefulset.*` equivalents); they are appended to the shared block.
 
 > **Upgrade note:** a workload that previously reported no `service.name` will start reporting one derived from its Kubernetes identity. In Tsuga it moves out of `unknown_service` and into its own service, so existing dashboards or monitors that filter on `unknown_service` need updating.
+
+### Cloud resource detection
+
+`resourceDetection` (on by default) runs the `resource_detection` processor on every collector, adding `cloud.provider`, `cloud.platform`, `cloud.account.id`, `cloud.region` and `host.id` — the actual instance id, which is what lets you pivot from telemetry to the cloud console.
+
+Detected values never override attributes the sender already set (`override: false`), and detection runs before `k8s_attributes`, so an explicit `clusterName` always wins over anything detected.
+
+**On local and bare-metal clusters, turn this off:**
+
+```bash
+helm install ... --set resourceDetection.enabled=false
+```
+
+The cloud detectors probe the link-local metadata service at `169.254.169.254`. On kind, minikube, k3s, Docker Desktop or on-prem nothing answers that address: collectors still start and telemetry still flows, but each one waits out `resourceDetection.timeout` on startup and logs a detector error. On a real cloud it is also worth trimming `resourceDetection.detectors` to just your provider, which skips the other providers' probes entirely.
+
+#### EKS cluster name detection and IAM
+
+Every EKS attribute is served by the instance metadata service for free — except `k8s.cluster.name`, which costs an `ec2:DescribeInstances` API call. It is therefore **opt-in** via `resourceDetection.detectEksClusterName`; left on, it would log an error on every EKS cluster whose collector role lacks the permission. For most users, setting `clusterName` is simpler and costs nothing.
+
+This permission cannot be granted by this chart. `ec2:DescribeInstances` is an **AWS IAM** permission, a different authorization system from the Kubernetes RBAC that the chart's `ClusterRole` manages — a `ClusterRole` grants access to the Kubernetes API only, never to an AWS API. Creating the IAM role itself is an AWS account-level change made outside the cluster. The chart's part is the service account annotation hook; the rest is yours.
+
+To enable it, attach this policy to an IAM role:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": "ec2:DescribeInstances", "Resource": "*" }
+  ]
+}
+```
+
+Then bind the role to the collector's service account, either with **IRSA**:
+
+```yaml
+resourceDetection:
+  detectEksClusterName: true
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+```
+
+or with **EKS Pod Identity**, which needs no annotation at all — create a pod identity association pointing at the release namespace and the service account name (`<release>-opentelemetry-kube-stack` unless you set `serviceAccount.name`), then set `resourceDetection.detectEksClusterName=true`.
+
+The in-cluster RBAC the chart creates is already complete for everything the collectors do against the Kubernetes API.
 
 ## Quick Start
 

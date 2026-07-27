@@ -23,6 +23,9 @@ processors:
     send_batch_size: 5000
     send_batch_max_size: 5000
   cumulativetodelta: {}
+  {{- if .Values.resourceDetection.enabled }}
+  {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+  {{- end }}
   k8s_attributes:
     extract:
       {{- include "opentelemetry-kube-stack.k8sAttributesExtract" (dict "extraLabelMapping" .Values.statefulset.extraLabelMapping "extraAnnotationsMapping" .Values.statefulset.extraAnnotationsMapping) | nindent 6 }}
@@ -59,6 +62,9 @@ service:
         - prometheus
       processors:
         - memory_limiter
+        {{- if .Values.resourceDetection.enabled }}
+        - resource_detection
+        {{- end }}
         - cumulativetodelta
         - k8s_attributes
         {{- if .Values.clusterName }}
