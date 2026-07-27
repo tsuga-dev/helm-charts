@@ -149,18 +149,14 @@ processors:
       - key: service.instance.id
         value: ${POD_UID}
         action: upsert
-      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-      {{- end }}
-  {{- if .Values.clusterName }}
   resource:
     attributes:
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-  {{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -188,9 +184,7 @@ service:
         - k8s_attributes
         - memory_limiter
         - batch
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
@@ -205,9 +199,7 @@ service:
         - k8s_attributes
         - memory_limiter
         - cumulativetodelta
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -222,9 +214,7 @@ service:
       processors:
         - k8s_attributes
         - memory_limiter
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
         - batch
       receivers:
         - otlp

@@ -1,4 +1,5 @@
 ---
+clusterName: test-cluster
 tsuga:
   enabledForClusterReceiver: false
   enabledForDaemonset: false

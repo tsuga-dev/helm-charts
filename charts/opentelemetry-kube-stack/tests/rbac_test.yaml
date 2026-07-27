@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should create cluster role and role binding
     set:
+      clusterName: "test-cluster"
       rbac.create: true
       serviceAccount.create: true
       serviceAccount.name: ""
@@ -16,6 +17,7 @@ tests:
 
   - it: should not include monitoring.coreos.com rules by default
     set:
+      clusterName: "test-cluster"
       rbac.create: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -30,6 +32,7 @@ tests:
 
   - it: should include monitoring.coreos.com rules when prometheusCR enabled
     set:
+      clusterName: "test-cluster"
       rbac.create: true
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
@@ -48,6 +51,7 @@ tests:
 
   - it: should not include endpointslices permission by default
     set:
+      clusterName: "test-cluster"
       rbac.create: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -62,6 +66,7 @@ tests:
 
   - it: should include endpointslices permission when targetAllocator enabled
     set:
+      clusterName: "test-cluster"
       rbac.create: true
       targetAllocator.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"

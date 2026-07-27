@@ -190,11 +190,19 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      resource:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
       resource/collector:
         attributes:
         - action: upsert
           key: service.instance.id
           value: ${POD_UID}
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
     exporters:
       debug: {}
     extensions:
@@ -218,6 +226,7 @@ spec:
           - k8s_attributes
           - memory_limiter
           - batch
+          - resource
           receivers:
           - otlp
           - file_log
@@ -228,6 +237,7 @@ spec:
           - k8s_attributes
           - memory_limiter
           - cumulativetodelta
+          - resource
           - batch
           receivers:
           - otlp
@@ -241,9 +251,11 @@ spec:
           processors:
           - k8s_attributes
           - memory_limiter
+          - resource
           - batch
           receivers:
           - otlp
       telemetry:
         resource:
+          k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should not render when targetAllocator disabled
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -16,6 +17,7 @@ tests:
 
   - it: should create TargetAllocator CR when enabled
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       targetAllocator.spec.allocationStrategy: "consistent-hashing"
       serviceAccount.create: true
@@ -36,6 +38,7 @@ tests:
 
   - it: should not set serviceAccount when serviceAccount.create is false
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       serviceAccount.create: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -50,6 +53,7 @@ tests:
 
   - it: should set prometheusCR fields when enabled
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
       targetAllocator.spec.prometheusCR.serviceMonitorSelector.matchLabels.release: "test"

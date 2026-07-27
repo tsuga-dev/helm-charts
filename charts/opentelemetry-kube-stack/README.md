@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.0](https://img.shields.io/badge/Version-0.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -377,7 +377,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
 | cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
-| clusterName | string | "" | The name of the cluster to be used in the resource attributes This value is added to all telemetry data as k8s.cluster.name RECOMMENDED: Set this value to identify your cluster in telemetry data If not set, the k8s.cluster.name attribute will be omitted from telemetry |
+| clusterName | string | "" (must be set) | REQUIRED. The name of the cluster, added to all telemetry as k8s.cluster.name.  Installation fails if this is empty. Telemetry from a cluster that does not name itself cannot be told apart from any other cluster's once it reaches Tsuga, and the omission only becomes visible during an incident, which is the worst time to discover it.    --set clusterName=<name>  |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
 | image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
 | nameOverride | string | "" | Override the chart name used in resource naming |

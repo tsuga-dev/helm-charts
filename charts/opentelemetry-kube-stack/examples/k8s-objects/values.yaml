@@ -1,3 +1,4 @@
 ---
+clusterName: test-cluster
 cluster:
   collectk8sobjects: true

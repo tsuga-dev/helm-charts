@@ -1,4 +1,5 @@
 ---
+clusterName: test-cluster
 # Test values file for auto-instrumentation feature
 # This file configures the chart to enable OpenTelemetry auto-instrumentation
 # Use with: helm install my-release . -f tests/values/auto-instrumentation.yaml
