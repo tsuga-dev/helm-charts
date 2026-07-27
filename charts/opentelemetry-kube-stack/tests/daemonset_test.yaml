@@ -149,3 +149,65 @@ tests:
       - contains:
           path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points.mount_points
           content: ^/var/lib/kubelet($|/)
+
+  - it: should derive service identity and container image from kubernetes
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.name
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.tag
+      # High-cardinality attributes are deliberately excluded: each takes a new
+      # value on every pod or container restart, or restates k8s.pod.name.
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: k8s.pod.ip
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: k8s.pod.hostname
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.id
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.instance.id
+      # Ownership falls back to the namespace when a pod does not declare it.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.labels
+          content:
+            tag_name: team
+            key: resource.opentelemetry.io/team
+            from: namespace
+      # Node topology without any cloud metadata calls.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.labels
+          content:
+            tag_name: cloud.region
+            key: topology.kubernetes.io/region
+            from: node
+
+  - it: should keep extra label mappings when merged into the shared extract block
+    set:
+      agent.enabled: true
+      agent.extraLabelMapping:
+        - tag_name: app.version
+          key: app.version
+          from: pod
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.labels
+          content:
+            tag_name: app.version
+            key: app.version
+            from: pod

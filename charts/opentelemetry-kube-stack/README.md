@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.0](https://img.shields.io/badge/Version-0.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -58,7 +58,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
-- **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata, container image identity, semconv-derived `service.*`, and pod/namespace/node labels (see [Telemetry enrichment](#telemetry-enrichment))
 - **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
@@ -127,7 +127,7 @@ agent:
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
 - **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
-- **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata (see [Telemetry enrichment](#telemetry-enrichment))
 - **Batch**: Batches telemetry for efficient processing
 
 **Default Exporters:**
@@ -138,6 +138,25 @@ agent:
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 
 ¹ Only present when `clusterName` is set.
+
+### Telemetry enrichment
+
+All three collectors share one `k8s_attributes` extract configuration, so the same pod is described identically no matter which collector saw the telemetry.
+
+Beyond the usual workload metadata, the defaults add:
+
+- **Container identity** — `k8s.container.name`, `container.image.name`, `container.image.tag`. This is what makes "did this start with the last deploy?" answerable, and is bounded by the number of images in the cluster.
+- **Semconv-derived service identity** — `service.name`, `service.version`, `service.namespace`, computed by the processor from the well-known `app.kubernetes.io/name` label, then the workload name, with the version from the image tag. Workloads that ship telemetry without a configured service name no longer land as `unknown_service`.
+- **Namespace-level ownership** — `resource.opentelemetry.io/team` and `.../env` are read from the namespace as well as the pod, because ownership is usually declared once per namespace.
+- **Node topology** — `cloud.region`, `cloud.availability_zone` and `host.type` from the `topology.kubernetes.io/*` and `node.kubernetes.io/instance-type` node labels. Every managed cluster sets these, and unlike a cloud metadata detector it costs no extra call.
+
+Precedence is **sender > pod > namespace > node**: the processor never overwrites an attribute that is already on the resource, so anything an SDK sets wins, and the explicit `resource.opentelemetry.io/*` pod labels and annotations override everything derived.
+
+Deliberately **not** extracted, despite being available: `k8s.pod.ip`, `k8s.pod.hostname`, `container.id` and `service.instance.id`. Each either takes a new value on every pod or container restart, or simply restates `k8s.pod.name`. They would add a high-cardinality dimension to every datapoint without identifying anything `k8s.pod.name` and `k8s.pod.uid` do not already identify.
+
+Add your own mappings with `agent.extraLabelMapping` / `agent.extraAnnotationsMapping` (and the `cluster.*` / `statefulset.*` equivalents); they are appended to the shared block.
+
+> **Upgrade note:** a workload that previously reported no `service.name` will start reporting one derived from its Kubernetes identity. In Tsuga it moves out of `unknown_service` and into its own service, so existing dashboards or monitors that filter on `unknown_service` need updating.
 
 ## Quick Start
 

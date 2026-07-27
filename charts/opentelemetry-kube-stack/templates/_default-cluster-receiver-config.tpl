@@ -29,49 +29,7 @@ processors:
     send_batch_max_size: 5000
   k8s_attributes:
     extract:
-      metadata:
-        - k8s.namespace.name
-        - k8s.deployment.name
-        - k8s.statefulset.name
-        - k8s.daemonset.name
-        - k8s.cronjob.name
-        - k8s.job.name
-        - k8s.node.name
-        - k8s.pod.name
-        - k8s.pod.uid
-        - k8s.pod.start_time
-      labels:
-        - tag_name: service.name
-          key: resource.opentelemetry.io/service.name
-          from: pod
-        - tag_name: service.version
-          key: resource.opentelemetry.io/service.version
-          from: pod
-        - tag_name: env
-          key: resource.opentelemetry.io/env
-          from: pod
-        - tag_name: team
-          key: resource.opentelemetry.io/team
-          from: pod
-{{- if .Values.cluster.extraLabelMapping }}
-{{- toYaml .Values.cluster.extraLabelMapping | nindent 8 }}
-{{- end}}
-      annotations:
-        - tag_name: service.name
-          key: resource.opentelemetry.io/service.name
-          from: pod
-        - tag_name: service.version
-          key: resource.opentelemetry.io/service.version
-          from: pod
-        - tag_name: env
-          key: resource.opentelemetry.io/env
-          from: pod
-        - tag_name: team
-          key: resource.opentelemetry.io/team
-          from: pod
-{{- if .Values.cluster.extraAnnotationsMapping }}
-{{- toYaml .Values.cluster.extraAnnotationsMapping | nindent 8 }}
-{{- end}}
+      {{- include "opentelemetry-kube-stack.k8sAttributesExtract" (dict "extraLabelMapping" .Values.cluster.extraLabelMapping "extraAnnotationsMapping" .Values.cluster.extraAnnotationsMapping) | nindent 6 }}
     passthrough: false
     pod_association:
       - sources:
