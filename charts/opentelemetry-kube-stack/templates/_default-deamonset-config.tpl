@@ -143,6 +143,9 @@ processors:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
+  # Runs before enrichment in the pipelines: delta state is keyed on the full
+  # resource, so a series that starts unenriched and later gains pod metadata
+  # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
   resource/collector:
     attributes:
@@ -181,10 +184,14 @@ service:
         - file_log
 {{- end }}
       processors:
-        - k8s_attributes
+        # memory_limiter must be first so load is shed before the pipeline
+        # spends work enriching data it is about to reject; batch closes the
+        # default list so it groups the finished records (user extraProcessors
+        # are appended after it).
         - memory_limiter
-        - batch
+        - k8s_attributes
         - resource
+        - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
@@ -196,9 +203,9 @@ service:
         - span_metrics
         - host_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
         - cumulativetodelta
+        - k8s_attributes
         - resource
         - batch
       exporters:
@@ -212,8 +219,8 @@ service:
         {{- end }}
         - span_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
+        - k8s_attributes
         - resource
         - batch
       receivers:

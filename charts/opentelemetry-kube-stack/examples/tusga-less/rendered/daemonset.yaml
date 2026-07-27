@@ -223,10 +223,10 @@ spec:
           exporters:
           - debug
           processors:
-          - k8s_attributes
           - memory_limiter
-          - batch
+          - k8s_attributes
           - resource
+          - batch
           receivers:
           - otlp
           - file_log
@@ -234,9 +234,9 @@ spec:
           exporters:
           - debug
           processors:
-          - k8s_attributes
           - memory_limiter
           - cumulativetodelta
+          - k8s_attributes
           - resource
           - batch
           receivers:
@@ -249,8 +249,8 @@ spec:
           - span_metrics
           - debug
           processors:
-          - k8s_attributes
           - memory_limiter
+          - k8s_attributes
           - resource
           - batch
           receivers:

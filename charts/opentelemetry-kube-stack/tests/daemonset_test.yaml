@@ -100,6 +100,25 @@ tests:
       - notExists:
           path: spec.config.service.telemetry.metrics
 
+  - it: should run memory_limiter first and batch last in every pipeline
+    set:
+      agent.enabled: true
+      clusterName: "test-cluster"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines.logs.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]
+
   - it: should fail to render when clusterName is not set
     set:
       agent.enabled: true
