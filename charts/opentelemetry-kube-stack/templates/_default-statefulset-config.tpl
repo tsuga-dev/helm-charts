@@ -28,11 +28,9 @@ processors:
       - key: service.instance.id
         value: ${POD_UID}
         action: upsert
-      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-      {{- end }}
   k8s_attributes:
     extract:
       metadata:
@@ -91,13 +89,11 @@ processors:
           name: k8s.pod.uid
       - sources:
         - from: connection
-  {{- if .Values.clusterName }}
   resource:
     attributes:
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-  {{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -113,9 +109,7 @@ service:
         - memory_limiter
         - cumulativetodelta
         - k8s_attributes
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForStatefulset") false }}

@@ -1,4 +1,5 @@
 ---
+clusterName: test-cluster
 agent:
   config:
     service:
