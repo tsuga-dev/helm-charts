@@ -103,6 +103,7 @@ install_chart() {
     
     helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
         --namespace "$TEST_NAMESPACE" \
+        --set clusterName="$RELEASE_NAME" \
         --set autoInstrumentation.enabled=true \
         --set autoInstrumentation.spec.exporter.endpoint="http://localhost:4317" \
         --set autoInstrumentation.spec.propagators[0]=tracecontext \
@@ -318,6 +319,7 @@ test_chart_upgrade() {
     
     helm upgrade "$RELEASE_NAME" "$CHART_DIR" \
         --namespace "$TEST_NAMESPACE" \
+        --set clusterName="$RELEASE_NAME" \
         --set autoInstrumentation.enabled=true \
         --set autoInstrumentation.spec.exporter.endpoint="http://modified-endpoint:4317" \
         --set autoInstrumentation.spec.propagators[0]=tracecontext \
@@ -355,6 +357,7 @@ test_disable_instrumentation() {
     
     helm upgrade "$RELEASE_NAME" "$CHART_DIR" \
         --namespace "$TEST_NAMESPACE" \
+        --set clusterName="$RELEASE_NAME" \
         --set autoInstrumentation.enabled=false \
         --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
         --set tsuga.apiKey="<TSUGA_API_KEY>" \

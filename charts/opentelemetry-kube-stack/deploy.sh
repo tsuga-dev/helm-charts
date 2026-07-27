@@ -537,7 +537,7 @@ show_next_steps() {
     
     echo -e "\n${CYAN}Useful Commands:${NC}"
     echo -e "• Uninstall: ${BLUE}helm uninstall $RELEASE_NAME -n $NAMESPACE${NC}"
-    echo -e "• Upgrade: ${BLUE}helm upgrade $RELEASE_NAME . -n $NAMESPACE${NC}"
+    echo -e "• Upgrade: ${BLUE}helm upgrade $RELEASE_NAME . -n $NAMESPACE --reuse-values${NC}"
     echo -e "• Status: ${BLUE}helm status $RELEASE_NAME -n $NAMESPACE${NC}"
 }
 

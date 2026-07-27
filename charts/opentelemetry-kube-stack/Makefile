@@ -71,6 +71,7 @@ clean:
 install:
 	@echo "Installing chart with test values..."
 	helm install otel-test . \
+		--set clusterName="test-cluster" \
 		--set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
 		--set tsuga.apiKey="<TSUGA_API_KEY>" \
 		--wait --timeout=300s
@@ -84,6 +85,7 @@ uninstall:
 template:
 	@echo "Templating chart..."
 	helm template otel-test . \
+		--set clusterName="test-cluster" \
 		--set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
 		--set tsuga.apiKey="<TSUGA_API_KEY>"
 
@@ -91,6 +93,7 @@ template:
 dry-run:
 	@echo "Dry run installation..."
 	helm install otel-test . \
+		--set clusterName="test-cluster" \
 		--set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
 		--set tsuga.apiKey="<TSUGA_API_KEY>" \
 		--dry-run --debug
