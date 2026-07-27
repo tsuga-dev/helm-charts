@@ -100,6 +100,65 @@ tests:
       - notExists:
           path: spec.config.service.telemetry.metrics
 
+  - it: should exclude pseudo filesystems from the filesystem scraper
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # node_exporter's defFSTypesExcluded set, verbatim.
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_fs_types
+          value:
+            match_type: strict
+            fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - erofs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+      # tmpfs is kept on purpose: /run and friends are real usage.
+      - notContains:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_fs_types.fs_types
+          content: tmpfs
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points
+          value:
+            match_type: regexp
+            mount_points:
+              - '^/dev($|/)'
+              - '^/proc($|/)'
+              - '^/run/credentials($|/)'
+              - '^/run/k3s/containerd($|/)'
+              - '^/snap($|/)'
+              - '^/sys($|/)'
+              - '^/var/lib/containers/storage($|/)'
+              - '^/var/lib/docker($|/)'
+              - '^/var/lib/kubelet($|/)'
+
   - it: should fail to render when clusterName is not set
     set:
       agent.enabled: true

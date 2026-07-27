@@ -51,6 +51,54 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
+        # Without these every container overlay mount and kernel pseudo filesystem
+        # on the node becomes its own series, which on a busy node is dozens per pod
+        # and tells you nothing. fs_types is Prometheus node_exporter's default
+        # fs-types-exclude set; mount_points is its default set plus the
+        # Kubernetes-specific paths (kubelet, k3s containerd, snap). No official
+        # OpenTelemetry chart ships an equivalent default. tmpfs is deliberately
+        # kept, as node_exporter keeps it too: /run and friends are real usage worth
+        # watching.
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+            - '^/dev($|/)'
+            - '^/proc($|/)'
+            - '^/run/credentials($|/)'
+            - '^/run/k3s/containerd($|/)'
+            - '^/snap($|/)'
+            - '^/sys($|/)'
+            - '^/var/lib/containers/storage($|/)'
+            - '^/var/lib/docker($|/)'
+            - '^/var/lib/kubelet($|/)'
+        exclude_fs_types:
+          match_type: strict
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - erofs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
       load:
       memory:
         metrics:
