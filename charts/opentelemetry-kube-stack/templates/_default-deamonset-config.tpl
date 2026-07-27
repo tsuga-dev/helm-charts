@@ -24,6 +24,20 @@ receivers:
       enabled: true
     start_at: end
   {{- end }}
+{{- if .Values.agent.journald.enabled }}
+  journald:
+    # The collector images do not ship journalctl, and the binary must match
+    # the systemd that wrote the journal. So chroot into the mounted host root
+    # (already available at /hostfs for host_metrics) and run the node's own.
+    root_path: /hostfs
+    journalctl_path: {{ .Values.agent.journald.journalctlPath }}
+    priority: {{ .Values.agent.journald.priority }}
+    start_at: end
+    {{- with .Values.agent.journald.units }}
+    units:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}
   kubelet_stats:
     auth_type: serviceAccount
     collection_interval: 20s
@@ -146,10 +160,9 @@ processors:
   cumulativetodelta: {}
   resource:
     attributes:
-      # host_metrics never touches a pod, so k8s_attributes cannot associate it
-      # and it would otherwise arrive with no node identity at all, collapsing
-      # every node's host metrics together. insert (not upsert) leaves
-      # pod-derived values alone.
+      # host_metrics and journald never touch a pod, so k8s_attributes cannot
+      # associate them and they would otherwise arrive with no node identity at
+      # all. insert (not upsert) leaves pod-derived values alone.
       - key: k8s.node.name
         value: ${env:K8S_NODE_NAME}
         action: insert
@@ -180,6 +193,9 @@ service:
         - otlp
 {{- if .Values.agent.collectLogs }}
         - file_log
+{{- end }}
+{{- if .Values.agent.journald.enabled }}
+        - journald
 {{- end }}
       processors:
         # memory_limiter must be first so load is shed before the pipeline

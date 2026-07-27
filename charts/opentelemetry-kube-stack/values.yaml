@@ -303,8 +303,19 @@ cluster:
   #           exporters: [otlp_http/tsuga]
   # @default -- {}
   customConfig: {}
+  # -- Watch pod objects and ship them as logs
   # This is used in the Kubernetes view to show pod configuration
+  # @default -- true
   collectk8sobjects: true
+  # -- Collect Kubernetes Warning events (FailedScheduling, BackOff, Evicted,
+  # ErrImagePull, FailedMount, Unhealthy, ...) as logs.
+  # Filtered to type=Warning: Normal events are the bulk of the volume and
+  # restate what the watched pod objects already show. Uses the RBAC rules
+  # already granted for events. Note that on collector restart the API
+  # server's retained event window (1h by default) is replayed, so a restart
+  # produces duplicates.
+  # @default -- true
+  collectk8sevents: true
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor
@@ -477,6 +488,34 @@ agent:
   # @default -- false
   collectProcesses: false
 
+  # -- Collect systemd/journald logs from the node (kubelet, containerd, ...)
+  # These are the logs for node-level failures - kubelet crashes, containerd
+  # errors, disk pressure - which are invisible in container stdout.
+  #
+  # DISABLED BY DEFAULT because it cannot work out of the box: the journald
+  # receiver shells out to `journalctl`, and the OpenTelemetry Collector images
+  # do not ship it. When enabled, the agent chroots into the host filesystem
+  # already mounted at /hostfs and runs the node's own journalctl, so the node
+  # must actually have a binary at journalctlPath. Enabling this also makes the
+  # agent container run as root with DAC_READ_SEARCH/SYS_PTRACE/SYS_CHROOT.
+  # Verify on a node first: `journalctl --header | grep "File path"`
+  journald:
+    # -- Enable the journald receiver on the agent
+    # @default -- false
+    enabled: false
+    # -- Absolute path to journalctl on the node (inside the /hostfs chroot)
+    # @default -- "/usr/bin/journalctl"
+    journalctlPath: /usr/bin/journalctl
+    # -- systemd units to read. An empty list reads every unit, which is a lot.
+    # @default -- ["kubelet", "containerd"]
+    units:
+      - kubelet
+      - containerd
+    # -- Minimum message priority to keep. One of emerg, alert, crit, err,
+    # warning, notice, info, debug.
+    # @default -- "info"
+    priority: info
+
   # -- Replace default config with complete custom configuration
   # When set, this completely replaces the default collector configuration
   # Use this for full control over the OpenTelemetry Collector config
@@ -492,8 +531,44 @@ agent:
     # Merges with default telemetry (Prometheus metrics on port 8888)
     # @default -- {}
     extraTelemetry: {}
+    # MIGRATING FROM AN EXISTING AGENT
+    # ---------------------------------------------------------------------
+    # The agent can accept the wire formats your current tooling already
+    # emits, so applications keep their existing SDK and just point at this
+    # DaemonSet. Add the receiver below and list it under the matching
+    # pipeline's extraReceivers. All of these ship in the
+    # opentelemetry-collector-contrib image, which is the agent default. If
+    # you pin agent.image to opentelemetry-collector-k8s instead, note that
+    # it carries zipkin, jaeger and fluentforward but not statsd or
+    # prometheusremotewrite.
+    #
+    #   config:
+    #     extraReceivers:
+    #       zipkin: {}                                  # -> traces
+    #       jaeger:                                     # -> traces
+    #         protocols:
+    #           grpc:
+    #             endpoint: ${env:MY_POD_IP}:14250
+    #           thrift_http:
+    #             endpoint: ${env:MY_POD_IP}:14268
+    #       statsd:                                     # -> metrics
+    #         endpoint: ${env:MY_POD_IP}:8125
+    #       prometheusremotewrite:                      # -> metrics
+    #         endpoint: ${env:MY_POD_IP}:9090
+    #       fluentforward:                              # -> logs
+    #         endpoint: ${env:MY_POD_IP}:8006
+    #     service:
+    #       pipelines:
+    #         traces:
+    #           extraReceivers: [zipkin, jaeger]
+    #         metrics:
+    #           extraReceivers: [statsd, prometheusremotewrite]
+    #         logs:
+    #           extraReceivers: [fluentforward]
+    # ---------------------------------------------------------------------
     # -- Additional receivers to merge into the collector configuration
-    # These are merged with default receivers
+    # These are merged with default receivers. See the migration examples
+    # directly above this key in values.yaml for ready-to-paste blocks.
     # @default -- {}
     extraReceivers: {}
     # -- Additional processors to merge into the collector configuration

@@ -79,6 +79,19 @@ spec:
   {{- if .Values.serviceAccount.create }}
   serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
   {{- end }}
+  {{- if .Values.agent.journald.enabled }}
+  # journalctl reads root-owned journal files and is executed through a chroot
+  # into the mounted host root, so the container needs root plus the file-read
+  # and chroot capabilities. Only applied when journald collection is on.
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    capabilities:
+      add:
+        - DAC_READ_SEARCH
+        - SYS_PTRACE
+        - SYS_CHROOT
+  {{- end }}
   env:
     {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
     {{- if .Values.agent.extraEnvs }}

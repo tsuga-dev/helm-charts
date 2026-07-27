@@ -45,12 +45,13 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **Kubelet Stats** (`kubelet_stats`): Node and pod metrics via kubelet
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
 - **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
+- **Journald**: systemd unit logs from the node — kubelet, containerd (opt-in, see `agent.journald`)
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
 - **Resource Detection** (`resource_detection`): Cloud identity — provider, account, region, instance id (see [Cloud resource detection](#cloud-resource-detection))
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata, container image identity, semconv-derived `service.*`, and pod/namespace/node labels (see [Telemetry enrichment](#telemetry-enrichment))
-- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
+- **Resource**: Adds `k8s.node.name`, so host metrics and journald are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
@@ -61,7 +62,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`, +`journald` when enabled) → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
 - **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Traces**: `otlp` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
@@ -111,11 +112,11 @@ agent:
 ### Cluster Receiver (Deployment)
 
 - Collects cluster metrics and events using the Kubernetes API server
-- **Pinned to a single replica.** `k8s_cluster` and `k8s_objects` do not use leader election here, so a second replica would report the same cluster state again: every cluster metric counted twice and every object ingested twice. The replica count is set in the `OpenTelemetryCollector` resource, so a manual `kubectl scale` is reconciled back to 1.
+- **Pinned to a single replica.** `k8s_cluster` and `k8s_objects` do not use leader election here, so a second replica would report the same cluster state again: every cluster metric counted twice and every Kubernetes event ingested twice. The replica count is set in the `OpenTelemetryCollector` resource, so a manual `kubectl scale` is reconciled back to 1.
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pods (enabled by default, disable with `cluster.collectk8sobjects=false`)
+- **Kubernetes Objects** (`k8s_objects`): Watches pods (`cluster.collectk8sobjects`) and Kubernetes events (`cluster.collectk8sevents`), both enabled by default
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
@@ -197,6 +198,35 @@ serviceAccount:
 or with **EKS Pod Identity**, which needs no annotation at all — create a pod identity association pointing at the release namespace and the service account name (`<release>-opentelemetry-kube-stack` unless you set `serviceAccount.name`), then set `resourceDetection.detectEksClusterName=true`.
 
 The in-cluster RBAC the chart creates is already complete for everything the collectors do against the Kubernetes API.
+
+### Kubernetes events
+
+`cluster.collectk8sevents` (on by default) watches the `events.k8s.io` API and ships events as logs, filtered to `type=Warning`. Those are the only source for `FailedScheduling`, `BackOff`, `Evicted`, `ErrImagePull`, `FailedMount` and `Unhealthy` — no metric receiver reports them, and the RBAC for it was already granted. `Normal` events (Scheduled, Pulling, Pulled, Created, Started) are excluded: they are the bulk of the volume and restate what the watched pod objects already show.
+
+The receiver takes an initial snapshot on startup (`include_initial_state`, which the upstream receiver only supports receiver-wide, not per object). For events that means a collector restart replays whatever the API server still retains, one hour by default, so expect duplicates around restarts. Disable with `--set cluster.collectk8sevents=false`.
+
+### Node journald logs
+
+`agent.journald` (**off by default**) collects systemd unit logs from the node — kubelet, containerd — which are where node-level failures show up and are invisible in container stdout.
+
+It is off by default because it cannot work out of the box: the journald receiver shells out to `journalctl`, and the OpenTelemetry Collector images do not ship that binary. When enabled, the agent chroots into the host filesystem already mounted at `/hostfs` and runs the node's own `journalctl`, which means:
+
+- the node must actually have a binary at `agent.journald.journalctlPath` (default `/usr/bin/journalctl`)
+- the agent container runs as **root** with the `DAC_READ_SEARCH`, `SYS_PTRACE` and `SYS_CHROOT` capabilities, since journal files are root-owned and are read through a chroot
+
+Check a node before enabling it:
+
+```bash
+journalctl --header | grep "File path"
+```
+
+```yaml
+agent:
+  journald:
+    enabled: true
+    units: [kubelet, containerd]
+    priority: info
+```
 
 ## Quick Start
 

@@ -21,8 +21,8 @@ spec:
   # Pinned, and deliberately not configurable. k8s_cluster and k8s_objects have
   # no leader election here, so every extra replica reports the same cluster
   # state again: two replicas means every cluster metric counted twice and
-  # every Kubernetes object ingested twice. Setting it in the CR also means a
-  # manual `kubectl scale` is reconciled back to 1.
+  # every Kubernetes event ingested twice. Setting it in the CR also means a
+  # manual `kubectl scale` is reconciled back to 1 by the operator.
   replicas: 1
   image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
   {{- if or .Values.cluster.resources .Values.resources }}

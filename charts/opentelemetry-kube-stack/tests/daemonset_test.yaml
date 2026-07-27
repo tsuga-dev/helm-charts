@@ -273,3 +273,45 @@ tests:
       - equal:
           path: spec.config.processors.resource_detection.timeout
           value: 5s
+
+  - it: should not collect journald by default
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.journald
+      - notContains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: journald
+      # No root/capabilities escalation unless journald is explicitly enabled.
+      - isNull:
+          path: spec.securityContext
+
+  - it: should collect journald through the host journalctl when enabled
+    set:
+      agent.enabled: true
+      agent.journald.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.journald.root_path
+          value: /hostfs
+      - equal:
+          path: spec.config.receivers.journald.journalctl_path
+          value: /usr/bin/journalctl
+      - contains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: journald
+      - equal:
+          path: spec.securityContext.runAsUser
+          value: 0
+      - contains:
+          path: spec.securityContext.capabilities.add
+          content: SYS_CHROOT

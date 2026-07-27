@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.11.0](https://img.shields.io/badge/Version-0.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -55,12 +55,13 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **Kubelet Stats** (`kubelet_stats`): Node and pod metrics via kubelet
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
 - **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
+- **Journald**: systemd unit logs from the node — kubelet, containerd (opt-in, see `agent.journald`)
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
 - **Resource Detection** (`resource_detection`): Cloud identity — provider, account, region, instance id (see [Cloud resource detection](#cloud-resource-detection))
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata, container image identity, semconv-derived `service.*`, and pod/namespace/node labels (see [Telemetry enrichment](#telemetry-enrichment))
-- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
+- **Resource**: Adds `k8s.node.name`, so host metrics and journald are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
@@ -71,7 +72,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`, +`journald` when enabled) → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
 - **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Traces**: `otlp` → `memory_limiter`, `resource_detection`¹, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
@@ -121,11 +122,11 @@ agent:
 ### Cluster Receiver (Deployment)
 
 - Collects cluster metrics and events using the Kubernetes API server
-- **Pinned to a single replica.** `k8s_cluster` and `k8s_objects` do not use leader election here, so a second replica would report the same cluster state again: every cluster metric counted twice and every object ingested twice. The replica count is set in the `OpenTelemetryCollector` resource, so a manual `kubectl scale` is reconciled back to 1.
+- **Pinned to a single replica.** `k8s_cluster` and `k8s_objects` do not use leader election here, so a second replica would report the same cluster state again: every cluster metric counted twice and every Kubernetes event ingested twice. The replica count is set in the `OpenTelemetryCollector` resource, so a manual `kubectl scale` is reconciled back to 1.
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pods (enabled by default, disable with `cluster.collectk8sobjects=false`)
+- **Kubernetes Objects** (`k8s_objects`): Watches pods (`cluster.collectk8sobjects`) and Kubernetes events (`cluster.collectk8sevents`), both enabled by default
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
@@ -207,6 +208,35 @@ serviceAccount:
 or with **EKS Pod Identity**, which needs no annotation at all — create a pod identity association pointing at the release namespace and the service account name (`<release>-opentelemetry-kube-stack` unless you set `serviceAccount.name`), then set `resourceDetection.detectEksClusterName=true`.
 
 The in-cluster RBAC the chart creates is already complete for everything the collectors do against the Kubernetes API.
+
+### Kubernetes events
+
+`cluster.collectk8sevents` (on by default) watches the `events.k8s.io` API and ships events as logs, filtered to `type=Warning`. Those are the only source for `FailedScheduling`, `BackOff`, `Evicted`, `ErrImagePull`, `FailedMount` and `Unhealthy` — no metric receiver reports them, and the RBAC for it was already granted. `Normal` events (Scheduled, Pulling, Pulled, Created, Started) are excluded: they are the bulk of the volume and restate what the watched pod objects already show.
+
+The receiver takes an initial snapshot on startup (`include_initial_state`, which the upstream receiver only supports receiver-wide, not per object). For events that means a collector restart replays whatever the API server still retains, one hour by default, so expect duplicates around restarts. Disable with `--set cluster.collectk8sevents=false`.
+
+### Node journald logs
+
+`agent.journald` (**off by default**) collects systemd unit logs from the node — kubelet, containerd — which are where node-level failures show up and are invisible in container stdout.
+
+It is off by default because it cannot work out of the box: the journald receiver shells out to `journalctl`, and the OpenTelemetry Collector images do not ship that binary. When enabled, the agent chroots into the host filesystem already mounted at `/hostfs` and runs the node's own `journalctl`, which means:
+
+- the node must actually have a binary at `agent.journald.journalctlPath` (default `/usr/bin/journalctl`)
+- the agent container runs as **root** with the `DAC_READ_SEARCH`, `SYS_PTRACE` and `SYS_CHROOT` capabilities, since journal files are root-owned and are read through a chroot
+
+Check a node before enabling it:
+
+```bash
+journalctl --header | grep "File path"
+```
+
+```yaml
+agent:
+  journald:
+    enabled: true
+    units: [kubelet, containerd]
+    priority: info
+```
 
 ## Quick Start
 
@@ -377,7 +407,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |
 | agent.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration These are merged with default extensions (health_check) |
 | agent.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors |
-| agent.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers |
+| agent.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers. See the migration examples directly above this key in values.yaml for ready-to-paste blocks. |
 | agent.config.extraTelemetry | object | {} | Additional telemetry to merge into the collector configuration Merges with default telemetry (Prometheus metrics on port 8888) |
 | agent.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
 | agent.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration Added to default extensions (health_check) |
@@ -401,6 +431,11 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
+| agent.journald | object | `{"enabled":false,"journalctlPath":"/usr/bin/journalctl","priority":"info","units":["kubelet","containerd"]}` | Collect systemd/journald logs from the node (kubelet, containerd, ...) These are the logs for node-level failures - kubelet crashes, containerd errors, disk pressure - which are invisible in container stdout.  DISABLED BY DEFAULT because it cannot work out of the box: the journald receiver shells out to `journalctl`, and the OpenTelemetry Collector images do not ship it. When enabled, the agent chroots into the host filesystem already mounted at /hostfs and runs the node's own journalctl, so the node must actually have a binary at journalctlPath. Enabling this also makes the agent container run as root with DAC_READ_SEARCH/SYS_PTRACE/SYS_CHROOT. Verify on a node first: `journalctl --header | grep "File path"` |
+| agent.journald.enabled | bool | false | Enable the journald receiver on the agent |
+| agent.journald.journalctlPath | string | "/usr/bin/journalctl" | Absolute path to journalctl on the node (inside the /hostfs chroot) |
+| agent.journald.priority | string | "info" | Minimum message priority to keep. One of emerg, alert, crit, err, warning, notice, info, debug. |
+| agent.journald.units | list | ["kubelet", "containerd"] | systemd units to read. An empty list reads every unit, which is a lot. |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
 | agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
@@ -411,7 +446,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
-| cluster.collectk8sobjects | bool | `true` |  |
+| cluster.collectk8sevents | bool | true | Collect Kubernetes Warning events (FailedScheduling, BackOff, Evicted, ErrImagePull, FailedMount, Unhealthy, ...) as logs. Filtered to type=Warning: Normal events are the bulk of the volume and restate what the watched pod objects already show. Uses the RBAC rules already granted for events. Note that on collector restart the API server's retained event window (1h by default) is replayed, so a restart produces duplicates. |
+| cluster.collectk8sobjects | bool | true | Watch pod objects and ship them as logs This is used in the Kubernetes view to show pod configuration |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
 | cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |

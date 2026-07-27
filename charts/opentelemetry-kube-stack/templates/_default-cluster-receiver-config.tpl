@@ -7,14 +7,29 @@ receivers:
     metrics:
       k8s.pod.status_reason:
         enabled: true
-{{- if .Values.cluster.collectk8sobjects }}
+{{- if or .Values.cluster.collectk8sobjects .Values.cluster.collectk8sevents }}
   k8s_objects:
     auth_type: serviceAccount
+    # Receiver-wide (the field does not exist per-object): on start, snapshot
+    # current objects before watching. For events that means the API server's
+    # retained window (1h by default) is replayed after a collector restart.
     include_initial_state: true
     objects:
+    {{- if .Values.cluster.collectk8sobjects }}
       - group: ""
         name: pods
         mode: watch
+    {{- end }}
+    {{- if .Values.cluster.collectk8sevents }}
+      # Warning only. Normal events (Scheduled, Pulling, Pulled, Created,
+      # Started) are the bulk of the volume and restate what the pod objects
+      # above already show; the diagnostic value - FailedScheduling, BackOff,
+      # Evicted, ErrImagePull, FailedMount, Unhealthy - is all type=Warning.
+      - group: events.k8s.io
+        name: events
+        mode: watch
+        field_selector: type=Warning
+    {{- end }}
 {{- end }}
 processors:
   memory_limiter:
@@ -62,7 +77,7 @@ service:
     logs:
       receivers:
         - k8s_cluster
-{{- if .Values.cluster.collectk8sobjects }}
+{{- if or .Values.cluster.collectk8sobjects .Values.cluster.collectk8sevents }}
         - k8s_objects
 {{- end }}
       processors:

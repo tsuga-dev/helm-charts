@@ -50,23 +50,6 @@ tests:
           path: spec.config.service.pipelines.logs.receivers
           content: k8s_objects
 
-  - it: should not collect k8s objects when disabled
-    set:
-      cluster.enabled: true
-      cluster.collectk8sobjects: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
-      tsuga.apiKey: "<TSUGA_API_KEY>"
-    release:
-      name: "test-release"
-    asserts:
-      - isKind:
-          of: OpenTelemetryCollector
-      - isNull:
-          path: spec.config.receivers.k8s_objects
-      - notContains:
-          path: spec.config.service.pipelines.logs.receivers
-          content: k8s_objects
-
   - it: should guard logs and metrics pipelines with memory_limiter first
     set:
       cluster.enabled: true
@@ -108,3 +91,54 @@ tests:
     asserts:
       - isNull:
           path: spec.config.processors["resource/collector"]
+
+  - it: should collect k8s events by default
+    set:
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.receivers.k8s_objects.objects
+          content:
+            group: events.k8s.io
+            name: events
+            mode: watch
+            field_selector: type=Warning
+
+  - it: should keep the k8s_objects receiver for events when pod objects are disabled
+    set:
+      cluster.enabled: true
+      cluster.collectk8sobjects: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - notContains:
+          path: spec.config.receivers.k8s_objects.objects
+          content:
+            group: ""
+            name: pods
+            mode: watch
+      - contains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects
+
+  - it: should not collect k8s objects when both objects and events are disabled
+    set:
+      cluster.enabled: true
+      cluster.collectk8sobjects: false
+      cluster.collectk8sevents: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.k8s_objects
+      - notContains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects
