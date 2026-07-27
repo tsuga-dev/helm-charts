@@ -238,12 +238,14 @@ spec:
         spike_limit_percentage: 25
       resource:
         attributes:
-        - action: insert
-          key: k8s.node.name
-          value: ${env:K8S_NODE_NAME}
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      resource/node:
+        attributes:
+        - action: upsert
+          key: k8s.node.name
+          value: ${env:K8S_NODE_NAME}
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -275,6 +277,16 @@ spec:
           - batch
           receivers:
           - otlp
+        logs/node:
+          exporters:
+          - otlp_http/tsuga
+          processors:
+          - memory_limiter
+          - k8s_attributes
+          - resource
+          - resource/node
+          - batch
+          receivers:
           - file_log
         metrics:
           exporters:
@@ -289,6 +301,17 @@ spec:
           - otlp
           - kubelet_stats
           - span_metrics
+        metrics/node:
+          exporters:
+          - otlp_http/tsuga
+          processors:
+          - memory_limiter
+          - k8s_attributes
+          - resource
+          - resource/node
+          - cumulativetodelta
+          - batch
+          receivers:
           - host_metrics
         traces:
           exporters:

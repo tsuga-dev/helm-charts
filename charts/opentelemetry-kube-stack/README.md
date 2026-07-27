@@ -51,7 +51,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - Uses host networking for optimal performance (configurable)
 
 **Default Receivers:**
-- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, optional network and process metrics. Pseudo filesystems (overlay, tmpfs, cgroup2, …) and container mount points are excluded to keep series counts sane.
+- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, optional network and process metrics. Kernel pseudo filesystems (overlay, cgroup2, proc, …) and container mount points are excluded to keep series counts sane — upstream's `fs_types`, with anchored mount-point regexes. `tmpfs` is kept: `/run` usage is worth watching.
 - **Kubelet Stats** (`kubelet_stats`): Node and pod metrics via kubelet
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
 - **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
@@ -59,7 +59,8 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
-- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, and `k8s.cluster.name`
+- **Resource**: Adds `k8s.cluster.name` to everything
+- **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API. Wired only into the node-local pipelines (`metrics/node`, `logs/node`), whose receivers read this node's kernel and log files. It is deliberately absent from the `otlp` pipelines: OTLP arrives over a Service that load-balances across every agent, so the receiving node is not the sending pod's node. `kubelet_stats` sets `k8s.node.name` itself and needs no stamp.
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
@@ -70,8 +71,10 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Logs**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Logs/node** (when `agent.collectLogs`): `file_log` → `memory_limiter`, `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Metrics/node**: `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `resource/node`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Traces**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
 Collector self-telemetry is exported through `service::telemetry`, not a pipeline.
@@ -128,13 +131,14 @@ agent:
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
 - **Resource**: Adds `k8s.cluster.name`
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **Cumulative To Delta**: Converts `k8s_cluster`'s cumulative counters to delta before export
 - **Batch**: Batches telemetry for efficient processing
 
 **Default Exporters:**
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`, `k8s_attributes`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 
 ## Quick Start
@@ -306,31 +310,39 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | affinity | object | {} | Affinity rules for pod scheduling Used as default when agent.affinity is not set |
 | agent.addLogsVolumes | bool | true | Add logs volumes to the agent When true, adds volumes for log collection Even if collectLogs is false, the volumes are added |
 | agent.affinity | object | {} | Agent-specific affinity rules If not set, inherits from global affinity configuration |
-| agent.collectLogs | bool | true | Collect logs from the host and containers When true, enables filelog receiver to collect logs from /var/log/pods Also mounts required volumes for log collection |
+| agent.collectLogs | bool | true | Collect logs from the host and containers When true, enables the file_log receiver to collect logs from /var/log/pods Also mounts required volumes for log collection |
 | agent.collectNetwork | bool | false | Collect host network metrics When true, enables network scraper in hostmetrics receiver |
 | agent.collectOtelLogs | bool | false | Collect OpenTelemetry collector logs When false (default), excludes the collector's own container logs to avoid a self-ingestion feedback loop that produces container-parser errors |
 | agent.collectProcesses | bool | false | Collect host processes metrics When true, enables processes and process scrapers in hostmetrics receiver |
-| agent.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Agent collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers Default processors: k8s_attributes, memory_limiter, batch, cumulativetodelta, resource |
+| agent.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"logs/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Agent collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp Default processors: memory_limiter, k8s_attributes, resource, resource/node, cumulativetodelta, batch Default connectors: span_metrics |
 | agent.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
 | agent.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |
 | agent.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration These are merged with default extensions (health_check) |
 | agent.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors |
 | agent.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers |
 | agent.config.extraTelemetry | object | {} | Additional telemetry to merge into the collector configuration Merges with default telemetry (Prometheus metrics on port 8888) |
-| agent.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
+| agent.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"logs/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
 | agent.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration Added to default extensions (health_check) |
-| agent.config.service.pipelines | object | `{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
-| agent.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration |
+| agent.config.service.pipelines | object | `{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"logs/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics/node":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
+| agent.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration (otlp only; node-local log sources live in the logs/node pipeline) |
 | agent.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline Added to default exporter (otlp_http/tsuga) |
-| agent.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline Added to default processors (k8s_attributes, memory_limiter, batch, resource) |
-| agent.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline Added to default receivers (otlp, filelog) |
-| agent.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration |
+| agent.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline Added to default processors (memory_limiter, k8s_attributes, resource, batch) |
+| agent.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline Added to default receivers (otlp) |
+| agent.config.service.pipelines.logs/node | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Node-local logs pipeline configuration (rendered only when agent.collectLogs is true) |
+| agent.config.service.pipelines.logs/node.extraExporters | list | [] | Additional exporters to add to the logs/node pipeline Added to default exporter (otlp_http/tsuga) |
+| agent.config.service.pipelines.logs/node.extraProcessors | list | [] | Additional processors to add to the logs/node pipeline Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch) |
+| agent.config.service.pipelines.logs/node.extraReceivers | list | [] | Additional receivers to add to the logs/node pipeline Added to default receivers (file_log) |
+| agent.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration (node-local metric sources live in the metrics/node pipeline) |
 | agent.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline Added to default exporter (otlp_http/tsuga) |
-| agent.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (k8s_attributes, memory_limiter, batch, cumulativetodelta, resource) |
-| agent.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receivers (otlp, kubelet_stats, spanmetrics, host_metrics) |
+| agent.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (memory_limiter, k8s_attributes, resource, cumulativetodelta, batch) |
+| agent.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receivers (otlp, kubelet_stats, span_metrics) |
+| agent.config.service.pipelines.metrics/node | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Node-local metrics pipeline configuration |
+| agent.config.service.pipelines.metrics/node.extraExporters | list | [] | Additional exporters to add to the metrics/node pipeline Added to default exporter (otlp_http/tsuga) |
+| agent.config.service.pipelines.metrics/node.extraProcessors | list | [] | Additional processors to add to the metrics/node pipeline Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, cumulativetodelta, batch) |
+| agent.config.service.pipelines.metrics/node.extraReceivers | list | [] | Additional receivers to add to the metrics/node pipeline Added to default receivers (host_metrics) |
 | agent.config.service.pipelines.traces | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Traces pipeline configuration |
-| agent.config.service.pipelines.traces.extraExporters | list | [] | Additional exporters to add to the traces pipeline Added to default exporters (otlp_http/tsuga, spanmetrics) |
-| agent.config.service.pipelines.traces.extraProcessors | list | [] | Additional processors to add to the traces pipeline Added to default processors (k8s_attributes, memory_limiter, batch, resource) |
+| agent.config.service.pipelines.traces.extraExporters | list | [] | Additional exporters to add to the traces pipeline Added to default exporters (otlp_http/tsuga, span_metrics) |
+| agent.config.service.pipelines.traces.extraProcessors | list | [] | Additional processors to add to the traces pipeline Added to default processors (memory_limiter, k8s_attributes, resource, batch) |
 | agent.config.service.pipelines.traces.extraReceivers | list | [] | Additional receivers to add to the traces pipeline Added to default receivers (otlp) |
 | agent.customConfig | object | {} | Replace default config with complete custom configuration When set, this completely replaces the default collector configuration Use this for full control over the OpenTelemetry Collector config See cluster.customConfig for example format |
 | agent.enabled | bool | true | Enable agent daemonset deployment |
@@ -350,11 +362,11 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
 | cluster.collectk8sobjects | bool | `true` |  |
-| cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor |
+| cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects) Default processors: memory_limiter, resource, k8s_attributes, cumulativetodelta, batch |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
 | cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |
-| cluster.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors (k8s_attributes, resource) |
-| cluster.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers (k8s_cluster) Example:   extraReceivers:     prometheus:       config:         scrape_configs:           - job_name: 'my-service' |
+| cluster.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors (memory_limiter, resource, k8s_attributes, cumulativetodelta, batch) |
+| cluster.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers (k8s_cluster, k8s_objects) Example:   extraReceivers:     prometheus:       config:         scrape_configs:           - job_name: 'my-service' |
 | cluster.config.extraTelemetry | object | {} | Additional telemetry to merge into the collector configuration Merges with default telemetry |
 | cluster.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
 | cluster.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration Added to default extensions |

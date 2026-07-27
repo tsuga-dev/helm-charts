@@ -15,24 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [opentelemetry-kube-stack-0.7.4] - 2026-07-13
 
-### Changed
-- Making placeholders explicits by @gus-tsuga
-
 ### Fixed
 - Render service.telemetry.resource as a map (#111) by @abruneau in [#111](https://github.com/tsuga-dev/helm-charts/pull/111)
+
+### Changed
+- Making placeholders explicits by @gus-tsuga
 
 ## [opentelemetry-kube-stack-0.7.3] - 2026-07-01
 
 ### Added
 - Align demo and kube-stack with OTel naming conventions (#95) by @abruneau in [#95](https://github.com/tsuga-dev/helm-charts/pull/95)
 
+### Fixed
+- List-form telemetry headers + collector version guard (#107) by @abruneau in [#107](https://github.com/tsuga-dev/helm-charts/pull/107)
+
 ### Changed
 - Fix Old otel conventions (#98) by @abruneau in [#98](https://github.com/tsuga-dev/helm-charts/pull/98)
 - Docs/readme charts update (#104) by @abruneau in [#104](https://github.com/tsuga-dev/helm-charts/pull/104)
 - Remove payment log pod annotation and default to contrib image (#106) by @abruneau in [#106](https://github.com/tsuga-dev/helm-charts/pull/106)
-
-### Fixed
-- List-form telemetry headers + collector version guard (#107) by @abruneau in [#107](https://github.com/tsuga-dev/helm-charts/pull/107)
 
 ## [opentelemetry-kube-stack-0.7.2] - 2026-06-11
 
@@ -107,10 +107,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add schema for targetAllocator and statefulset values by @abruneau
 - Add target-allocator example by @abruneau
 
-### Changed
-- Add statefulset collector-TA link tests by @abruneau
-- Bump version by @abruneau
-
 ### Fixed
 - Make replicas conditional, document TA coupling by @abruneau
 - Guard TargetAllocator serviceAccount on serviceAccount.create by @abruneau
@@ -124,6 +120,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add net.host.name and cumulativetodelta to statefulset collector by @abruneau
 - Fix tolerations type for agent and cluster by @abruneau
 
+### Changed
+- Add statefulset collector-TA link tests by @abruneau
+- Bump version by @abruneau
+
 ## [opentelemetry-kube-stack-0.4.0] - 2026-02-17
 
 ### Added
@@ -131,13 +131,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make clusterName optional with warning by @abruneau
 - Document operator and cert-manager requirements by @abruneau
 
+### Fixed
+- Update gitignore and operator condition by @abruneau
+
 ### Changed
 - Add auto-instrumentation examples and testing framework by @abruneau
 - Remove unused otel-crds dependency by @abruneau
 - Bump version by @abruneau
-
-### Fixed
-- Update gitignore and operator condition by @abruneau
 
 ## [opentelemetry-kube-stack-0.3.0] - 2026-02-02
 
@@ -161,12 +161,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [opentelemetry-kube-stack-0.2.14] - 2026-01-12
 
+### Fixed
+- Fix custom config not being taken in count by @abruneau
+
 ### Changed
 - Enhance OpenTelemetry configuration by adding k8s_observer extension for improved Kubernetes resource observation. Update daemonset and service templates to include new logging receiver and adjust extraExtensions handling. by @abruneau
 - Bump version by @abruneau
-
-### Fixed
-- Fix custom config not being taken in count by @abruneau
 
 ## [opentelemetry-kube-stack-0.2.13] - 2026-01-12
 

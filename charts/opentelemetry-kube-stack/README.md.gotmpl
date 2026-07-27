@@ -41,7 +41,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - Uses host networking for optimal performance (configurable)
 
 **Default Receivers:**
-- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, optional network and process metrics. Pseudo filesystems (overlay, tmpfs, cgroup2, …) and container mount points are excluded to keep series counts sane.
+- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, optional network and process metrics. Kernel pseudo filesystems (overlay, cgroup2, proc, …) and container mount points are excluded to keep series counts sane — upstream's `fs_types`, with anchored mount-point regexes. `tmpfs` is kept: `/run` usage is worth watching.
 - **Kubelet Stats** (`kubelet_stats`): Node and pod metrics via kubelet
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
 - **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
@@ -49,7 +49,8 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
-- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, and `k8s.cluster.name`
+- **Resource**: Adds `k8s.cluster.name` to everything
+- **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API. Wired only into the node-local pipelines (`metrics/node`, `logs/node`), whose receivers read this node's kernel and log files. It is deliberately absent from the `otlp` pipelines: OTLP arrives over a Service that load-balances across every agent, so the receiving node is not the sending pod's node. `kubelet_stats` sets `k8s.node.name` itself and needs no stamp.
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
@@ -60,8 +61,10 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics`, `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Logs**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Logs/node** (when `agent.collectLogs`): `file_log` → `memory_limiter`, `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, `span_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
+- **Metrics/node**: `host_metrics` → `memory_limiter`, `k8s_attributes`, `resource`, `resource/node`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Traces**: `otlp` → `memory_limiter`, `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`, `span_metrics`
 
 Collector self-telemetry is exported through `service::telemetry`, not a pipeline.
@@ -118,13 +121,14 @@ agent:
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
 - **Resource**: Adds `k8s.cluster.name`
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
+- **Cumulative To Delta**: Converts `k8s_cluster`'s cumulative counters to delta before export
 - **Batch**: Batches telemetry for efficient processing
 
 **Default Exporters:**
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`, `k8s_attributes`, `cumulativetodelta`, `batch` → `otlp_http/tsuga`
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 
 ## Quick Start

@@ -92,7 +92,14 @@ jobs:
 
       - name: Lint Helm chart
         run: |
-          helm lint charts/${{ matrix.chart }}
+          CHART="charts/${{ matrix.chart }}"
+          # Charts with required values (e.g. kube-stack's clusterName) cannot be
+          # linted against their own defaults, which are intentionally invalid.
+          if [ -f "$CHART/values_ci_test.yaml" ]; then
+            helm lint "$CHART" -f "$CHART/values_ci_test.yaml"
+          else
+            helm lint "$CHART"
+          fi
 
   unittest:
     needs: detect-charts

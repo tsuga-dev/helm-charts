@@ -181,6 +181,7 @@ spec:
           - memory_limiter
           - resource
           - k8s_attributes
+          - cumulativetodelta
           - batch
           receivers:
           - k8s_cluster

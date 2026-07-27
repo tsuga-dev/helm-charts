@@ -28,7 +28,13 @@ agent:
         metrics:
           extraExporters:
             - debug
+        metrics/node:
+          extraExporters:
+            - debug
         logs:
+          extraExporters:
+            - debug
+        logs/node:
           extraExporters:
             - debug
         traces:

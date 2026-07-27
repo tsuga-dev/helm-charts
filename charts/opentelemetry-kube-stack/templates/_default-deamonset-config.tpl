@@ -51,9 +51,11 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
-        # Without these every overlayfs and tmpfs mount on the node becomes its
-        # own series, which on a busy node is dozens per pod and tells you
-        # nothing. Same exclusion set as the upstream hostMetrics preset.
+        # Without these every overlayfs mount and kernel pseudo-filesystem on
+        # the node becomes its own series, which on a busy node is dozens per
+        # pod and tells you nothing. Uses upstream's fs_types, with anchored
+        # mount-point regexes. tmpfs is deliberately kept: /run and friends are
+        # real usage worth watching, and upstream keeps it too.
         exclude_mount_points:
           match_type: regexp
           mount_points:
@@ -183,15 +185,20 @@ processors:
     limit_percentage: 80
     spike_limit_percentage: 25
   cumulativetodelta: {}
-  resource:
+  # Only wired into the node-local pipelines (metrics/node, logs/node). Those
+  # receivers read this node's kernel and this node's log files, so the agent's
+  # own node name is always the right answer. It is deliberately kept off the
+  # otlp pipelines: otlp arrives over a Service that load-balances across every
+  # agent, so a pod on another node reaches this collector and k8s_attributes
+  # cannot associate it (filter.node_from_env_var restricts the pod informer to
+  # local pods). Stamping there would label it with the receiving node.
+  resource/node:
     attributes:
-      # host_metrics never touches a pod, so k8s_attributes cannot associate it
-      # and it would otherwise arrive with no node identity at all, collapsing
-      # every node's host metrics together. insert (not upsert) leaves
-      # pod-derived values alone.
       - key: k8s.node.name
         value: ${env:K8S_NODE_NAME}
-        action: insert
+        action: upsert
+  resource:
+    attributes:
       - key: k8s.cluster.name
         value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
@@ -215,9 +222,6 @@ service:
     logs:
       receivers:
         - otlp
-{{- if .Values.agent.collectLogs }}
-        - file_log
-{{- end }}
       processors:
         # memory_limiter must be first so load is shed before the pipeline
         # spends work enriching data it is about to reject; batch last so it
@@ -230,16 +234,45 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
         {{- end }}
+{{- if .Values.agent.collectLogs }}
+    logs/node:
+      receivers:
+        - file_log
+      processors:
+        - memory_limiter
+        - k8s_attributes
+        - resource
+        - resource/node
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlp_http/tsuga
+        {{- end }}
+{{- end }}
     metrics:
       receivers:
         - otlp
+        # kubelet_stats sets k8s.node.name itself, so it needs no stamp.
         - kubelet_stats
         - span_metrics
+      processors:
+        - memory_limiter
+        - k8s_attributes
+        - resource
+        - cumulativetodelta
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlp_http/tsuga
+        {{- end }}
+    metrics/node:
+      receivers:
         - host_metrics
       processors:
         - memory_limiter
         - k8s_attributes
         - resource
+        - resource/node
         - cumulativetodelta
         - batch
       exporters:

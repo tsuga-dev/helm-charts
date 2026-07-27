@@ -113,13 +113,19 @@ tests:
           path: spec.config.service.pipelines.logs.processors
           value: [memory_limiter, k8s_attributes, resource, batch]
       - equal:
+          path: spec.config.service.pipelines["logs/node"].processors
+          value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
+      - equal:
           path: spec.config.service.pipelines.metrics.processors
           value: [memory_limiter, k8s_attributes, resource, cumulativetodelta, batch]
+      - equal:
+          path: spec.config.service.pipelines["metrics/node"].processors
+          value: [memory_limiter, k8s_attributes, resource, resource/node, cumulativetodelta, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
           value: [memory_limiter, k8s_attributes, resource, batch]
 
-  - it: should stamp node identity even without a cluster name
+  - it: should stamp the node name only on node-local pipelines
     set:
       clusterName: "test-cluster"
       agent.enabled: true
@@ -128,17 +134,63 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # insert, so k8s_attributes' pod-derived node name is never clobbered.
-      - contains:
+      - equal:
+          path: spec.config.processors["resource/node"].attributes
+          value:
+            - key: k8s.node.name
+              value: ${env:K8S_NODE_NAME}
+              action: upsert
+      # The shared resource processor only carries cluster identity.
+      - equal:
           path: spec.config.processors.resource.attributes
-          content:
-            key: k8s.node.name
-            value: ${env:K8S_NODE_NAME}
-            action: insert
-      # The dead processor is gone: it stamped the collector's own pod UID as
-      # service.instance.id, and was referenced by no pipeline.
+          value:
+            - key: k8s.cluster.name
+              value: test-cluster
+              action: upsert
+      # otlp arrives over a Service that fans out across every agent, so the
+      # receiving node is not the originating node: never stamp it there.
+      - notContains:
+          path: spec.config.service.pipelines.logs.processors
+          content: resource/node
+      - notContains:
+          path: spec.config.service.pipelines.metrics.processors
+          content: resource/node
+      - notContains:
+          path: spec.config.service.pipelines.traces.processors
+          content: resource/node
+      - contains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: otlp
+      - contains:
+          path: spec.config.service.pipelines.metrics.receivers
+          content: otlp
+      # host_metrics and file_log are node-local, so they do get the stamp and
+      # are the only receivers on those pipelines.
+      - equal:
+          path: spec.config.service.pipelines["metrics/node"].receivers
+          value: [host_metrics]
+      - equal:
+          path: spec.config.service.pipelines["logs/node"].receivers
+          value: [file_log]
+      # kubelet_stats sets k8s.node.name itself, so it stays unstamped.
+      - contains:
+          path: spec.config.service.pipelines.metrics.receivers
+          content: kubelet_stats
+
+  - it: should drop the node log pipeline when collectLogs is disabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectLogs: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
       - isNull:
-          path: spec.config.processors["resource/collector"]
+          path: spec.config.receivers.file_log
+      - isNull:
+          path: spec.config.service.pipelines["logs/node"]
 
   - it: should exclude pseudo filesystems from the filesystem scraper
     set:

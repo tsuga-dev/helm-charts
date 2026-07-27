@@ -118,6 +118,8 @@ service:
         - memory_limiter
         - resource
         - k8s_attributes
+        # Tsuga expects delta temporality; k8s_cluster emits cumulative sums.
+        - cumulativetodelta
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
