@@ -190,6 +190,22 @@ tests:
       - isNull:
           path: spec.config.service.pipelines["logs/node"]
 
+  - it: should exclude pseudo filesystems from the filesystem scraper
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_fs_types.fs_types
+          content: overlay
+      - contains:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points.mount_points
+          content: ^/var/lib/kubelet($|/)
+
   - it: should fail to render when clusterName is not set
     set:
       agent.enabled: true

@@ -51,6 +51,47 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
+        # Without these every overlayfs mount and kernel pseudo-filesystem on
+        # the node becomes its own series, which on a busy node is dozens per
+        # pod and tells you nothing. Uses upstream's fs_types, with anchored
+        # mount-point regexes. tmpfs is deliberately kept: /run and friends are
+        # real usage worth watching, and upstream keeps it too.
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+            - '^/dev($|/)'
+            - '^/proc($|/)'
+            - '^/sys($|/)'
+            - '^/run/k3s/containerd($|/)'
+            - '^/var/lib/docker($|/)'
+            - '^/var/lib/kubelet($|/)'
+            - '^/snap($|/)'
+        exclude_fs_types:
+          match_type: strict
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
       load:
       memory:
         metrics:
