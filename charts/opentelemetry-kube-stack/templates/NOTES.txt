@@ -10,7 +10,6 @@ OpenTelemetry Kubernetes Stack - Post-Installation Guide
 
 Release: {{ .Release.Name }} | Namespace: {{ .Release.Namespace }} | Version: {{ .Chart.Version }}
 
-
 =============================================================================
 📊 STATUS CHECK
 =============================================================================

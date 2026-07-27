@@ -49,7 +49,7 @@ The chart implements the recommended OpenTelemetry architecture with two main co
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). Always first, so load is shed before the pipeline spends work on data it is about to reject.
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
-- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, plus `k8s.cluster.name` when `clusterName` is set
+- **Resource**: Adds `k8s.node.name`, so host metrics are attributable to a node, and `k8s.cluster.name`
 - **Cumulative To Delta**: Converts cumulative counters to delta where applicable
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Always last.
 
@@ -116,7 +116,7 @@ agent:
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit)
-- **Resource**: Adds `k8s.cluster.name` (only when `clusterName` is set)
+- **Resource**: Adds `k8s.cluster.name`
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
 - **Batch**: Batches telemetry for efficient processing
 
@@ -124,10 +124,8 @@ agent:
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`¹, `k8s_attributes`, `batch` → `otlp_http/tsuga`
-
-¹ Only present when `clusterName` is set.
+- **Metrics**: `k8s_cluster` → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, `resource`, `k8s_attributes`, `batch` → `otlp_http/tsuga`
 
 ## Quick Start
 
@@ -170,6 +168,7 @@ opentelemetry-operator:
 Or via command line:
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true
 ```
 
@@ -187,6 +186,12 @@ kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=opentelemetry-
 ```
 
 ## Installation
+
+> **`clusterName` is required.** Installs and upgrades fail without it — it is
+> what distinguishes this cluster's telemetry from every other cluster's in
+> Tsuga. Existing installs that never set it must add
+> `--set clusterName=<name>` when upgrading.
+
 
 ## Auto-instrumentation (APM)
 
@@ -249,6 +254,7 @@ helm repo update
 
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set secret.create=true \
   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
@@ -259,6 +265,7 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set secret.create=true \
   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
@@ -269,6 +276,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 ```bash
 # Create a values file
 cat > my-values.yaml << EOF
+clusterName: "<CLUSTER_NAME>"
 tsuga:
   otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
   apiKey: "<TSUGA_API_KEY>"
@@ -349,7 +357,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
+helm template test . --set clusterName="<CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation
