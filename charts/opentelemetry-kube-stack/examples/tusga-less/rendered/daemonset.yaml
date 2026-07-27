@@ -195,14 +195,6 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
-      resource/collector:
-        attributes:
-        - action: upsert
-          key: service.instance.id
-          value: ${POD_UID}
-        - action: upsert
-          key: k8s.cluster.name
-          value: test-cluster
       resource/node:
         attributes:
         - action: insert

@@ -26,14 +26,6 @@ processors:
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      - key: k8s.cluster.name
-        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
-        action: upsert
   k8s_attributes:
     extract:
       metadata:

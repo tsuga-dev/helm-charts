@@ -325,20 +325,6 @@ cluster:
           # Added to default receiver (k8s_cluster)
           # @default -- []
           extraReceivers: []
-        # -- Traces pipeline configuration
-        traces:
-          # -- Additional exporters to add to the traces pipeline
-          # Added to default exporter (otlp_http/tsuga)
-          # @default -- []
-          extraExporters: []
-          # -- Additional processors to add to the traces pipeline
-          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
-          # @default -- []
-          extraProcessors: []
-          # -- Additional receivers to add to the traces pipeline
-          # Added to default receiver (k8s_cluster)
-          # @default -- []
-          extraReceivers: []
         # -- Additional pipelines to add to the service configuration
         # These are completely new pipelines (not extending default ones)
         # Example:
