@@ -231,6 +231,9 @@ spec:
         - action: insert
           key: k8s.node.name
           value: ${env:K8S_NODE_NAME}
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
     exporters:
       debug: {}
     extensions:
@@ -285,4 +288,5 @@ spec:
           - otlp
       telemetry:
         resource:
+          k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

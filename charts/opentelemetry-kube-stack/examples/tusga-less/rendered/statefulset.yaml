@@ -128,6 +128,11 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      resource:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
     exporters:
       debug: {}
     service:
@@ -140,9 +145,11 @@ spec:
           - memory_limiter
           - cumulativetodelta
           - k8s_attributes
+          - resource
           - batch
           receivers:
           - prometheus
       telemetry:
         resource:
+          k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

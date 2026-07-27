@@ -192,11 +192,9 @@ processors:
       - key: k8s.node.name
         value: ${env:K8S_NODE_NAME}
         action: insert
-      {{- if .Values.clusterName }}
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-      {{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}

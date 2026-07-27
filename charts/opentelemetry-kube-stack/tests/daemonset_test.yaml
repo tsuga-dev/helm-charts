@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should create daemonset with default values
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       agent.hostNetwork: true
       serviceAccount.create: true
@@ -25,6 +26,7 @@ tests:
 
   - it: should not include tsuga exporter when enabledForDaemonset is false
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -40,6 +42,7 @@ tests:
 
   - it: should configure spanmetrics with low-cardinality HTTP dimensions by default
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -65,6 +68,7 @@ tests:
 
   - it: should not reference the Tsuga secret when the exporter is disabled everywhere
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       tsuga.enabledForClusterReceiver: false
       tsuga.enabledForDaemonset: false
@@ -117,6 +121,7 @@ tests:
 
   - it: should stamp node identity even without a cluster name
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -137,6 +142,7 @@ tests:
 
   - it: should exclude pseudo filesystems from the filesystem scraper
     set:
+      clusterName: "test-cluster"
       agent.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -149,3 +155,14 @@ tests:
       - contains:
           path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points.mount_points
           content: ^/var/lib/kubelet($|/)
+
+  - it: should fail to render when clusterName is not set
+    set:
+      agent.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorMessage: "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file."

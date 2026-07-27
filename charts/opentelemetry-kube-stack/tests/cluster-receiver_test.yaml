@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should create deployment with default values
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       serviceAccount.create: true
       serviceAccount.name: ""
@@ -21,6 +22,7 @@ tests:
 
   - it: should not include tsuga exporter when enabledForClusterReceiver is false
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -36,6 +38,7 @@ tests:
 
   - it: should collect k8s objects by default
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -52,6 +55,7 @@ tests:
 
   - it: should not collect k8s objects when disabled
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       cluster.collectk8sobjects: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -69,6 +73,7 @@ tests:
 
   - it: should guard logs and metrics pipelines with memory_limiter first
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -88,6 +93,7 @@ tests:
 
   - it: should pin the cluster receiver to a single replica
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -100,6 +106,7 @@ tests:
 
   - it: should not define the unused resource/collector processor
     set:
+      clusterName: "test-cluster"
       cluster.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"

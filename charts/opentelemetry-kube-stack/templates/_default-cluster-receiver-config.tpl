@@ -83,13 +83,11 @@ processors:
       - sources:
         - from: connection
   cumulativetodelta: {}
-  {{- if .Values.clusterName }}
   resource:
     attributes:
       - key: k8s.cluster.name
-        value: {{ .Values.clusterName }}
+        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-  {{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -106,9 +104,7 @@ service:
 {{- end }}
       processors:
         - memory_limiter
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
         - k8s_attributes
         - batch
       exporters:
@@ -120,9 +116,7 @@ service:
         - k8s_cluster
       processors:
         - memory_limiter
-        {{- if .Values.clusterName }}
         - resource
-        {{- end }}
         - k8s_attributes
         - batch
       exporters:

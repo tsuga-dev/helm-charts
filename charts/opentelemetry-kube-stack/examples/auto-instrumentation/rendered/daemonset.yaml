@@ -241,6 +241,9 @@ spec:
         - action: insert
           key: k8s.node.name
           value: ${env:K8S_NODE_NAME}
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -310,4 +313,5 @@ spec:
                     value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
         resource:
+          k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

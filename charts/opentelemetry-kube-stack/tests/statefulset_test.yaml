@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should not render when targetAllocator disabled
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -16,6 +17,7 @@ tests:
 
   - it: should create statefulset collector when targetAllocator enabled
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       serviceAccount.create: true
       serviceAccount.name: ""
@@ -38,6 +40,7 @@ tests:
 
   - it: should not set serviceAccount when serviceAccount.create is false
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       serviceAccount.create: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -52,6 +55,7 @@ tests:
 
   - it: should use custom replicas when specified
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       statefulset.replicas: 3
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -65,6 +69,7 @@ tests:
 
   - it: should not include tsuga exporter when enabledForStatefulset is false
     set:
+      clusterName: "test-cluster"
       targetAllocator.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
