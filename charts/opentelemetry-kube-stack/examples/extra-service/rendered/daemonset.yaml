@@ -238,10 +238,10 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
-          - k8s_attributes
           - memory_limiter
-          - batch
+          - k8s_attributes
           - resource
+          - batch
           receivers:
           - otlp
           - file_log
@@ -249,9 +249,9 @@ spec:
           exporters:
           - otlp_http/tsuga
           processors:
-          - k8s_attributes
           - memory_limiter
           - cumulativetodelta
+          - k8s_attributes
           - resource
           - batch
           receivers:
@@ -270,8 +270,8 @@ spec:
           - otlp_http/tsuga
           - span_metrics
           processors:
-          - k8s_attributes
           - memory_limiter
+          - k8s_attributes
           - resource
           - batch
           receivers:

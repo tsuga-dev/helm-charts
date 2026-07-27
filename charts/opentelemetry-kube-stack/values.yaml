@@ -259,7 +259,8 @@ cluster:
   collectk8sobjects: true
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default config includes: k8s_cluster receiver, k8s_attributes processor, resource processor
+  # Default receivers: k8s_cluster
+  # Default processors: memory_limiter, k8s_attributes, resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry
@@ -276,7 +277,8 @@ cluster:
     # @default -- {}
     extraReceivers: {}
     # -- Additional processors to merge into the collector configuration
-    # These are merged with default processors (k8s_attributes, resource)
+    # These are merged with default processors (memory_limiter, k8s_attributes,
+    # resource, batch)
     # @default -- {}
     extraProcessors: {}
     # -- Additional exporters to merge into the collector configuration
@@ -302,7 +304,7 @@ cluster:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline
-          # Added to default processors (resource)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
@@ -316,7 +318,7 @@ cluster:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (resource)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
@@ -330,7 +332,7 @@ cluster:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline
-          # Added to default processors (resource)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the traces pipeline
@@ -438,7 +440,8 @@ agent:
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers
-  # Default processors: k8s_attributes, memory_limiter, batch, cumulativetodelta, resource
+  # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
+  # resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -479,7 +482,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline
-          # Added to default processors (k8s_attributes, memory_limiter, batch, resource)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
@@ -493,7 +496,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (k8s_attributes, memory_limiter, batch, cumulativetodelta, resource)
+          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
@@ -507,7 +510,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline
-          # Added to default processors (k8s_attributes, memory_limiter, batch, resource)
+          # Added to default processors (memory_limiter, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the traces pipeline
@@ -692,7 +695,7 @@ statefulset:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (k8s_attributes, batch)
+          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline

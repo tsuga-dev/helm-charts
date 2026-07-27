@@ -170,8 +170,8 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
-          - resource
           - k8s_attributes
+          - resource
           - batch
           receivers:
           - k8s_cluster
@@ -181,8 +181,8 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
-          - resource
           - k8s_attributes
+          - resource
           - batch
           receivers:
           - k8s_cluster

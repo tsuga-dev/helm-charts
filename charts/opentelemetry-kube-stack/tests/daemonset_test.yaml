@@ -110,3 +110,20 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file."
+
+  - it: should run memory_limiter first and batch last in every pipeline
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines.logs.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, k8s_attributes, resource, batch]

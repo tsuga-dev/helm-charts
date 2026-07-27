@@ -22,6 +22,9 @@ processors:
   batch:
     send_batch_size: 5000
     send_batch_max_size: 5000
+  # Runs before enrichment in the pipeline: delta state is keyed on the full
+  # resource, so a series that starts unenriched and later gains pod metadata
+  # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
   resource/collector:
     attributes:

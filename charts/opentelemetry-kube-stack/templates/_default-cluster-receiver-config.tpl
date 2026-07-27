@@ -112,8 +112,8 @@ service:
 {{- end }}
       processors:
         - memory_limiter
-        - resource
         - k8s_attributes
+        - resource
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
@@ -124,8 +124,8 @@ service:
         - k8s_cluster
       processors:
         - memory_limiter
-        - resource
         - k8s_attributes
+        - resource
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
