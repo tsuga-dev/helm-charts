@@ -259,7 +259,7 @@ cluster:
   collectk8sobjects: true
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default receivers: k8s_cluster
+  # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects)
   # Default processors: memory_limiter, k8s_attributes, resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
@@ -267,7 +267,7 @@ cluster:
     # @default -- {}
     extraTelemetry: {}
     # -- Additional receivers to merge into the collector configuration
-    # These are merged with default receivers (k8s_cluster)
+    # These are merged with default receivers (k8s_cluster, k8s_objects)
     # Example:
     #   extraReceivers:
     #     prometheus:
@@ -297,7 +297,7 @@ cluster:
       extraExtensions: []
       # -- Pipeline configuration
       pipelines:
-        # -- Logs pipeline configuration
+        # -- Logs pipeline configuration (Kubernetes entity events)
         logs:
           # -- Additional exporters to add to the logs pipeline
           # Added to default exporter (otlp_http/tsuga)
@@ -308,7 +308,8 @@ cluster:
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the logs pipeline
-          # Added to default receiver (k8s_cluster)
+          # Added to default receivers (k8s_cluster, plus k8s_objects when
+          # cluster.collectk8sobjects)
           # @default -- []
           extraReceivers: []
         # -- Metrics pipeline configuration
@@ -390,7 +391,7 @@ agent:
   # @default -- []
   extraEnvs: []
   # -- Collect logs from the host and containers
-  # When true, enables filelog receiver to collect logs from /var/log/pods
+  # When true, enables the file_log receiver to collect logs from /var/log/pods
   # Also mounts required volumes for log collection
   # @default -- true
   collectLogs: true
@@ -425,9 +426,10 @@ agent:
   customConfig: {}
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default config includes: filelog, kubelet_stats, host_metrics, otlp, prometheus/self receivers
+  # Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp
   # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
   # resource, resource/node, batch
+  # Default connectors: span_metrics
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -526,7 +528,7 @@ agent:
         # -- Traces pipeline configuration
         traces:
           # -- Additional exporters to add to the traces pipeline
-          # Added to default exporters (otlp_http/tsuga, spanmetrics)
+          # Added to default exporters (otlp_http/tsuga, span_metrics)
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the traces pipeline

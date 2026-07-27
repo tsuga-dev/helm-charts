@@ -27,32 +27,28 @@ the webhook replaces `service.telemetry.metrics.readers` with its own prometheus
 port 8888, discarding any user-configured periodic/OTLP reader. This was confirmed by inspecting
 the live ConfigMap after deployment with operator v0.152.0.
 
-## Solution: self-scrape pipeline
+## Current approach: `service::telemetry`
 
-Because the operator always exposes collector internal metrics on `localhost:8888` (Prometheus
-format), the reliable workaround is to have each collector scrape itself and forward the result
-through a normal pipeline.
+There is no self-scrape pipeline. Internal telemetry is configured through `service::telemetry`
+alone, rendered by the `opentelemetry-kube-stack.otelTelemetry` helper in `templates/_config.tpl`
+and included by all three default configs (`_default-deamonset-config.tpl`,
+`_default-statefulset-config.tpl`, `_default-cluster-receiver-config.tpl`).
 
-Each default collector config (`_default-deamonset-config.tpl`, `_default-statefulset-config.tpl`,
-`_default-cluster-receiver-config.tpl`) includes:
+The helper emits two things:
 
-**Receiver** — `prometheus/self` scrapes `localhost:8888` every 10 seconds. Named with the `/self`
-suffix to avoid colliding with the statefulset's existing `prometheus` receiver (used by the Target
-Allocator for dynamic scrape discovery).
+**`telemetry.resource`** — a map of `k8s.cluster.name` (from `clusterName`) and
+`service.instance.id: ${POD_UID}` (see below).
 
-**Processor chain** — matches the main metrics pipeline:
-1. `memory_limiter` — backpressure safety (daemonset and statefulset only; cluster-receiver follows
-   its existing pattern of omitting this processor)
-2. `cumulativetodelta` — Prometheus exposes all counters as cumulative monotonic sums; this
-   converts them to delta before export so Tsuga receives the expected incremental values
-3. `resource/collector` — enriches every data point with:
-   - `service.instance.id: ${POD_UID}` — globally unique per pod across the cluster and across
-     time (see below)
-   - `k8s.cluster.name` — set when `clusterName` is configured, same as the main pipeline
-4. `batch` — standard batching before export
+**`telemetry.metrics.readers`** — a single `periodic` reader with an OTLP `http/protobuf` exporter
+pointed at `${TSUGA_OTLP_ENDPOINT}/v1/metrics` with a bearer-token header. Emitted only when the
+Tsuga exporter is enabled; without credentials there is nowhere to push.
 
-**Pipeline** — `metrics/collector` is a dedicated named pipeline so it stays isolated from
-application metrics and can be toggled or modified independently.
+This is the configuration the chart *asks* for. As described above, the operator webhook still
+replaces `readers` with its own Prometheus pull reader on `:8888`, so in practice internal metrics
+are exposed for scraping rather than pushed. The block is kept so the intended behaviour lands as
+soon as the operator stops overriding it. Getting those metrics into Tsuga today requires scraping
+`:8888` yourself — e.g. a `prometheus` receiver added via `agent.config.extraReceivers` plus a
+matching pipeline, or the Target Allocator statefulset.
 
 ## Why POD_UID, not POD_NAME
 
@@ -69,6 +65,5 @@ using a UUID or a platform-specific ID that is tightly coupled to the service in
 
 `POD_UID` is assigned by the Kubernetes API server, is unique across the entire cluster, and is
 never reused — even after the pod is deleted and recreated with the same name. It is injected via
-the downward API (`metadata.uid`) and referenced as `${POD_UID}` in both the `resource/collector`
-processor and the `service.telemetry.resource` block (the latter is currently overridden by the
-operator webhook but is kept for forward compatibility).
+the downward API (`metadata.uid`) and referenced as `${POD_UID}` in the
+`service.telemetry.resource` block.
