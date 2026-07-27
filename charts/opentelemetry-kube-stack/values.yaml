@@ -15,11 +15,13 @@
 #
 # Option 1: Generate new secret (default)
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set clusterName="<CLUSTER_NAME>" \
 #   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
 #   --set tsuga.apiKey="<TSUGA_API_KEY>"
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set clusterName="<CLUSTER_NAME>" \
 #   --set secret.create=false \
 #   --set secret.name="my-existing-secret" \
 #   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \

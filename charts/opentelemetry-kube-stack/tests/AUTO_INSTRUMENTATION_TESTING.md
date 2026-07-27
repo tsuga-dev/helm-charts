@@ -103,6 +103,7 @@ Install the chart with auto-instrumentation enabled:
 
 ```bash
 helm install otel-test . \
+  --set clusterName="<CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.exporter.endpoint="http://otel-test-opentelemetry-kube-stack-agent:4317" \
   --set autoInstrumentation.spec.java.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest" \
@@ -228,6 +229,7 @@ annotations:
 
 ```bash
 helm install otel-test . \
+  --set clusterName="<CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.exporter.endpoint="http://custom-collector:4317" \
   --set autoInstrumentation.spec.propagators[0]=tracecontext \
@@ -243,6 +245,7 @@ helm install otel-test . \
 
 ```bash
 helm install otel-test . \
+  --set clusterName="<CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.resource.addK8sUIDAttributes=true \
   --set "autoInstrumentation.spec.resource.resourceAttributes.service\.namespace=production" \
@@ -271,7 +274,7 @@ kubectl get instrumentation -o yaml
 
 ```bash
 # Disable auto-instrumentation
-helm upgrade otel-test . --set autoInstrumentation.enabled=false
+helm upgrade otel-test . --reuse-values --set autoInstrumentation.enabled=false
 
 # Verify Instrumentation resource is removed
 kubectl get instrumentation  # Should return empty

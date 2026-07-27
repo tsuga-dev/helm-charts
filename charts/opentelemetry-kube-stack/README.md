@@ -183,6 +183,7 @@ opentelemetry-operator:
 Or via command line:
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true
 ```
 
@@ -200,6 +201,9 @@ kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=opentelemetry-
 ```
 
 ## Installation
+
+`clusterName` is required on every install: it is what distinguishes this cluster's
+telemetry from every other cluster's in Tsuga.
 
 ## Auto-instrumentation (APM)
 
@@ -262,6 +266,7 @@ helm repo update
 
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set secret.create=true \
   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
@@ -272,6 +277,7 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
+  --set clusterName="<CLUSTER_NAME>" \
   --set secret.create=true \
   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
@@ -282,6 +288,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 ```bash
 # Create a values file
 cat > my-values.yaml << EOF
+clusterName: "<CLUSTER_NAME>"
 tsuga:
   otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
   apiKey: "<TSUGA_API_KEY>"
@@ -513,7 +520,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
+helm template test . --set clusterName="<CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation
