@@ -256,20 +256,6 @@
                                                     "type": "array"
                                                 }
                                             }
-                                        },
-                                        "traces": {
-                                            "type": "object",
-                                            "properties": {
-                                                "extraExporters": {
-                                                    "type": "array"
-                                                },
-                                                "extraProcessors": {
-                                                    "type": "array"
-                                                },
-                                                "extraReceivers": {
-                                                    "type": "array"
-                                                }
-                                            }
                                         }
                                     }
                                 }

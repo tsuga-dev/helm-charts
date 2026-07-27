@@ -82,15 +82,6 @@ processors:
           name: k8s.pod.uid
       - sources:
         - from: connection
-  cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      - key: k8s.cluster.name
-        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
-        action: upsert
   resource:
     attributes:
       - key: k8s.cluster.name

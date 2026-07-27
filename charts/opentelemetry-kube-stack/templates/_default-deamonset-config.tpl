@@ -147,14 +147,6 @@ processors:
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      - key: k8s.cluster.name
-        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
-        action: upsert
   # Only wired into the node-local pipelines (logs/node, metrics/node), whose
   # receivers all read strictly local data: file_log reads this node's log files
   # under /var/log/pods, host_metrics reads this node's kernel, kubelet_stats

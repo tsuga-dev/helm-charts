@@ -88,7 +88,6 @@ spec:
       batch:
         send_batch_max_size: 5000
         send_batch_size: 5000
-      cumulativetodelta: {}
       k8s_attributes:
         extract:
           annotations:
@@ -144,14 +143,6 @@ spec:
         spike_limit_percentage: 25
       resource:
         attributes:
-        - action: upsert
-          key: k8s.cluster.name
-          value: test-cluster
-      resource/collector:
-        attributes:
-        - action: upsert
-          key: service.instance.id
-          value: ${POD_UID}
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
