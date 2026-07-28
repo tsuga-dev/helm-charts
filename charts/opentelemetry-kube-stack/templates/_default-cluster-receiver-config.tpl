@@ -82,15 +82,6 @@ processors:
           name: k8s.pod.uid
       - sources:
         - from: connection
-  cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      - key: k8s.cluster.name
-        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
-        action: upsert
   resource:
     attributes:
       - key: k8s.cluster.name
@@ -112,8 +103,8 @@ service:
 {{- end }}
       processors:
         - memory_limiter
-        - resource
         - k8s_attributes
+        - resource
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
@@ -124,8 +115,8 @@ service:
         - k8s_cluster
       processors:
         - memory_limiter
-        - resource
         - k8s_attributes
+        - resource
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}

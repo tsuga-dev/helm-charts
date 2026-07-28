@@ -51,6 +51,54 @@ receivers:
         metrics:
           system.filesystem.utilization:
             enabled: true
+        # Without these every container overlay mount and kernel pseudo filesystem
+        # on the node becomes its own series, which on a busy node is dozens per pod
+        # and tells you nothing. fs_types is Prometheus node_exporter's default
+        # fs-types-exclude set; mount_points is its default set plus the
+        # Kubernetes-specific paths (kubelet, k3s containerd, snap). No official
+        # OpenTelemetry chart ships an equivalent default. tmpfs is deliberately
+        # kept, as node_exporter keeps it too: /run and friends are real usage worth
+        # watching.
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+            - '^/dev($|/)'
+            - '^/proc($|/)'
+            - '^/run/credentials($|/)'
+            - '^/run/k3s/containerd($|/)'
+            - '^/snap($|/)'
+            - '^/sys($|/)'
+            - '^/var/lib/containers/storage($|/)'
+            - '^/var/lib/docker($|/)'
+            - '^/var/lib/kubelet($|/)'
+        exclude_fs_types:
+          match_type: strict
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - erofs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
       load:
       memory:
         metrics:
@@ -143,20 +191,29 @@ processors:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
+  # Runs before enrichment in the pipelines: delta state is keyed on the full
+  # resource, so a series that starts unenriched and later gains pod metadata
+  # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
-  resource/collector:
-    attributes:
-      - key: service.instance.id
-        value: ${POD_UID}
-        action: upsert
-      - key: k8s.cluster.name
-        value: {{ include "opentelemetry-kube-stack.clusterName" . }}
-        action: upsert
   resource:
     attributes:
       - key: k8s.cluster.name
         value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
+  # k8s.node.name for telemetry that arrives without one. insert, not upsert:
+  # whatever already carries a node name keeps it. kubelet_stats sets it on its
+  # node metric group, and k8s_attributes sets it for any pod it could
+  # associate. What is left is host_metrics, which touches no pod so
+  # k8s_attributes can never associate it, and records whose pod was not in the
+  # informer cache. Those are this node's either way: the operator gives
+  # daemonset collectors a Service with internalTrafficPolicy: Local, so OTLP
+  # reaches the agent on the sender's own node. Upstream's kube-stack chart
+  # does the same with resourcedetection(k8snode) and override: false.
+  resource/node:
+    attributes:
+      - key: k8s.node.name
+        value: ${env:K8S_NODE_NAME}
+        action: insert
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -181,10 +238,15 @@ service:
         - file_log
 {{- end }}
       processors:
-        - k8s_attributes
+        # memory_limiter must be first so load is shed before the pipeline
+        # spends work enriching data it is about to reject; batch closes the
+        # default list so it groups the finished records (user extraProcessors
+        # are appended after it).
         - memory_limiter
-        - batch
+        - k8s_attributes
         - resource
+        - resource/node
+        - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
@@ -196,10 +258,11 @@ service:
         - span_metrics
         - host_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
         - cumulativetodelta
+        - k8s_attributes
         - resource
+        - resource/node
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -212,9 +275,10 @@ service:
         {{- end }}
         - span_metrics
       processors:
-        - k8s_attributes
         - memory_limiter
+        - k8s_attributes
         - resource
+        - resource/node
         - batch
       receivers:
         - otlp
