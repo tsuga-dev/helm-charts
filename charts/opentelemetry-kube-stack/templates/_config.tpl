@@ -46,6 +46,61 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
+The k8s_attributes extract block, shared by all three collectors.
+
+Input: dict with "root" (the chart context), "extraLabelMapping" and
+"extraAnnotationsMapping" (that collector's user-supplied mappings).
+
+Shared because the three collectors had byte-identical copies of this block,
+and every attribute added to one belongs in all three.
+*/}}
+{{- define "opentelemetry-kube-stack.k8sAttributesExtract" -}}
+metadata:
+  - k8s.namespace.name
+  - k8s.deployment.name
+  - k8s.statefulset.name
+  - k8s.daemonset.name
+  - k8s.cronjob.name
+  - k8s.job.name
+  - k8s.node.name
+  - k8s.pod.name
+  - k8s.pod.uid
+  - k8s.pod.start_time
+labels:
+  - tag_name: service.name
+    key: resource.opentelemetry.io/service.name
+    from: pod
+  - tag_name: service.version
+    key: resource.opentelemetry.io/service.version
+    from: pod
+  - tag_name: env
+    key: resource.opentelemetry.io/env
+    from: pod
+  - tag_name: team
+    key: resource.opentelemetry.io/team
+    from: pod
+{{- with .extraLabelMapping }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+annotations:
+  - tag_name: service.name
+    key: resource.opentelemetry.io/service.name
+    from: pod
+  - tag_name: service.version
+    key: resource.opentelemetry.io/service.version
+    from: pod
+  - tag_name: env
+    key: resource.opentelemetry.io/env
+    from: pod
+  - tag_name: team
+    key: resource.opentelemetry.io/team
+    from: pod
+{{- with .extraAnnotationsMapping }}
+{{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{/*
 GOMEMLIMIT for a collector, as 80% of its memory limit, in bytes.
 
 Input: the collector's effective resources map.

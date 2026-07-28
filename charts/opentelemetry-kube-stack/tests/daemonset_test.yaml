@@ -389,3 +389,16 @@ tests:
           content:
             name: GOMEMLIMIT
             value: "429496729"
+
+  - it: should keep the agent pod informer scoped to its own node
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Without this the pod informer caches every pod in the cluster, on
+      # every node.
+      - equal:
+          path: spec.config.processors.k8s_attributes.filter.node_from_env_var
+          value: K8S_NODE_NAME
