@@ -451,6 +451,24 @@ agent:
   # @default -- true
   addLogsVolumes: true
 
+  # -- kubelet_stats receiver options
+  kubeletStats:
+    # -- Use the kubelet /pods endpoint for pod metadata
+    #
+    # The receiver calls /pods in addition to /stats/summary whenever volume
+    # type labels or any limit/request utilization metric are requested. When
+    # that call fails the receiver discards the ENTIRE scrape for that interval,
+    # node and pod metrics included — not just the attributes it could not
+    # resolve.
+    #
+    # /pods authorizes against the nodes/proxy subresource, which this chart's
+    # ClusterRole grants. GKE Autopilot does not allow nodes/proxy to be granted
+    # at all, so on Autopilot set this to false: the collector then asks for
+    # neither volume type labels nor utilization metrics, and keeps the node,
+    # pod, container and volume metrics that only need /stats/summary.
+    # @default -- true
+    usePodsEndpoint: true
+
   # -- Collect host network metrics
   # When true, enables network scraper in hostmetrics receiver
   # @default -- false
