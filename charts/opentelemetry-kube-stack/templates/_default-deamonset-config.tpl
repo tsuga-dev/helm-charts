@@ -188,7 +188,9 @@ processors:
       - sources:
         - from: connection
   memory_limiter:
-    check_interval: 5s
+    # 1s, the value the processor README recommends. At 5s the limiter can
+    # spend most of a spike over its soft limit before it next looks.
+    check_interval: 1s
     limit_percentage: 80
     spike_limit_percentage: 25
   # Runs before enrichment in the pipelines: delta state is keyed on the full

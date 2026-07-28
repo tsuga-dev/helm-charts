@@ -16,7 +16,8 @@ metadata:
     meta.helm.sh/release-namespace: "default"
 spec:
   mode: statefulset
-  replicas: 2
+  replicas: 1
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
   resources:
     limits:
       cpu: 500m
@@ -27,16 +28,6 @@ spec:
   serviceAccount: example-opentelemetry-kube-stack
   env:
     
-    - name: TSUGA_OTLP_ENDPOINT
-      valueFrom:
-        secretKeyRef:
-          name: otel-secret
-          key: TSUGA_OTLP_ENDPOINT
-    - name: TSUGA_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: otel-secret
-          key: TSUGA_API_KEY
     - name: MY_POD_IP
       valueFrom:
         fieldRef:
@@ -146,18 +137,13 @@ spec:
           key: k8s.cluster.name
           value: test-cluster
     exporters:
-      otlp_http/tsuga:
-        compression: gzip
-        encoding: json
-        endpoint: ${TSUGA_OTLP_ENDPOINT}
-        headers:
-          Authorization: Bearer ${TSUGA_API_KEY}
+      debug: {}
     service:
       extensions: []
       pipelines:
         metrics:
           exporters:
-          - otlp_http/tsuga
+          - debug
           processors:
           - memory_limiter
           - cumulativetodelta
@@ -167,16 +153,6 @@ spec:
           receivers:
           - prometheus
       telemetry:
-        metrics:
-          readers:
-          - periodic:
-              exporter:
-                otlp:
-                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
-                  headers:
-                  - name: Authorization
-                    value: Bearer ${TSUGA_API_KEY}
-                  protocol: http/protobuf
         resource:
           k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

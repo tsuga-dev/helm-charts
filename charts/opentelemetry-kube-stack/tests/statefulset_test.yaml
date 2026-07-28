@@ -130,3 +130,19 @@ tests:
       - equal:
           path: spec.image
           value: "example.test/collector:0.152.0"
+
+  - it: should check memory every second and set GOMEMLIMIT
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.memory_limiter.check_interval
+          value: 1s
+      - contains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "429496729"

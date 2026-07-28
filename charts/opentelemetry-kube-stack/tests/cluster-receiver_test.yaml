@@ -178,3 +178,19 @@ tests:
       - equal:
           path: spec.deploymentUpdateStrategy.rollingUpdate.maxUnavailable
           value: 1
+
+  - it: should check memory every second and set GOMEMLIMIT
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.memory_limiter.check_interval
+          value: 1s
+      - contains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "429496729"

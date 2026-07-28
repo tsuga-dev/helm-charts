@@ -626,6 +626,13 @@ agent:
 # =============================================================================
 # Resource limits and requests for both agent and cluster receiver
 # These are used as defaults when agent.resources or cluster-specific resources are not set
+#
+# The memory limit does double duty. memory_limiter's limit_percentage reads the
+# cgroup limit and sheds load at 80% of it, and each collector also gets
+# GOMEMLIMIT set to 80% of the same limit so the Go garbage collector knows the
+# budget exists. Raising or lowering limits.memory moves both. Quantities in
+# Ki/Mi/Gi, K/M/G or plain bytes are understood; a fractional quantity such as
+# 1.5Gi leaves GOMEMLIMIT unset.
 resources:
   # -- Resource limits
   limits:
