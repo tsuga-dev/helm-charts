@@ -1,0 +1,236 @@
+charts/opentelemetry-kube-stack/templates/_config.tpl
+  s_255f6a827deb1f::t_9941f211d10e36 309-323,334
+  s_255f6a827deb1f::t_184df748504db3 236-272,279-295
+  s_255f6a827deb1f::t_f6735d8fc209e2 273-278
+  s_255f6a827deb1f::t_ad3ea20954c4ef 94-113,202-235
+  s_255f6a827deb1f::t_92b582592c8d05 93
+  s_255f6a827deb1f::t_37725a9a0ea0e0 150-161,180-201
+  s_255f6a827deb1f::t_92d7721113e51e 114-124,134-149
+  s_255f6a827deb1f::t_3c4cc2ddb36308 49-68,75-88,90-92
+  s_255f6a827deb1f::t_4dd9e1363ba226 48
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/statefulset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 20
+  s_255f6a827deb1f::t_e1233917c4a4d6 56-58,137
+  s_255f6a827deb1f::t_ad846f29828611 120-122
+  s_255f6a827deb1f::t_7e8500fb6a83ef 117-119
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_741774f1db4460 93-95,187
+  s_255f6a827deb1f::t_138656d33c00d6 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_edbf42cabba97b 86-88,268
+  s_255f6a827deb1f::t_430725645eb819 252-254
+  s_255f6a827deb1f::t_7e8500fb6a83ef 249-251
+  s_fec5e39127d22c::t_18e631a3f329b9 180-198
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_a5b30241512213 93-95,187
+  s_255f6a827deb1f::t_41aab1a3492b60 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_4ea8602d7fe012 93-95,187
+  s_255f6a827deb1f::t_376f95510db140 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_d8cdb717fdaa00 93-95,187
+  s_255f6a827deb1f::t_2ef734de797242 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/README.md
+  s_255f6a827deb1f::t_e42b9dbacd5879 342,384,391,440
+  s_255f6a827deb1f::t_2269c26e93ffb2 347,351,452
+  s_255f6a827deb1f::t_b1d058cd581e25 400,402
+  s_255f6a827deb1f::t_8b010efb6da88c 343-344
+  s_255f6a827deb1f::t_7d47f9e230c883 3,359
+charts/opentelemetry-kube-stack/templates/statefulset.yaml
+  s_255f6a827deb1f::t_bbb0f8bcfb23bb 25
+  s_255f6a827deb1f::t_97342c6332738c 63
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_d5a911b0af54e9 86-88,268
+  s_255f6a827deb1f::t_5b357027e10a41 252-254
+  s_255f6a827deb1f::t_7e8500fb6a83ef 249-251
+  s_fec5e39127d22c::t_1ef25a4a17a5e2 180-198
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_255f6a827deb1f::t_bb578dc464d0f9 213-260,262-273
+  s_255f6a827deb1f::t_1160a071dca277 274-308
+  s_255f6a827deb1f::t_27420f63977315 309,321-391
+  s_255f6a827deb1f::t_cec2c6422007a2 392-404
+  s_255f6a827deb1f::t_910a71e0be31ec 405-448
+  s_255f6a827deb1f::t_7e8500fb6a83ef 449-477
+  s_255f6a827deb1f::t_32d1d768ec7760 478-527
+  s_255f6a827deb1f::t_95715ee1df7e89 528,543-584
+charts/opentelemetry-kube-stack/tests/statefulset_test.yaml
+  s_255f6a827deb1f::t_bb578dc464d0f9 111-135
+  s_255f6a827deb1f::t_27420f63977315 136-151
+  s_255f6a827deb1f::t_b1d058cd581e25 152-166
+charts/opentelemetry-kube-stack/templates/daemonset.yaml
+  s_255f6a827deb1f::t_9f809eec40de07 21
+  s_255f6a827deb1f::t_8d9a9b4b84a3e1 72-73
+  s_255f6a827deb1f::t_379aa8829d1bdb 87
+charts/opentelemetry-kube-stack/examples/default/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_69127c4e8029a2 86-88,268
+  s_255f6a827deb1f::t_a324a83af0898a 252-254
+  s_255f6a827deb1f::t_7e8500fb6a83ef 249-251
+  s_fec5e39127d22c::t_11261897be99c5 180-198
+charts/opentelemetry-kube-stack/templates/cluster-receiver.yaml
+  s_255f6a827deb1f::t_a807f678b0446e 50
+  s_255f6a827deb1f::t_e12acac83752bc 29-34,45-49
+  s_255f6a827deb1f::t_cb93768b72658d 88
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_ee35355dec3451 86-88,268
+  s_255f6a827deb1f::t_1f8de9ee788d1c 252-254
+  s_255f6a827deb1f::t_7e8500fb6a83ef 249-251
+  s_fec5e39127d22c::t_f6c6bb068db470 180-198
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_0162afc0ea962f 93-95,187
+  s_255f6a827deb1f::t_62ddc02e06e6a4 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_8fe117b7201e5b 93-95,187
+  s_255f6a827deb1f::t_3420ecaa993577 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_ffefe27b5bf9ab 86-88,268
+  s_255f6a827deb1f::t_090f85ba8a670e 252-254
+  s_255f6a827deb1f::t_7e8500fb6a83ef 249-251
+  s_fec5e39127d22c::t_715fb4f82ce089 180-198
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_bcc0bfd5b820d0 83-85,177
+  s_255f6a827deb1f::t_77ac0c4f3517ab 163-165
+  s_255f6a827deb1f::t_7e8500fb6a83ef 160-162
+  s_255f6a827deb1f::t_7d47f9e230c883 109-116,185-189,206-214
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 47
+  s_255f6a827deb1f::t_2269c26e93ffb2 26-31,42-46
+  s_255f6a827deb1f::t_1edf1ce880fd7c 93-95,187
+  s_255f6a827deb1f::t_ea029aac810d43 173-175
+  s_255f6a827deb1f::t_7e8500fb6a83ef 170-172
+  s_255f6a827deb1f::t_7d47f9e230c883 119-126,195-199,221-230
+charts/opentelemetry-kube-stack/templates/_helpers.tpl
+  s_255f6a827deb1f::t_e8ae76744481c5 33-65
+  s_255f6a827deb1f::t_bd585a5ef092b2 87-92
+  s_255f6a827deb1f::t_aa3bc8b16e430e 86
+charts/opentelemetry-kube-stack/values.yaml
+  s_255f6a827deb1f::t_ccd5e97cccf944 114-118
+  s_255f6a827deb1f::t_e2bc4ea6b668ff 489-490
+  s_255f6a827deb1f::t_bfc2173b30c86d 840-841
+  s_255f6a827deb1f::t_206510ad98fad2 316-317
+  s_255f6a827deb1f::t_97b200a2f3dd91 658-681,688,701-707,712-717,725-726
+  s_255f6a827deb1f::t_f4c272c9b09973 763
+  s_255f6a827deb1f::t_777ebd0fb861f1 732-738
+  s_255f6a827deb1f::t_910a71e0be31ec 76-86,97-105
+  s_255f6a827deb1f::t_32d1d768ec7760 123-134,140-179
+  s_255f6a827deb1f::t_4bf83cfe166482 515-532
+  s_255f6a827deb1f::t_f36f3e29769469 351-362
+charts/opentelemetry-kube-stack/examples/target-allocator/rendered/statefulset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 20
+  s_255f6a827deb1f::t_3c9e0fa4c050e5 66-68,147
+  s_255f6a827deb1f::t_54d91469f394f4 130-132
+  s_255f6a827deb1f::t_7e8500fb6a83ef 127-129
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_255f6a827deb1f::t_bb578dc464d0f9 137-159
+  s_255f6a827deb1f::t_1160a071dca277 160-170,173-181
+  s_255f6a827deb1f::t_27420f63977315 182-197
+  s_255f6a827deb1f::t_cec2c6422007a2 198-208
+  s_255f6a827deb1f::t_b1d058cd581e25 209-229
+  s_255f6a827deb1f::t_7d47f9e230c883 280-319
+  s_255f6a827deb1f::t_b9e568a70caf31 230-279
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_e42b9dbacd5879 19
+  s_255f6a827deb1f::t_2a4e525dae795d 76-78,258
+  s_255f6a827deb1f::t_b68420dce577b4 242-244
+  s_255f6a827deb1f::t_7e8500fb6a83ef 239-241
+  s_fec5e39127d22c::t_c95cd77f1533d7 170-188
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_255f6a827deb1f::t_3591045e0df8ee 50-56
+  s_255f6a827deb1f::t_2269c26e93ffb2 39-49
+  s_255f6a827deb1f::t_f7518c43369eed 33-38
+  s_255f6a827deb1f::t_ee3b3b10e772c0 24-32
+  s_255f6a827deb1f::t_b1d058cd581e25 19-23
+  s_255f6a827deb1f::t_42e4e41f91ebb4 13-18
+  s_255f6a827deb1f::t_7d47f9e230c883 8-12
+charts/opentelemetry-kube-stack/values.schema.json
+  s_255f6a827deb1f::t_2269c26e93ffb2 142-151,154-156
+  s_255f6a827deb1f::t_610e07b21849c4 296-298
+  s_255f6a827deb1f::t_b1d058cd581e25 356-372
+  s_255f6a827deb1f::t_07007ebcf49941 131-138
+  s_255f6a827deb1f::t_7d47f9e230c883 194-196
+charts/opentelemetry-kube-stack/tests/priorityclass_test.yaml
+  s_255f6a827deb1f::t_1160a071dca277 1-69
+charts/opentelemetry-kube-stack/templates/priorityclass.yaml
+  s_255f6a827deb1f::t_1e90806e42e2ba 1-11,15-17,28-33
+  s_255f6a827deb1f::t_08fefe6241ade7 12-14
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  s_255f6a827deb1f::t_b9567644c165d3 68-70
+  s_255f6a827deb1f::t_cc9ee39a19db6d 100
+  s_255f6a827deb1f::t_dca3dcf8a8ce17 79-80,97,133-135,171-173
+  s_255f6a827deb1f::t_0ae4a6516064d6 65,81-96,130,143-154,158-165
+  s_255f6a827deb1f::t_f36f3e29769469 19,61-64
+  s_255f6a827deb1f::t_58533ba492d622 20-37,51-60
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  s_255f6a827deb1f::t_b9567644c165d3 190-192
+  s_255f6a827deb1f::t_3036ac33496a8c 175-176
+  s_255f6a827deb1f::t_cc9ee39a19db6d 174
+  s_255f6a827deb1f::t_dca3dcf8a8ce17 169-171,247-249,267-269,286-288
+  s_255f6a827deb1f::t_4bf83cfe166482 32-49,51-72
+charts/opentelemetry-kube-stack/templates/_default-statefulset-config.tpl
+  s_255f6a827deb1f::t_b9567644c165d3 19-21
+  s_255f6a827deb1f::t_cc9ee39a19db6d 36
+  s_255f6a827deb1f::t_dca3dcf8a8ce17 31-33,69-71
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_278c1dcfdf2bdd 86-88
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_3c4a006f64c4de 86-88,278
+  s_255f6a827deb1f::t_3a18d667917c19 262-264
+  s_255f6a827deb1f::t_7e8500fb6a83ef 259-261
+  s_fec5e39127d22c::t_c1f1f9a9c6efa4 166-184
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_255f6a827deb1f::t_7d47f9e230c883 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "456487f5c311ea64f7c7d37fd80f51c33217bd9b",
+  "prompts": {},
+  "sessions": {
+    "s_255f6a827deb1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cb5e6ed-cae5-434c-b305-53e0df042357",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    },
+    "s_fec5e39127d22c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f027bf34-3546-45d0-9590-cb0f99e98700",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
