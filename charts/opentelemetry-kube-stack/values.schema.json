@@ -282,6 +282,9 @@
         "clusterName": {
             "type": "string"
         },
+        "deriveServiceIdentity": {
+            "type": "boolean"
+        },
         "fullnameOverride": {
             "type": "string"
         },

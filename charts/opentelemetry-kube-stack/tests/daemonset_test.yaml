@@ -402,3 +402,47 @@ tests:
       - equal:
           path: spec.config.processors.k8s_attributes.filter.node_from_env_var
           value: K8S_NODE_NAME
+
+  - it: should derive service identity by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.name
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.version
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.namespace
+      # One series per container instance on metrics, and removed from an
+      # earlier version of this change on review.
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.instance.id
+
+  - it: should not derive service identity when the flag is off
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      deriveServiceIdentity: false
+    release:
+      name: "test-release"
+    asserts:
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.name
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.version
+      # The explicit annotation and label mappings are untouched by the flag.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.annotations
+          content:
+            tag_name: service.name
+            key: resource.opentelemetry.io/service.name
+            from: pod
