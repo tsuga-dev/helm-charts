@@ -1,0 +1,49 @@
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  s_255f6a827deb1f::t_4bf83cfe166482 32-49,51-72
+charts/opentelemetry-kube-stack/values.yaml
+  s_255f6a827deb1f::t_4bf83cfe166482 493-510
+charts/opentelemetry-kube-stack/README.md
+  s_255f6a827deb1f::t_8b010efb6da88c 3,343-344
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_715fb4f82ce089 180-198
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_f6c6bb068db470 180-198
+charts/opentelemetry-kube-stack/examples/default/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_11261897be99c5 180-198
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_1ef25a4a17a5e2 180-198
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_18e631a3f329b9 180-198
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_c1f1f9a9c6efa4 166-184
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/daemonset.yaml
+  s_fec5e39127d22c::t_c95cd77f1533d7 170-188
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_255f6a827deb1f::t_95715ee1df7e89 517-559
+charts/opentelemetry-kube-stack/values.schema.json
+  s_255f6a827deb1f::t_07007ebcf49941 131-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "646c3f4387fe1a3644e98feff49f1b7a8594e523",
+  "prompts": {},
+  "sessions": {
+    "s_255f6a827deb1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cb5e6ed-cae5-434c-b305-53e0df042357",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    },
+    "s_fec5e39127d22c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f027bf34-3546-45d0-9590-cb0f99e98700",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
