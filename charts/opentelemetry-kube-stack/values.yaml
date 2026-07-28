@@ -73,6 +73,36 @@
 # @default -- "" (must be set)
 clusterName: ""
 
+# -- Derive service identity from Kubernetes
+# When true, the k8s_attributes processor computes service.name,
+# service.version and service.namespace for telemetry that does not already
+# carry them, following the semantic conventions' Kubernetes attribute
+# guidance.
+#
+# This matters most for metrics and traces. Tsuga already fills a missing
+# service name and version for logs during ingest, but that postprocessing is
+# documented for logs only, so metrics and spans from a workload that never set
+# a service name arrive with none.
+#
+# Nothing already on the telemetry is overwritten, so an app that sets its own
+# service.name keeps it.
+#
+# One caveat worth knowing before enabling this. Of the two ways this chart lets
+# a pod declare a service name, only the ANNOTATION form survives: the processor
+# applies label rules, then copies the well-known app.kubernetes.io/name and
+# /instance labels over the top, then applies annotation rules. So a
+# resource.opentelemetry.io/service.name LABEL is overwritten by a well-known
+# label, while the annotation of the same name wins. Use the annotation form, or
+# leave this off.
+#
+# The derivation reads the well-known app.kubernetes.io/name,
+# app.kubernetes.io/instance and app.kubernetes.io/version labels. The semantic
+# conventions ask tools to make that opt-in; this flag ships on instead,
+# because the gap it closes is silent. Set it to false to stop reading those
+# labels.
+# @default -- true
+deriveServiceIdentity: true
+
 # -- Override the chart name used in resource naming
 # @default -- ""
 nameOverride: ""

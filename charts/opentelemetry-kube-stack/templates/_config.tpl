@@ -66,6 +66,88 @@ metadata:
   - k8s.pod.name
   - k8s.pod.uid
   - k8s.pod.start_time
+  # Container identity. Bounded cardinality: the container name comes from the
+  # pod spec, and the image name by the number of distinct images running.
+  #
+  # Only applied when the incoming resource already carries container.id or
+  # k8s.container.name. The filelog container parser sets the container name,
+  # so container logs get these; on a multi-container pod carrying neither,
+  # the processor adds nothing rather than guessing. host_metrics records touch
+  # no pod at all and are unaffected.
+  #
+  # container.image.tag is the processor's v0 name and a plain string. Stable
+  # semantic conventions name it container.image.tags, a string array, and the
+  # singular form does not exist in semconv at all. A default collector emits
+  # the singular key and logs a rename warning at startup.
+  #
+  # Moving to the stable name takes two alpha, default-off feature gates, not
+  # one. processor.k8sattributes.EmitV1K8sConventions ADDS the stable names
+  # (container.image.tags, k8s.pod.label.<key> and the namespace and node
+  # equivalents) alongside the v0 ones; processor.k8sattributes.
+  # DontEmitV0K8sConventions is what removes the v0 names, and it is a fatal
+  # startup error without the first. So enabling EmitV1 alone emits both keys.
+  #
+  # The tag takes a new value on every deploy, which fragments any series
+  # carrying it. Kept anyway: it answers which image is actually running, which
+  # is a different question from the version an application claims for itself.
+  #
+  # container.id is excluded. It is unique per container instance and changes
+  # on every restart, so it is the worst offender available here.
+  - k8s.container.name
+  - container.image.name
+  - container.image.tag
+{{- if .root.Values.deriveServiceIdentity }}
+  # Service identity, computed by the processor from the semantic conventions'
+  # Kubernetes attribute guidance ("Configuring recommended resource
+  # attributes" in the processor README).
+  #
+  # Scoped to metrics and traces for its value. Tsuga already fills a missing
+  # context.service.name during ingest, from candidates such as service.name
+  # or k8s.container_name, and does the same for context.service.version — but
+  # that postprocessing is documented for logs only. Metrics and spans from a
+  # workload that never set a service name therefore arrive with none at all,
+  # which is the gap this closes.
+  #
+  # Nothing already on the telemetry is lost: the processor writes an extracted
+  # attribute only when the key is absent or empty, so an app that sets its own
+  # service.name keeps it.
+  #
+  # Precedence among the pod's own metadata is narrower than it looks, and worth
+  # knowing before enabling this. Inside the processor the order is: label rules,
+  # then the well-known app.kubernetes.io labels, then annotation rules. The
+  # well-known copy is an unconditional write, so it OVERWRITES a value a label
+  # rule just produced. Consequence:
+  #
+  #   resource.opentelemetry.io/service.name as an ANNOTATION  -> wins
+  #   resource.opentelemetry.io/service.name as a LABEL        -> overwritten by
+  #                                                               app.kubernetes.io/name
+  #                                                               or /instance
+  #
+  # So a workload that opts into a service name through the label form loses it
+  # to a well-known label once this is on. Use the annotation form, or set
+  # deriveServiceIdentity to false. There is no ordering knob for this.
+  #
+  # service.name and service.version consult the well-known
+  # app.kubernetes.io/name, app.kubernetes.io/instance and
+  # app.kubernetes.io/version labels. The semantic conventions ask tooling to
+  # "provide an opt-in flag for the use of well-known labels, since users may
+  # not be aware that their labels are being used for this purpose".
+  # deriveServiceIdentity is that flag, but it ships on rather than off: the
+  # gap above is silent, and these labels are conventional. Set it to false to
+  # stop reading them.
+  #
+  # service.version falls back to the container image tag or digest, so it
+  # takes a new value on each deploy. It cannot be used as a pod_association
+  # source rule for that reason.
+  #
+  # service.instance.id is deliberately excluded. It is
+  # namespace.pod.container, so on metrics it is a series per container
+  # instance, and it was removed from an earlier version of this change on
+  # review for exactly that.
+  - service.namespace
+  - service.name
+  - service.version
+{{- end }}
 labels:
   - tag_name: service.name
     key: resource.opentelemetry.io/service.name
