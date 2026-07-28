@@ -540,3 +540,45 @@ tests:
       - equal:
           path: spec.config.processors.resourcedetection.timeout
           value: 15s
+  - it: should collect container and volume metrics from the kubelet
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod, container, volume]
+      - equal:
+          path: spec.config.receivers.kubelet_stats.extra_metadata_labels
+          value: [k8s.volume.type]
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metrics["k8s.container.cpu_limit_utilization"].enabled
+          value: true
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metrics["k8s.pod.memory_request_utilization"].enabled
+          value: true
+      # container.cpu.usage, k8s.pod.cpu.usage and k8s.node.cpu.usage are
+      # already enabled by default, so configuring them would be inert.
+      - isNull:
+          path: spec.config.receivers.kubelet_stats.metrics["container.cpu.usage"]
+
+  - it: should avoid the kubelet /pods endpoint when told to
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.usePodsEndpoint: false
+    release:
+      name: "test-release"
+    asserts:
+      # Both of these trigger the /pods call, which GKE Autopilot cannot
+      # authorize, and whose failure discards the whole scrape.
+      - isNull:
+          path: spec.config.receivers.kubelet_stats.extra_metadata_labels
+      - isNull:
+          path: spec.config.receivers.kubelet_stats.metrics
+      # The metrics that only need /stats/summary are still collected.
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod, container, volume]

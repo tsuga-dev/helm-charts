@@ -16,6 +16,7 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: true
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
       cpu: 500m
@@ -176,6 +177,25 @@ spec:
         metric_groups:
         - node
         - pod
+        - container
+        - volume
+        metrics:
+          k8s.container.cpu_limit_utilization:
+            enabled: true
+          k8s.container.cpu_request_utilization:
+            enabled: true
+          k8s.container.memory_limit_utilization:
+            enabled: true
+          k8s.container.memory_request_utilization:
+            enabled: true
+          k8s.pod.cpu_limit_utilization:
+            enabled: true
+          k8s.pod.cpu_request_utilization:
+            enabled: true
+          k8s.pod.memory_limit_utilization:
+            enabled: true
+          k8s.pod.memory_request_utilization:
+            enabled: true
       otlp:
         protocols:
           grpc:
