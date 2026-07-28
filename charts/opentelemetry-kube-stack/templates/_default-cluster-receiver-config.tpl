@@ -29,6 +29,9 @@ processors:
     # Enforce a hard limit of 5000 items per batch. This prevents the
     # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
+{{- if .Values.resourceDetection.enabled }}
+  {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+{{- end }}
   k8s_attributes:
     extract:
 {{- include "opentelemetry-kube-stack.k8sAttributesExtract" (dict "root" . "extraLabelMapping" .Values.cluster.extraLabelMapping "extraAnnotationsMapping" .Values.cluster.extraAnnotationsMapping) | nindent 6 }}
@@ -63,6 +66,9 @@ service:
 {{- end }}
       processors:
         - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - batch
@@ -75,6 +81,9 @@ service:
         - k8s_cluster
       processors:
         - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - batch

@@ -135,6 +135,63 @@ fullnameOverride: ""
 image: ""
 
 # =============================================================================
+# RESOURCE DETECTION
+# =============================================================================
+# Adds cloud and host attributes (cloud.provider, cloud.region,
+# cloud.account.id, host.id) so telemetry can be traced back to a specific
+# account, region and instance, and multi-region or multi-account workloads can
+# be told apart by something other than a hand-typed clusterName.
+resourceDetection:
+  # -- Enable the resourcedetection processor
+  #
+  # Off by default, and opt-in on purpose. A detector that fails takes the
+  # collector down with it: the processor's Start() propagates the error and
+  # stops the collector from starting. There is no escape hatch on any version
+  # this chart can target — the processor.resourcedetection.propagateerrors gate
+  # had already gone stable, and therefore become permanently on, before this
+  # chart's floor, and was deleted outright in v0.150.0. So this is not a safe
+  # thing to switch on for every cluster.
+  # @default -- false
+  enabled: false
+  # -- Detectors to run, in order
+  #
+  # Where two detectors can supply the same attribute, the FIRST one listed
+  # wins. Existing attributes on the telemetry are never replaced
+  # (override: false).
+  #
+  # env is the only default: it reads OTEL_RESOURCE_ATTRIBUTES and returns
+  # nothing, without error, when that is unset.
+  #
+  # Recipes, with the caveats that matter:
+  #   AWS/EKS:  [env, eks, ec2]
+  #     eks on its own only supplies cloud.provider and cloud.platform; every
+  #     other EKS attribute is default-off. ec2 is what supplies cloud.region,
+  #     cloud.account.id, cloud.availability_zone, host.id and host.name, and
+  #     must come after eks so cloud.platform stays aws_eks.
+  #     eks is NOT safe on a non-EKS cluster: KUBERNETES_SERVICE_HOST is set on
+  #     every Kubernetes cluster, so its check falls through to the Kubernetes
+  #     API and can error, which prevents startup.
+  #   GCP/GKE:  [env, gcp]
+  #     gcp supplies cloud.provider, cloud.region, cloud.account.id, host.id,
+  #     host.name and k8s.cluster.name. Returns empty without error off GCE.
+  #   Azure/AKS: [env, aks, azure]
+  #     azure supplies region, account id and host id; aks adds cloud.platform.
+  #     Both return empty without error outside Azure.
+  #
+  # k8snode is deliberately absent. It reads the node object from the
+  # Kubernetes API and fails Start() if that call fails, and the only attribute
+  # it adds that this chart does not already set is k8s.node.uid.
+  # @default -- ["env"]
+  detectors:
+    - env
+  # -- Per-detector timeout
+  # 15s, the value the processor README uses for EKS, rather than the 5s
+  # factory default: the retry uses exponential backoff with no maximum elapsed
+  # time, so a failing detector spends the whole budget before giving up.
+  # @default -- "15s"
+  timeout: 15s
+
+# =============================================================================
 # AUTO-INSTRUMENTATION (APM) CONFIGURATION
 # =============================================================================
 #

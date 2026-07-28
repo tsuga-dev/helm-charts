@@ -130,6 +130,9 @@ processors:
     # Enforce a hard limit of 5000 items per batch. This prevents the
     # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
+{{- if .Values.resourceDetection.enabled }}
+  {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+{{- end }}
   k8s_attributes:
     extract:
 {{- include "opentelemetry-kube-stack.k8sAttributesExtract" (dict "root" . "extraLabelMapping" .Values.agent.extraLabelMapping "extraAnnotationsMapping" .Values.agent.extraAnnotationsMapping) | nindent 6 }}
@@ -205,6 +208,9 @@ service:
         # default list so it groups the finished records (user extraProcessors
         # are appended after it).
         - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - resource/node
@@ -222,6 +228,9 @@ service:
       processors:
         - memory_limiter
         - cumulativetodelta
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - resource/node
@@ -238,6 +247,9 @@ service:
         - span_metrics
       processors:
         - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - resource/node

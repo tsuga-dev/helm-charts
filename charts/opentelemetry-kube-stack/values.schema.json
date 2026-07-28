@@ -342,6 +342,23 @@
                 }
             }
         },
+        "resourceDetection": {
+            "type": "object",
+            "properties": {
+                "detectors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "timeout": {
+                    "type": "string"
+                }
+            }
+        },
         "resources": {
             "type": "object",
             "properties": {
