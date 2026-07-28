@@ -122,7 +122,7 @@ tests:
           value: [memory_limiter, k8s_attributes, resource, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, k8s_attributes, resource, batch]
+          value: [memory_limiter, filter/empty_replicasets, k8s_attributes, resource, batch]
 
   - it: should fail to render when clusterName is not set
     set:
@@ -225,7 +225,7 @@ tests:
       # clusterName afterwards, so the explicit value stays authoritative.
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, resourcedetection, k8s_attributes, resource, batch]
+          value: [memory_limiter, filter/empty_replicasets, resourcedetection, k8s_attributes, resource, batch]
 
   - it: should collect only Warning events, filtered at the API server
     set:
@@ -329,3 +329,26 @@ tests:
       - equal:
           path: spec.config.service.pipelines["logs/events"].processors
           value: [memory_limiter, resourcedetection, transform/k8s_event_severity, resource, batch]
+  - it: should drop zero-valued replicaset metrics
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # value_int because both metrics are Gauge/Int. value_double on an int
+      # datapoint returns 0.0 rather than erroring, so it would match every
+      # integer datapoint.
+      - equal:
+          path: spec.config.processors["filter/empty_replicasets"].metric_conditions
+          value:
+            - (metric.name == "k8s.replicaset.available" or metric.name == "k8s.replicaset.desired") and datapoint.value_int == 0
+      # propagate, the default, would drop the whole payload on a condition
+      # error.
+      - equal:
+          path: spec.config.processors["filter/empty_replicasets"].error_mode
+          value: ignore
+      # Early, so the drop happens before enrichment does work on them.
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, filter/empty_replicasets, k8s_attributes, resource, batch]
