@@ -156,3 +156,25 @@ tests:
       - equal:
           path: spec.image
           value: "example.test/collector:0.152.0"
+
+  - it: should never surge a second cluster receiver during a rollout
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      # maxUnavailable is explicit for clarity; Kubernetes would promote it to
+      # 1 anyway once both fenceposts resolved to zero.
+      - equal:
+          path: spec.deploymentUpdateStrategy.type
+          value: RollingUpdate
+      - equal:
+          path: spec.deploymentUpdateStrategy.rollingUpdate.maxSurge
+          value: 0
+      - equal:
+          path: spec.deploymentUpdateStrategy.rollingUpdate.maxUnavailable
+          value: 1
