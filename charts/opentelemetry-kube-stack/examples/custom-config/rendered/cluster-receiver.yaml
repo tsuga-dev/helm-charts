@@ -29,12 +29,6 @@ spec:
   # replica maxSurge rounds up to 1 and maxUnavailable rounds down to 0, so
   # every helm upgrade briefly runs two cluster receivers, both scraping
   # k8s_cluster and both emitting the same cluster metrics and objects.
-  # maxSurge 0 makes the old pod terminate before the new one starts. Both
-  # values are set because Kubernetes forbids maxUnavailable 0 alongside
-  # maxSurge 0, and the 25% default would round down to 0 and deadlock the
-  # rollout. The trade is a short gap in cluster metrics on every upgrade,
-  # which is the correct side to err on: a gap is visible, double-counting is
-  # not.
   # maxSurge 0 makes the old pod terminate before the new one starts.
   # maxUnavailable 1 is stated for clarity rather than necessity: Kubernetes
   # rejects an explicit 0/0 pair, but ResolveFenceposts already promotes
@@ -50,7 +44,6 @@ spec:
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
       cpu: 500m
@@ -176,7 +169,6 @@ spec:
         - sources:
           - from: connection
       memory_limiter:
-        check_interval: 5s
         check_interval: 1s
         limit_percentage: 80
         spike_limit_percentage: 25
