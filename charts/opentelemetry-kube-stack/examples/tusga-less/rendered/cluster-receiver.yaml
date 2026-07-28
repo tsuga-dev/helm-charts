@@ -44,6 +44,7 @@ spec:
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
       cpu: 500m
@@ -105,6 +106,14 @@ spec:
         - group: ""
           mode: watch
           name: pods
+      k8s_objects/events:
+        auth_type: serviceAccount
+        include_initial_state: false
+        objects:
+        - field_selector: type=Warning
+          group: events.k8s.io
+          mode: watch
+          name: events
     processors:
       batch:
         send_batch_max_size: 5000
@@ -173,6 +182,11 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      transform/k8s_event_severity:
+        error_mode: ignore
+        log_statements:
+        - set(log.severity_text, "WARN")
+        - set(log.severity_number, SEVERITY_NUMBER_WARN)
     exporters:
       debug: {}
     service:
@@ -189,6 +203,15 @@ spec:
           receivers:
           - k8s_cluster
           - k8s_objects
+        logs/events:
+          exporters: []
+          processors:
+          - memory_limiter
+          - transform/k8s_event_severity
+          - resource
+          - batch
+          receivers:
+          - k8s_objects/events
         metrics:
           exporters:
           - debug
