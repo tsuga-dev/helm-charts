@@ -58,8 +58,10 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
-Fail the render if a pinned collector image is older than v0.119.0, where the
-service::telemetry headers schema switched from map to list. Only images with a
+Fail the render if a pinned collector image is older than v0.152.0, the release
+that renamed the kubeletstats receiver to kubelet_stats — the newest component
+name the default configs use. An older collector rejects the config at startup
+with `unknown type: "kubelet_stats"` and crash-loops. Only images with a
 parseable semver tag can be checked; untagged/":latest"/operator-default images
 resolve at runtime and cannot be verified here.
 */}}
@@ -68,8 +70,8 @@ resolve at runtime and cannot be verified here.
 {{- if . -}}
 {{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
 {{- if regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
-{{- if semverCompare "< 0.119.0" $tag -}}
-{{- fail (printf "collector image %q is < v0.119.0; service::telemetry headers require the v0.119+ config schema (list-form headers)" .) -}}
+{{- if semverCompare "< 0.152.0" $tag -}}
+{{- fail (printf "collector image %q is < v0.152.0; this chart's default config uses the kubelet_stats receiver type, which older collectors reject with `unknown type`. Pin a v0.152.0+ image." .) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
