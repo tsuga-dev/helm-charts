@@ -81,8 +81,25 @@ nameOverride: ""
 # @default -- ""
 fullnameOverride: ""
 
-# -- Default OpenTelemetry Collector image
-# Used as fallback when cluster.image or agent.image are not set
+# -- OpenTelemetry Collector image for every collector
+# Used as the fallback when agent.image, cluster.image and statefulset.image are
+# not set.
+#
+# Empty by default, and then no image is set on the collector at all: the
+# OpenTelemetry Operator supplies its own, which is pinned by the operator
+# subchart this chart bundles (opentelemetry-collector-k8s:0.152.1). That keeps
+# the collector version tied to the operator you deploy instead of to a tag this
+# chart would have to remember to bump, and it is what upstream's kube-stack
+# chart does.
+#
+# Two consequences worth knowing. The default is the k8s distribution, not
+# contrib: every component this chart configures is present in k8s, but a
+# contrib-only component added through extraReceivers or customConfig (statsd and
+# prometheusremotewrite among others) needs an explicit contrib image here. And
+# if you do set one, include a tag — an untagged reference resolves to :latest
+# and forces imagePullPolicy: Always. A tag below the chart's floor fails the
+# render.
+#
 # Format: registry/repository:tag
 # @default -- ""
 image: ""
@@ -223,7 +240,8 @@ cluster:
   # @default -- true
   enabled: true
   # -- OpenTelemetry Collector image for cluster receiver
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # Falls back to the top-level image, and then to the operator's own pinned
+  # default. See the top-level image value.
   # @default -- ""
   image: ""
   # -- Extra environment variables for cluster receiver
@@ -383,7 +401,8 @@ agent:
   # @default -- true
   hostNetwork: true
   # -- OpenTelemetry Collector image for agent
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # Falls back to the top-level image, and then to the operator's own pinned
+  # default. See the top-level image value.
   # @default -- ""
   image: ""
   # -- Extra environment variables for agent
@@ -644,6 +663,8 @@ statefulset:
   # @default -- 1
   replicas: 1
   # -- OpenTelemetry Collector image for statefulset collector
+  # Falls back to the top-level image, and then to the operator's own pinned
+  # default. See the top-level image value.
   # @default -- ""
   image: ""
   # -- Extra environment variables for statefulset collector

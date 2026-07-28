@@ -22,7 +22,9 @@ spec:
   {{- if .Values.statefulset.replicas }}
   replicas: {{ .Values.statefulset.replicas }}
   {{- end }}
-  image: {{ .Values.statefulset.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  {{- with (.Values.statefulset.image | default .Values.image) }}
+  image: {{ . }}
+  {{- end }}
   {{- if or .Values.statefulset.resources .Values.resources }}
   resources:
     {{- if .Values.statefulset.resources }}

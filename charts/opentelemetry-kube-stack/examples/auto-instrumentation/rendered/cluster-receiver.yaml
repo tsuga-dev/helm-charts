@@ -23,7 +23,6 @@ spec:
   # replicas to 1; setting it explicitly stops a `kubectl scale` (the CRD
   # exposes a scale subresource on .spec.replicas) from surviving a helm upgrade.
   replicas: 1
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
   resources:
     limits:
       cpu: 500m

@@ -18,7 +18,9 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: {{ .Values.agent.hostNetwork }}
-  image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
+  {{- with (.Values.agent.image | default .Values.image) }}
+  image: {{ . }}
+  {{- end }}
   {{- if or .Values.agent.resources .Values.resources }}
   resources:
     {{- if .Values.agent.resources }}

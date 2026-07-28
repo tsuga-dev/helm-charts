@@ -134,3 +134,25 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file."
+
+  - it: should leave the collector image to the operator by default
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.image
+
+  - it: should honour the top-level image for the cluster receiver
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      image: "example.test/collector:0.152.0"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.image
+          value: "example.test/collector:0.152.0"
