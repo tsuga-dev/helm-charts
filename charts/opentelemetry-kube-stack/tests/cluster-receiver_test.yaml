@@ -155,3 +155,109 @@ tests:
       - equal:
           path: spec.config.service.pipelines.metrics.processors
           value: [memory_limiter, resourcedetection, k8s_attributes, resource, batch]
+
+  - it: should collect only Warning events, filtered at the API server
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers["k8s_objects/events"].objects
+          value:
+            - group: events.k8s.io
+              name: events
+              mode: watch
+              field_selector: type=Warning
+      # A separate instance purely so events can skip the initial snapshot:
+      # the field is receiver-wide and the pods stream needs it.
+      - equal:
+          path: spec.config.receivers["k8s_objects/events"].include_initial_state
+          value: false
+      - equal:
+          path: spec.config.receivers.k8s_objects.include_initial_state
+          value: true
+
+  - it: should not collect events by default
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers["k8s_objects/events"]
+      - notContains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects/events
+
+  - it: should keep collecting events when pod objects are disabled
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      cluster.collectk8sobjects: false
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.k8s_objects
+      - isNotNull:
+          path: spec.config.receivers["k8s_objects/events"]
+
+  - it: should give events their own pipeline and a real severity
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+    release:
+      name: "test-release"
+    asserts:
+      # Tsuga normalizes a missing level to INFO, which would file every OOMKill
+      # as routine.
+      - equal:
+          path: spec.config.processors["transform/k8s_event_severity"].log_statements
+          value:
+            - set(log.severity_text, "WARN")
+            - set(log.severity_number, SEVERITY_NUMBER_WARN)
+      # Own pipeline, so the transform never sees a non-map body: indexing one
+      # errors per record.
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].receivers
+          value: [k8s_objects/events]
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].processors
+          value: [memory_limiter, transform/k8s_event_severity, resource, batch]
+      # Events do not reach the shared logs pipeline.
+      - notContains:
+          path: spec.config.service.pipelines.logs.receivers
+          content: k8s_objects/events
+
+  - it: should not render the events pipeline or transform when disabled
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: false
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.processors["transform/k8s_event_severity"]
+      - isNull:
+          path: spec.config.service.pipelines["logs/events"]
+
+  - it: should detect resources on the events pipeline too
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      resourceDetection.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Otherwise events are the one signal with no cloud.* or host.id.
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].processors
+          value: [memory_limiter, resourcedetection, transform/k8s_event_severity, resource, batch]

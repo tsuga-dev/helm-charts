@@ -300,6 +300,21 @@ cluster:
   customConfig: {}
   # This is used in the Kubernetes view to show pod configuration
   collectk8sobjects: true
+  # -- Collect Kubernetes Warning events as logs
+  #
+  # Off by default: this adds a log stream whose volume follows cluster health,
+  # so it is opt-in rather than something an upgrade turns on for you.
+  #
+  # Worth enabling. Events are the only source for OOMKilled, FailedScheduling,
+  # Evicted, ErrImagePull, FailedMount and failing probes — no metric receiver
+  # reports them. RBAC for events is already granted, so this costs no extra
+  # configuration.
+  #
+  # Warning events only, filtered by field_selector on the API server, so Normal
+  # events are never watched or transferred. Normal events are the high-volume,
+  # low-value majority and restate what the pods object stream already carries.
+  # @default -- false
+  collectk8sevents: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects)
