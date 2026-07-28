@@ -95,6 +95,26 @@ processors:
       - set(log.severity_text, "WARN")
       - set(log.severity_number, SEVERITY_NUMBER_WARN)
 {{- end }}
+  # Kubernetes keeps 10 historical ReplicaSets per Deployment by default, and
+  # k8s_cluster emits both of these for every ReplicaSet object in its informer
+  # cache, guarded only on spec.replicas being non-nil. Old revisions are scaled
+  # to zero, so most of these series are permanent zeros that say nothing.
+  #
+  # value_int, not value_double: both metrics are Gauge/Int. Reading
+  # value_double on an integer datapoint does not error, it returns 0.0, so a
+  # condition written that way would match every integer datapoint and drop far
+  # more than intended.
+  #
+  # metric_conditions rather than the older metrics.datapoint form, which is
+  # deprecated at this chart's floor. error_mode: ignore because the default,
+  # propagate, drops the whole payload when a condition errors.
+  #
+  # When every datapoint of a metric is dropped the metric goes with it, so no
+  # empty shells are exported.
+  filter/empty_replicasets:
+    error_mode: ignore
+    metric_conditions:
+      - (metric.name == "k8s.replicaset.available" or metric.name == "k8s.replicaset.desired") and datapoint.value_int == 0
   k8s_attributes:
     extract:
 {{- include "opentelemetry-kube-stack.k8sAttributesExtract" (dict "root" . "extraLabelMapping" .Values.cluster.extraLabelMapping "extraAnnotationsMapping" .Values.cluster.extraAnnotationsMapping) | nindent 6 }}
@@ -168,6 +188,7 @@ service:
         - k8s_cluster
       processors:
         - memory_limiter
+        - filter/empty_replicasets
 {{- if .Values.resourceDetection.enabled }}
         - resourcedetection
 {{- end }}

@@ -44,6 +44,7 @@ spec:
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
       cpu: 500m
@@ -127,6 +128,11 @@ spec:
       batch:
         send_batch_max_size: 5000
         send_batch_size: 5000
+      filter/empty_replicasets:
+        error_mode: ignore
+        metric_conditions:
+        - (metric.name == "k8s.replicaset.available" or metric.name == "k8s.replicaset.desired")
+          and datapoint.value_int == 0
       k8s_attributes:
         extract:
           annotations:
@@ -232,6 +238,7 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
+          - filter/empty_replicasets
           - k8s_attributes
           - resource
           - batch
