@@ -128,6 +128,14 @@
                 "image": {
                     "type": "string"
                 },
+                "kubeletStats": {
+                    "type": "object",
+                    "properties": {
+                        "usePodsEndpoint": {
+                            "type": "boolean"
+                        }
+                    }
+                },
                 "nodeSelector": {
                     "type": "object"
                 },
