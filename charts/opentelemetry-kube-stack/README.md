@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.10.1](https://img.shields.io/badge/Version-0.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.2](https://img.shields.io/badge/Version-0.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -339,7 +339,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.extraEnvs | list | [] | Extra environment variables for agent These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) |
 | agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
-| agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
+| agent.image | string | "" | OpenTelemetry Collector image for agent Falls back to the top-level image, and then to the operator's own pinned default. See the top-level image value. |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
 | agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
@@ -374,13 +374,13 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.extraAnnotationsMapping | list | [] | Annotations mapping configuration for cluster receiver Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | cluster.extraEnvs | list | [] | Extra environment variables for cluster receiver These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) Example:   extraEnvs:     - name: CUSTOM_VAR       value: "custom-value" |
 | cluster.extraLabelMapping | list | [] | Label mapping configuration for cluster receiver Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
-| cluster.image | string | "" | OpenTelemetry Collector image for cluster receiver Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
+| cluster.image | string | "" | OpenTelemetry Collector image for cluster receiver Falls back to the top-level image, and then to the operator's own pinned default. See the top-level image value. |
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
 | cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
 | clusterName | string | "" (must be set) | REQUIRED. The name of the cluster, added to all telemetry as k8s.cluster.name.  Installation fails if this is empty. Telemetry from a cluster that does not name itself cannot be told apart from any other cluster's once it reaches Tsuga, and the omission only becomes visible during an incident, which is the worst time to discover it.    --set clusterName=<name>  |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
-| image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
+| image | string | "" | OpenTelemetry Collector image for every collector Used as the fallback when agent.image, cluster.image and statefulset.image are not set.  Empty by default, and then no image is set on the collector at all: the OpenTelemetry Operator supplies its own, which is pinned by the operator subchart this chart bundles (opentelemetry-collector-k8s:0.152.1). That keeps the collector version tied to the operator you deploy instead of to a tag this chart would have to remember to bump, and it is what upstream's kube-stack chart does.  Two consequences worth knowing. The default is the k8s distribution, not contrib: every component this chart configures is present in k8s, but a contrib-only component added through extraReceivers or customConfig (statsd and prometheusremotewrite among others) needs an explicit contrib image here. And if you do set one, include a tag — an untagged reference resolves to :latest and forces imagePullPolicy: Always. A tag below the chart's floor fails the render.  Format: registry/repository:tag |
 | nameOverride | string | "" | Override the chart name used in resource naming |
 | nodeSelector | object | {} | Node selector for daemonset mode (agent) Used as default when agent.nodeSelector is not set |
 | opentelemetry-operator.admissionWebhooks.failurePolicy | string | `"Ignore"` |  |
@@ -426,7 +426,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | statefulset.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
 | statefulset.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
-| statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector |
+| statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector Falls back to the top-level image, and then to the operator's own pinned default. See the top-level image value. |
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
 | statefulset.resources | object | {} | StatefulSet-specific resource limits and requests |

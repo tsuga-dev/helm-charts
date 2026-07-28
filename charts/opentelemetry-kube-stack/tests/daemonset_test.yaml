@@ -210,3 +210,64 @@ tests:
       - contains:
           path: spec.config.service.pipelines.traces.processors
           content: resource/node
+
+  - it: should leave the collector image to the operator by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # No image field at all, so the operator applies the version its own
+      # subchart pins. A bare repository name would resolve to :latest and force
+      # imagePullPolicy: Always.
+      - isNull:
+          path: spec.image
+
+  - it: should honour the top-level image, and let agent.image win over it
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: "example.test/collector:0.152.0"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.image
+          value: "example.test/collector:0.152.0"
+
+  - it: should prefer agent.image over the top-level image
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: "example.test/collector:0.152.0"
+      agent.image: "example.test/agent:0.153.0"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.image
+          value: "example.test/agent:0.153.0"
+
+  - it: should fail to render when a pinned collector image is below the floor
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.test/agent:0.151.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorMessage: "collector image \"example.test/agent:0.151.0\" is < v0.152.0; this chart's default config uses the kubelet_stats receiver type, which older collectors reject with `unknown type`. Pin a v0.152.0+ image."
+
+  - it: should accept a pinned collector image at the floor
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.test/agent:0.152.0"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.image
+          value: "example.test/agent:0.152.0"
