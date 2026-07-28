@@ -1,55 +1,21 @@
 ---
-# Source: opentelemetry-kube-stack/templates/cluster-receiver.yaml
+# Source: opentelemetry-kube-stack/templates/daemonset.yaml
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: example-opentelemetry-kube-stack-cluster-receiver
+  name: example-opentelemetry-kube-stack-agent
   labels:
     app.kubernetes.io/name: opentelemetry-kube-stack
     app.kubernetes.io/instance: example
-    app.kubernetes.io/component: cluster-receiver
+    app.kubernetes.io/component: agent
     app.kubernetes.io/part-of: opentelemetry-kube-stack
     app.kubernetes.io/managed-by: Helm
   annotations:
     meta.helm.sh/release-name: "example"
     meta.helm.sh/release-namespace: "default"
 spec:
-  mode: deployment
-  # Pinned, and deliberately not configurable. Upstream's kube-stack chart notes
-  # that k8s_cluster and k8s_objects "MUST be used by a collector with a single
-  # replica": they have no leader election, so a second replica reports the same
-  # cluster state again, and every cluster metric is counted twice and every
-  # Kubernetes object ingested twice. The operator's CRD already defaults
-  # replicas to 1; setting it explicitly stops a `kubectl scale` (the CRD
-  # exposes a scale subresource on .spec.replicas) from surviving a helm upgrade.
-  replicas: 1
-  # replicas: 1 bounds the steady state, not a rollout. The operator passes
-  # this strategy straight through to the Deployment, and an unset strategy
-  # gets Kubernetes' defaults of maxSurge and maxUnavailable 25%: at one
-  # replica maxSurge rounds up to 1 and maxUnavailable rounds down to 0, so
-  # every helm upgrade briefly runs two cluster receivers, both scraping
-  # k8s_cluster and both emitting the same cluster metrics and objects.
-  # maxSurge 0 makes the old pod terminate before the new one starts. Both
-  # values are set because Kubernetes forbids maxUnavailable 0 alongside
-  # maxSurge 0, and the 25% default would round down to 0 and deadlock the
-  # rollout. The trade is a short gap in cluster metrics on every upgrade,
-  # which is the correct side to err on: a gap is visible, double-counting is
-  # not.
-  # maxSurge 0 makes the old pod terminate before the new one starts.
-  # maxUnavailable 1 is stated for clarity rather than necessity: Kubernetes
-  # rejects an explicit 0/0 pair, but ResolveFenceposts already promotes
-  # maxUnavailable to 1 when both fenceposts resolve to zero, so the rollout
-  # could not deadlock either way.
-  #
-  # The trade is a short gap on every upgrade, which is the correct side to err
-  # on for cluster metrics: a gap is visible, double-counting is not. Note the
-  # gap cuts the other way for the Warning events stream, which cannot backfill
-  # what it missed while no pod was running.
-  deploymentUpdateStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+  mode: daemonset
+  hostNetwork: true
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
@@ -58,6 +24,27 @@ spec:
     requests:
       cpu: 100m
       memory: 128Mi
+  volumeMounts:
+    - name: hostfs
+      mountPath: /hostfs
+      readOnly: true
+      mountPropagation: HostToContainer
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+  volumes:
+    - name: hostfs
+      hostPath:
+        path: /
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
   serviceAccount: example-opentelemetry-kube-stack
   env:
     
@@ -101,31 +88,106 @@ spec:
       value: "429496729"
   config:
     receivers:
-      k8s_cluster:
-        allocatable_types_to_report:
-        - cpu
-        - memory
-        - storage
+      file_log:
+        exclude:
+        - /var/log/pods/*/otc-container/*.log
+        - /var/log/pods/*/otel-collector/*.log
+        include:
+        - /var/log/pods/*/*/*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - id: container-parser
+          max_log_size: 102400
+          type: container
+        retry_on_failure:
+          enabled: true
+        start_at: end
+      host_metrics:
         collection_interval: 10s
-        metrics:
-          k8s.pod.status_reason:
-            enabled: true
-        node_conditions_to_report:
-        - Ready
-        - MemoryPressure
-        - DiskPressure
-        - PIDPressure
-      k8s_objects:
+        root_path: /hostfs
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          disk: null
+          filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - erofs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - ^/dev($|/)
+              - ^/proc($|/)
+              - ^/run/credentials($|/)
+              - ^/run/k3s/containerd($|/)
+              - ^/snap($|/)
+              - ^/sys($|/)
+              - ^/var/lib/containers/storage($|/)
+              - ^/var/lib/docker($|/)
+              - ^/var/lib/kubelet($|/)
+            metrics:
+              system.filesystem.utilization:
+                enabled: true
+          load: null
+          memory:
+            metrics:
+              system.memory.limit:
+                enabled: true
+              system.memory.utilization:
+                enabled: true
+          paging:
+            metrics:
+              system.paging.utilization:
+                enabled: true
+      kubelet_stats:
         auth_type: serviceAccount
-        include_initial_state: true
-        objects:
-        - group: ""
-          mode: watch
-          name: pods
+        collection_interval: 20s
+        endpoint: ${env:NODE_IP}:10250
+        extra_metadata_labels:
+        - k8s.volume.type
+        insecure_skip_verify: true
+        metric_groups:
+        - node
+        - pod
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
     processors:
       batch:
         send_batch_max_size: 5000
         send_batch_size: 5000
+      cumulativetodelta: {}
       k8s_attributes:
         extract:
           annotations:
@@ -165,6 +227,8 @@ spec:
           - k8s.pod.name
           - k8s.pod.uid
           - k8s.pod.start_time
+        filter:
+          node_from_env_var: K8S_NODE_NAME
         passthrough: false
         pod_association:
         - sources:
@@ -176,7 +240,6 @@ spec:
         - sources:
           - from: connection
       memory_limiter:
-        check_interval: 5s
         check_interval: 1s
         limit_percentage: 80
         spike_limit_percentage: 25
@@ -185,6 +248,11 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      resource/node:
+        attributes:
+        - action: insert
+          key: k8s.node.name
+          value: ${env:K8S_NODE_NAME}
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -192,8 +260,19 @@ spec:
         endpoint: ${TSUGA_OTLP_ENDPOINT}
         headers:
           Authorization: Bearer ${TSUGA_API_KEY}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    connectors:
+      span_metrics:
+        dimensions:
+        - default: GET
+          name: http.request.method
+        - name: http.response.status_code
+        - name: http.route
     service:
-      extensions: []
+      extensions:
+      - health_check
       pipelines:
         logs:
           exporters:
@@ -202,20 +281,38 @@ spec:
           - memory_limiter
           - k8s_attributes
           - resource
+          - resource/node
           - batch
           receivers:
-          - k8s_cluster
-          - k8s_objects
+          - otlp
+          - file_log
         metrics:
           exporters:
           - otlp_http/tsuga
           processors:
           - memory_limiter
+          - cumulativetodelta
           - k8s_attributes
           - resource
+          - resource/node
           - batch
           receivers:
-          - k8s_cluster
+          - otlp
+          - kubelet_stats
+          - span_metrics
+          - host_metrics
+        traces:
+          exporters:
+          - otlp_http/tsuga
+          - span_metrics
+          processors:
+          - memory_limiter
+          - k8s_attributes
+          - resource
+          - resource/node
+          - batch
+          receivers:
+          - otlp
       telemetry:
         metrics:
           readers:

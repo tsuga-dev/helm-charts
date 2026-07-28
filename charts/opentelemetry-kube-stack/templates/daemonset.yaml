@@ -86,6 +86,7 @@ spec:
   {{- end }}
   env:
     {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    {{- include "opentelemetry-kube-stack.goMemLimitEnv" (.Values.agent.resources | default .Values.resources) | nindent 4 }}
     {{- if .Values.agent.extraEnvs }}
     {{- toYaml .Values.agent.extraEnvs | nindent 4 }}
     {{- end }}

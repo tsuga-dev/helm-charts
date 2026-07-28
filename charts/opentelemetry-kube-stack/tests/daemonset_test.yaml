@@ -318,3 +318,74 @@ tests:
       - equal:
           path: spec.priorityClassName
           value: "system-node-critical"
+  - it: should check memory every second
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # 1s is the value the memory_limiter README recommends.
+      - equal:
+          path: spec.config.processors.memory_limiter.check_interval
+          value: 1s
+
+  - it: should set GOMEMLIMIT to 80% of the memory limit
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # 80% of the default 512Mi limit, in bytes. The Go runtime does not read
+      # cgroup limits, so without this the GC never learns it has a budget.
+      - contains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "429496729"
+
+  - it: should derive GOMEMLIMIT from an overridden memory limit
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.resources.limits.memory: 4Gi
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "3435973836"
+
+  - it: should derive GOMEMLIMIT from a decimal memory limit
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.resources.limits.memory: 512M
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "409600000"
+
+  - it: should omit GOMEMLIMIT when there is no memory limit
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.resources.limits.cpu: 500m
+      resources: {}
+    release:
+      name: "test-release"
+    asserts:
+      # No limit means no percentage to take, so the variable is left unset
+      # rather than given a made-up value.
+      - notContains:
+          path: spec.env
+          content:
+            name: GOMEMLIMIT
+            value: "429496729"

@@ -46,6 +46,66 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
+GOMEMLIMIT for a collector, as 80% of its memory limit, in bytes.
+
+Input: the collector's effective resources map.
+
+The memory_limiter processor's README calls this out: "It is highly recommended
+to configure the GOMEMLIMIT environment variable as well as the memory_limiter
+processor on every collector", with "GOMEMLIMIT should be set to 80% of the
+hard memory limit of your collector". The Go runtime does not read cgroup
+limits — GOMEMLIMIT defaults to math.MaxInt64, "which effectively disables the
+memory limit" — so without it the garbage collector has no idea the container
+has a budget, and the kernel reaches the limit before the GC feels any reason
+to work harder. This is separate from memory_limiter's limit_percentage, which
+does read the cgroup limit and sheds load; GOMEMLIMIT makes the runtime collect
+harder instead of being OOM-killed.
+
+Derived rather than hardcoded, so it follows an overridden
+resources.limits.memory: a fixed value would throttle a collector given 4Gi
+into constant GC, and mean nothing to one given 128Mi. Emitted as a plain byte
+count, which the runtime reads as bytes. Renders empty when there is no memory
+limit, or when the quantity is in a form not handled here — GOMEMLIMIT has no
+sensible value without a limit to take a percentage of.
+*/}}
+{{- define "opentelemetry-kube-stack.goMemLimit" -}}
+{{- $mem := "" -}}
+{{- if and .limits .limits.memory -}}
+{{- $mem = .limits.memory | toString -}}
+{{- end -}}
+{{- $bytes := int64 0 -}}
+{{- if regexMatch "^[0-9]+$" $mem -}}
+{{- $bytes = $mem | int64 -}}
+{{- else if regexMatch "^[0-9]+Ki$" $mem -}}
+{{- $bytes = mul (trimSuffix "Ki" $mem | int64) 1024 -}}
+{{- else if regexMatch "^[0-9]+Mi$" $mem -}}
+{{- $bytes = mul (trimSuffix "Mi" $mem | int64) 1048576 -}}
+{{- else if regexMatch "^[0-9]+Gi$" $mem -}}
+{{- $bytes = mul (trimSuffix "Gi" $mem | int64) 1073741824 -}}
+{{- else if regexMatch "^[0-9]+K$" $mem -}}
+{{- $bytes = mul (trimSuffix "K" $mem | int64) 1000 -}}
+{{- else if regexMatch "^[0-9]+M$" $mem -}}
+{{- $bytes = mul (trimSuffix "M" $mem | int64) 1000000 -}}
+{{- else if regexMatch "^[0-9]+G$" $mem -}}
+{{- $bytes = mul (trimSuffix "G" $mem | int64) 1000000000 -}}
+{{- end -}}
+{{- if gt ($bytes | int64) (int64 0) -}}
+{{- div (mul $bytes 80) 100 -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The GOMEMLIMIT env entry, omitted when no limit can be derived.
+*/}}
+{{- define "opentelemetry-kube-stack.goMemLimitEnv" -}}
+{{- $limit := include "opentelemetry-kube-stack.goMemLimit" . -}}
+{{- if $limit }}
+- name: GOMEMLIMIT
+  value: {{ $limit | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}
