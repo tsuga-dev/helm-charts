@@ -446,3 +446,32 @@ tests:
             tag_name: service.name
             key: resource.opentelemetry.io/service.name
             from: pod
+
+  - it: should extract low-cardinality container identity
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: k8s.container.name
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.name
+      # The processor's v0 name, and what a default collector emits. Stable
+      # semconv calls it container.image.tags, a string array, behind an
+      # alpha default-off feature gate.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.tag
+      # Unique per container instance, changes on every restart.
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.id
+      # The stable plural is not what this collector emits by default, so
+      # asking for it would produce nothing.
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.tags
