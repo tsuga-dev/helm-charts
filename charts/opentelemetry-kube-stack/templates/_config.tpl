@@ -86,6 +86,12 @@ metadata:
   # equivalents) alongside the v0 ones; processor.k8sattributes.
   # DontEmitV0K8sConventions is what removes the v0 names, and it is a fatal
   # startup error without the first. So enabling EmitV1 alone emits both keys.
+  # singular form does not exist in semconv at all. The rename sits behind the
+  # alpha, default-off processor.k8sattributes.EmitV1K8sConventions gate, so a
+  # default collector emits the singular key and logs a rename warning at
+  # startup. That gate also renames k8s.pod.labels.<key> to
+  # k8s.pod.label.<key>, and the namespace and node equivalents, so turning it
+  # on changes more than this one key.
   #
   # The tag takes a new value on every deploy, which fragments any series
   # carrying it. Kept anyway: it answers which image is actually running, which
