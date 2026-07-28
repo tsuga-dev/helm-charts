@@ -146,3 +146,18 @@ tests:
           content:
             name: GOMEMLIMIT
             value: "429496729"
+
+  - it: should detect resources when enabled
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      resourceDetection.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.resourcedetection.detectors
+          value: [env]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, batch]

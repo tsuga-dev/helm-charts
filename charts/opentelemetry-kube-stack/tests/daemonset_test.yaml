@@ -475,3 +475,68 @@ tests:
       - notContains:
           path: spec.config.processors.k8s_attributes.extract.metadata
           content: container.image.tags
+
+  - it: should not detect resources by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # A failing detector stops the collector from starting, and there is no
+      # feature gate to suppress that at this chart's floor.
+      - isNull:
+          path: spec.config.processors.resourcedetection
+      - equal:
+          path: spec.config.service.pipelines.logs.processors
+          value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch]
+
+  - it: should detect resources when enabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      resourceDetection.enabled: true
+      resourceDetection.detectors: [env, eks, ec2]
+      resourceDetection.timeout: 20s
+    release:
+      name: "test-release"
+    asserts:
+      # resourcedetection, not resource_detection: the underscored alias only
+      # exists from v0.153.0, above this chart's floor.
+      - equal:
+          path: spec.config.processors.resourcedetection.detectors
+          value: [env, eks, ec2]
+      - equal:
+          path: spec.config.processors.resourcedetection.timeout
+          value: 20s
+      # Against the processor's own default of true, so a detected value never
+      # replaces one an instrumented application already set.
+      - equal:
+          path: spec.config.processors.resourcedetection.override
+          value: false
+      # After cumulativetodelta, which this chart deliberately runs before
+      # enrichment so delta state is not keyed on a resource that later grows.
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, resource/node, batch]
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, resourcedetection, k8s_attributes, resource, resource/node, batch]
+
+  - it: should fall back to a usable detection timeout
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      resourceDetection.enabled: true
+      resourceDetection.timeout: null
+    release:
+      name: "test-release"
+    asserts:
+      # An empty timeout would render as 0s, expiring the per-detector context
+      # before the first call and failing Start().
+      - equal:
+          path: spec.config.processors.resourcedetection.timeout
+          value: 15s
