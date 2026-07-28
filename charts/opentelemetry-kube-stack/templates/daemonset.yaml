@@ -70,6 +70,9 @@ spec:
       hostPath:
         path: /var/lib/docker/containers
   {{- end }}
+  {{- if or .Values.agent.priorityClass.create .Values.agent.priorityClass.name }}
+  priorityClassName: {{ include "opentelemetry-kube-stack.agentPriorityClassName" . }}
+  {{- end }}
   {{- if or .Values.agent.affinity .Values.affinity }}
   affinity:
     {{- if .Values.agent.affinity }}

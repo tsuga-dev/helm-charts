@@ -51,6 +51,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+The name of the agent PriorityClass
+*/}}
+{{- define "opentelemetry-kube-stack.agentPriorityClassName" -}}
+{{- .Values.agent.priorityClass.name | default (printf "%s-agent" (include "opentelemetry-kube-stack.fullname" .)) }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "opentelemetry-kube-stack.serviceAccountName" -}}
