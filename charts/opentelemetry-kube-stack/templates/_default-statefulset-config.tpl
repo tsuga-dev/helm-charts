@@ -26,6 +26,9 @@ processors:
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
   cumulativetodelta: {}
+{{- if .Values.resourceDetection.enabled }}
+  {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+{{- end }}
   k8s_attributes:
     extract:
       metadata:
@@ -103,6 +106,9 @@ service:
       processors:
         - memory_limiter
         - cumulativetodelta
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
         - k8s_attributes
         - resource
         - batch

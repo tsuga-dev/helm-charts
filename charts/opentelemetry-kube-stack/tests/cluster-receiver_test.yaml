@@ -134,3 +134,24 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file."
+
+  - it: should detect resources when enabled
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      resourceDetection.enabled: true
+      resourceDetection.detectors: [env, gcp]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.resourcedetection.detectors
+          value: [env, gcp]
+      - equal:
+          path: spec.config.processors.resourcedetection.override
+          value: false
+      # gcp can supply k8s.cluster.name, but the resource processor upserts
+      # clusterName afterwards, so the explicit value stays authoritative.
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, resourcedetection, k8s_attributes, resource, batch]

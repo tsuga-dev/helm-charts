@@ -46,6 +46,51 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
+The resourcedetection processor, shared by all three collectors.
+
+Off by default, and opt-in rather than opt-out, because every detector worth
+enabling can stop the collector from booting. The processor's Start() returns
+the detector error — "If a configured resource detector fails, the error will
+propagate and stop the collector from starting" — and a detector that returns a
+partial result alongside an error has that result discarded. The feature gate
+that used to suppress this, processor.resourcedetection.propagateerrors, was
+removed in v0.150.0, below this chart's floor, so there is no escape hatch on
+any version we can target.
+
+That risk is not limited to cloud metadata endpoints. k8snode reads the node
+object from the Kubernetes API and fails Start() if that call fails, and it
+errors before Start() at all if its env var is unset. eks looks safe off-cloud
+but is not: KUBERNETES_SERVICE_HOST is set on every Kubernetes cluster, so its
+own check falls through to the Kubernetes API and can error on GKE, AKS or
+kind. ec2, gcp, azure and aks do return an empty resource without error when
+their metadata service is unreachable, so those are safe to list off-cloud —
+but an on-cloud metadata hiccup at startup is still a hard failure.
+
+Type name is resourcedetection because the canonical resource_detection does not
+exist below v0.153.0, above this chart's floor. Note the direction: from v0.153.0
+resource_detection is canonical and resourcedetection is the DEPRECATED alias, so
+on the image this chart pins by default the collector logs a deprecation warning
+for it at startup. cumulativetodelta is in the same position from v0.157.0. Both
+are kept so a user pinning a floor-version image still gets a working config.
+
+override: false everywhere, against the processor's own default of true, so a
+detected value never replaces a cloud.* or host.* attribute an instrumented
+application already set. Note that where two detectors can answer the same
+attribute, the first one listed wins.
+
+timeout is 15s rather than the factory default of 5s, the value the processor
+README uses in its EKS example: the per-detector retry uses exponential backoff
+with no maximum elapsed time, so a failing detector spends the whole budget.
+*/}}
+{{- define "opentelemetry-kube-stack.resourceDetection" -}}
+resourcedetection:
+  detectors:
+    {{- toYaml .Values.resourceDetection.detectors | nindent 4 }}
+  timeout: {{ .Values.resourceDetection.timeout | default "15s" }}
+  override: false
+{{- end }}
+
+{{/*
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}
