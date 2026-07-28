@@ -271,3 +271,50 @@ tests:
       - equal:
           path: spec.image
           value: "example.test/agent:0.152.0"
+
+  - it: should not set a priorityClassName by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.priorityClassName
+
+  - it: should set the priorityClassName when the PriorityClass is created
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.priorityClass.create: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.priorityClassName
+          value: "test-release-opentelemetry-kube-stack-agent"
+
+  - it: should honour a custom PriorityClass name
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.priorityClass.create: true
+      agent.priorityClass.name: "custom-agent-priority"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.priorityClassName
+          value: "custom-agent-priority"
+
+  - it: should use an existing PriorityClass without creating one
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.priorityClass.name: "system-node-critical"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.priorityClassName
+          value: "system-node-critical"

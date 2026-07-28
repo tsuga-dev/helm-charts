@@ -1,0 +1,33 @@
+{{- if and .Values.agent.enabled .Values.agent.priorityClass.create }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ include "opentelemetry-kube-stack.agentPriorityClassName" . }}
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "agent" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+# int, because Helm parses YAML numbers as float64 and 1000000 would otherwise
+# render as 1e+06, which the API server rejects for an int32 field.
+value: {{ .Values.agent.priorityClass.value | int }}
+# Never the default for unclassed pods: that would silently re-rank every
+# workload in the cluster.
+globalDefault: false
+# The goal is to survive eviction, not to displace anyone. Priority is the
+# kubelet's second eviction sort key: it ranks pods by whether usage exceeds
+# requests first, so this only reorders the agent against other over-request
+# pods. See agent.priorityClass in values.yaml for what that means with the
+# chart's default requests.
+#
+# preemptionPolicy governs the separate, scheduler-side question of whether
+# running pods may be evicted to make room for this one. Never keeps the agent
+# from taking a slot from a workload it exists to observe, at the cost of
+# staying Pending on a node with no spare capacity.
+preemptionPolicy: Never
+description: >-
+  Priority for the {{ include "opentelemetry-kube-stack.fullname" . }} agent, so
+  node telemetry survives node pressure. Below system-cluster-critical, and
+  does not preempt.
+{{- end }}

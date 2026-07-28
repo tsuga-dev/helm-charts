@@ -131,6 +131,21 @@
                 "nodeSelector": {
                     "type": "object"
                 },
+                "priorityClass": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "integer",
+                            "maximum": 1000000000
+                        }
+                    }
+                },
                 "resources": {
                     "type": "object"
                 },
