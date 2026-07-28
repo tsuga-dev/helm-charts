@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.10.5] - 2026-07-28
+
+### Added
+- Derive service.name, service.version and service.namespace from Kubernetes, behind deriveServiceIdentity
+- Extract k8s.container.name, container.image.name and container.image.tag
+
+### Changed
+- Share one k8s_attributes extract block across the three collectors
+
 ## [opentelemetry-kube-stack-0.10.4] - 2026-07-28
 
 ### Fixed
