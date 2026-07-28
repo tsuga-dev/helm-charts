@@ -44,7 +44,6 @@ spec:
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   resources:
     limits:
       cpu: 500m
