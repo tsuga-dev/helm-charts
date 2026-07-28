@@ -5,6 +5,7 @@ templates:
 tests:
   - it: should not create instrumentation resource when disabled
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: false
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -16,6 +17,7 @@ tests:
 
   - it: should create instrumentation resource when enabled with minimal config
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -42,6 +44,7 @@ tests:
 
   - it: should use custom apiVersion when specified
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.apiVersion: "opentelemetry.io/v1beta1"
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -55,6 +58,7 @@ tests:
 
   - it: should use custom name when nameOverride is set
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.nameOverride: "my-custom-instrumentation"
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
@@ -68,6 +72,7 @@ tests:
 
   - it: should include custom labels
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.labels:
         environment: "production"
@@ -86,6 +91,7 @@ tests:
 
   - it: should include custom annotations
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.annotations:
         description: "Auto-instrumentation for production cluster"
@@ -104,6 +110,7 @@ tests:
 
   - it: should pass through spec configuration for Java
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.spec:
         exporter:
@@ -141,6 +148,7 @@ tests:
 
   - it: should pass through spec configuration for multiple languages
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.spec:
         exporter:
@@ -184,6 +192,7 @@ tests:
 
   - it: should include component labels
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -202,6 +211,7 @@ tests:
 
   - it: should truncate name to 63 characters for long release names
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
@@ -217,6 +227,7 @@ tests:
 
   - it: should pass through resource attributes
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.spec:
         resource:
@@ -241,6 +252,7 @@ tests:
 
   - it: should work with custom environment variables in spec
     set:
+      clusterName: "test-cluster"
       autoInstrumentation.enabled: true
       autoInstrumentation.spec:
         env:

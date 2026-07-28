@@ -26,6 +26,7 @@ kubectl create namespace "$NAMESPACE"
 echo "Test 1: Deploying with minimal configuration..."
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
+    --set clusterName="$RELEASE_NAME" \
     --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --wait --timeout=300s
@@ -43,6 +44,7 @@ kubectl get deployment -n "$NAMESPACE" | grep opentelemetry-kube-stack
 echo "Test 2: Testing upgrade..."
 helm upgrade "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
+    --set clusterName="$RELEASE_NAME" \
     --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --set resources.limits.memory="1Gi" \
@@ -64,6 +66,7 @@ kubectl create secret generic existing-otel-secret \
 
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
+    --set clusterName="$RELEASE_NAME" \
     --set secret.existing.enabled=true \
     --set secret.existing.name="existing-otel-secret" \
     --wait --timeout=300s

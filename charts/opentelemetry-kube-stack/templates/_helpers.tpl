@@ -111,6 +111,18 @@ Validate that required secret values are provided
 {{- end }}
 
 {{/*
+The cluster name, which is required.
+
+Telemetry from a cluster that does not name itself cannot be told apart from
+any other cluster's once it reaches Tsuga, and the omission only becomes
+visible during an incident. Resolved through `required` at each point of use
+so the failure happens at install time with one message.
+*/}}
+{{- define "opentelemetry-kube-stack.clusterName" -}}
+{{- required "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file." .Values.clusterName -}}
+{{- end }}
+
+{{/*
 Validate resource names to prevent conflicts and ensure Kubernetes compliance
 */}}
 {{- define "opentelemetry-kube-stack.validateResourceNames" -}}

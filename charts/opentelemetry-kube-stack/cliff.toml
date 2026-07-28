@@ -24,9 +24,12 @@ https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
 ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- for group, commits in grouped_commits %}
 
-### {{ group | upper_first }}
+### {{ group | striptags | trim | upper_first }}
 {%- for commit in commits %}
-- {{ commit.message | split(pat="\n") | first | upper_first | trim }}{% if commit.remote.username %} by @{{ commit.remote.username }}{% endif %}{% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){% endif %}
+- {% if commit.breaking %}**BREAKING** {% endif %}{{ commit.message | split(pat="\n") | first | upper_first | trim }}{% if commit.remote.username %} by @{{ commit.remote.username }}{% endif %}{% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){% endif %}
+{%- if commit.breaking and commit.breaking_description and commit.breaking_description != commit.message %}
+  {{ commit.breaking_description | split(pat="\n") | first | upper_first | trim }}
+{%- endif %}
 {%- endfor %}
 {%- endfor %}
 {%- if first_time_contributors | length != 0 %}
@@ -63,16 +66,20 @@ exclude_paths = ["charts/opentelemetry-kube-stack/CHANGELOG.md", "charts/opentel
 # Tags created by helm chart-releaser for this chart (e.g. opentelemetry-kube-stack-0.6.1)
 tag_pattern = "opentelemetry-kube-stack-[0-9].*"
 commit_parsers = [
-  { message = "^feat", group = "Added" },
-  { message = "^fix", group = "Fixed" },
-  { message = "^docs", group = "Added" },
-  { message = "^perf", group = "Changed" },
-  { message = "^refactor", group = "Changed" },
-  { message = "^style", group = "Changed" },
-  { message = "^test", group = "Changed" },
-  { message = "^chore", group = "Changed" },
-  { message = "^ci", group = "Changed" },
-  { message = "^.*", group = "Changed" },
+  # Breaking changes get their own group, whether flagged with `type!:` or a
+  # `BREAKING CHANGE:` footer. Must come first: parsing stops at the first match.
+  { message = "^[a-zA-Z]+(\\(.*\\))?!:", group = "<!-- 0 -->Breaking Changes" },
+  { footer = "^BREAKING[ -]CHANGE:", group = "<!-- 0 -->Breaking Changes" },
+  { message = "^feat", group = "<!-- 1 -->Added" },
+  { message = "^fix", group = "<!-- 2 -->Fixed" },
+  { message = "^docs", group = "<!-- 1 -->Added" },
+  { message = "^perf", group = "<!-- 3 -->Changed" },
+  { message = "^refactor", group = "<!-- 3 -->Changed" },
+  { message = "^style", group = "<!-- 3 -->Changed" },
+  { message = "^test", group = "<!-- 3 -->Changed" },
+  { message = "^chore", group = "<!-- 3 -->Changed" },
+  { message = "^ci", group = "<!-- 3 -->Changed" },
+  { message = "^.*", group = "<!-- 3 -->Changed" },
 ]
 filter_commits = false
 topo_order = false

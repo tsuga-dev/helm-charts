@@ -210,11 +210,19 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      resource:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
       resource/collector:
         attributes:
         - action: upsert
           key: service.instance.id
           value: ${POD_UID}
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -248,6 +256,7 @@ spec:
           - k8s_attributes
           - memory_limiter
           - batch
+          - resource
           receivers:
           - otlp
           - receiver_creator/logs
@@ -258,6 +267,7 @@ spec:
           - k8s_attributes
           - memory_limiter
           - cumulativetodelta
+          - resource
           - batch
           receivers:
           - otlp
@@ -273,6 +283,7 @@ spec:
           processors:
           - k8s_attributes
           - memory_limiter
+          - resource
           - batch
           receivers:
           - otlp
@@ -288,4 +299,5 @@ spec:
                     value: Bearer ${TSUGA_API_KEY}
                   protocol: http/protobuf
         resource:
+          k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}

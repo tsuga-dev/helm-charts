@@ -1,4 +1,5 @@
 ---
+clusterName: test-cluster
 # Target Allocator example
 # Deploys a TargetAllocator CR and a paired StatefulSet OpenTelemetryCollector.
 # The Target Allocator distributes Prometheus targets evenly across 2 collector replicas.

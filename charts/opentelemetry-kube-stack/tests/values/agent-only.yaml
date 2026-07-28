@@ -1,4 +1,5 @@
 ---
+clusterName: test-cluster
 # Agent-only configuration
 tsuga:
   otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"

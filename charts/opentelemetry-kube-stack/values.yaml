@@ -15,11 +15,13 @@
 #
 # Option 1: Generate new secret (default)
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set clusterName="<CLUSTER_NAME>" \
 #   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
 #   --set tsuga.apiKey="<TSUGA_API_KEY>"
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+#   --set clusterName="<CLUSTER_NAME>" \
 #   --set secret.create=false \
 #   --set secret.name="my-existing-secret" \
 #   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
@@ -58,11 +60,17 @@
 # GLOBAL CONFIGURATION
 # =============================================================================
 
-# -- The name of the cluster to be used in the resource attributes
-# This value is added to all telemetry data as k8s.cluster.name
-# RECOMMENDED: Set this value to identify your cluster in telemetry data
-# If not set, the k8s.cluster.name attribute will be omitted from telemetry
-# @default -- ""
+# -- REQUIRED. The name of the cluster, added to all telemetry as
+# k8s.cluster.name.
+#
+# Installation fails if this is empty. Telemetry from a cluster that does not
+# name itself cannot be told apart from any other cluster's once it reaches
+# Tsuga, and the omission only becomes visible during an incident, which is
+# the worst time to discover it.
+#
+#   --set clusterName=<name>
+#
+# @default -- "" (must be set)
 clusterName: ""
 
 # -- Override the chart name used in resource naming
