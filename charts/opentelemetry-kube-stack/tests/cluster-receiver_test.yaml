@@ -194,3 +194,14 @@ tests:
           content:
             name: GOMEMLIMIT
             value: "429496729"
+
+  - it: should not scope the cluster receiver informer to one node
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # The cluster receiver is cluster-scoped by design.
+      - isNull:
+          path: spec.config.processors.k8s_attributes.filter
