@@ -29,6 +29,27 @@ spec:
   {{- with (.Values.cluster.image | default .Values.image) }}
   image: {{ . }}
   {{- end }}
+  # replicas: 1 bounds the steady state, not a rollout. The operator passes
+  # this strategy straight through to the Deployment, and an unset strategy
+  # gets Kubernetes' defaults of maxSurge and maxUnavailable 25%: at one
+  # replica maxSurge rounds up to 1 and maxUnavailable rounds down to 0, so
+  # every helm upgrade briefly runs two cluster receivers, both scraping
+  # k8s_cluster and both emitting the same cluster metrics and objects.
+  # maxSurge 0 makes the old pod terminate before the new one starts.
+  # maxUnavailable 1 is stated for clarity rather than necessity: Kubernetes
+  # rejects an explicit 0/0 pair, but ResolveFenceposts already promotes
+  # maxUnavailable to 1 when both fenceposts resolve to zero, so the rollout
+  # could not deadlock either way.
+  #
+  # The trade is a short gap on every upgrade, which is the correct side to err
+  # on for cluster metrics: a gap is visible, double-counting is not. Note the
+  # gap cuts the other way for the Warning events stream, which cannot backfill
+  # what it missed while no pod was running.
+  deploymentUpdateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   {{- if or .Values.cluster.resources .Values.resources }}
   resources:
     {{- if .Values.cluster.resources }}
