@@ -48,39 +48,16 @@ Generate environment variables for OpenTelemetry Collector
 {{/*
 The resourcedetection processor, shared by all three collectors.
 
-Off by default, and opt-in rather than opt-out, because every detector worth
-enabling can stop the collector from booting. The processor's Start() returns
-the detector error — "If a configured resource detector fails, the error will
-propagate and stop the collector from starting" — and a detector that returns a
-partial result alongside an error has that result discarded. The feature gate
-that used to suppress this, processor.resourcedetection.propagateerrors, was
-removed in v0.150.0, below this chart's floor, so there is no escape hatch on
-any version we can target.
+Type name is resourcedetection, not the canonical resource_detection, which does
+not exist below v0.153.0 — above this chart's collector floor. Same position as
+cumulativetodelta, canonical from v0.157.0.
 
-That risk is not limited to cloud metadata endpoints. k8snode reads the node
-object from the Kubernetes API and fails Start() if that call fails, and it
-errors before Start() at all if its env var is unset. eks looks safe off-cloud
-but is not: KUBERNETES_SERVICE_HOST is set on every Kubernetes cluster, so its
-own check falls through to the Kubernetes API and can error on GKE, AKS or
-kind. ec2, gcp, azure and aks do return an empty resource without error when
-their metadata service is unreachable, so those are safe to list off-cloud —
-but an on-cloud metadata hiccup at startup is still a hard failure.
+override: false, against the processor's own default of true, so a detected
+value never replaces a cloud.* or host.* attribute an instrumented application
+already set.
 
-Type name is resourcedetection because the canonical resource_detection does not
-exist below v0.153.0, above this chart's floor. Note the direction: from v0.153.0
-resource_detection is canonical and resourcedetection is the DEPRECATED alias, so
-on the image this chart pins by default the collector logs a deprecation warning
-for it at startup. cumulativetodelta is in the same position from v0.157.0. Both
-are kept so a user pinning a floor-version image still gets a working config.
-
-override: false everywhere, against the processor's own default of true, so a
-detected value never replaces a cloud.* or host.* attribute an instrumented
-application already set. Note that where two detectors can answer the same
-attribute, the first one listed wins.
-
-timeout is 15s rather than the factory default of 5s, the value the processor
-README uses in its EKS example: the per-detector retry uses exponential backoff
-with no maximum elapsed time, so a failing detector spends the whole budget.
+timeout falls back to 15s rather than rendering as 0s, which would expire the
+per-detector context before the first call and fail Start().
 */}}
 {{- define "opentelemetry-kube-stack.resourceDetection" -}}
 resourcedetection:
