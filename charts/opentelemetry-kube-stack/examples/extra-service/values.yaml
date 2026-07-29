@@ -6,7 +6,12 @@ agent:
       pipelines:
         extraPipelines:
           metrics/extra:
+            # A pipeline references the component keys the chart actually
+            # renders, so these must be the canonical names — host_metrics and
+            # otlp_http/tsuga, not hostmetrics and otlphttp. Deprecated type
+            # aliases do not help here: the collector matches a pipeline entry
+            # against literal config keys, not against factory aliases.
             receivers:
-              - hostmetrics
+              - host_metrics
             exporters:
-              - otlphttp/tsuga
+              - otlp_http/tsuga

@@ -71,9 +71,12 @@ processors:
 {{- end}}
     passthrough: false
     pod_association:
-      - sources:
-        - from: resource_attribute
-          name: net.host.name
+      # net.host.name used to lead this list and never matched anything: no
+      # component in this pipeline sets that attribute, so the association was
+      # skipped on every record. The prometheus receiver labels the scraped host
+      # as server.address; k8s.pod.uid below is what it does set. Switching to
+      # host.name would not have helped either — the processor additionally
+      # requires that value to parse as an IP address.
       - sources:
         - from: resource_attribute
           name: k8s.pod.ip
