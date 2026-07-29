@@ -29,11 +29,47 @@ receivers:
     collection_interval: 20s
     endpoint: ${env:NODE_IP}:10250
     insecure_skip_verify: true
-    # Collect node and pod metrics (not container) to manage cardinality
-    # Users can add 'container' to metric_groups if detailed container metrics are needed
-    metric_groups: [node, pod]
-    # Add volume type labels for storage observability
+    # container is included deliberately, reversing an earlier decision to omit
+    # it "to manage cardinality". It adds eleven default-on metrics per
+    # container, which is the cost of being able to see which container in a pod
+    # is consuming the pod's budget — the question a pod-level total cannot
+    # answer. volume adds five per volume.
+    metric_groups: [node, pod, container, volume]
+{{- if .Values.agent.kubeletStats.usePodsEndpoint }}
+    # Both of the blocks below make the receiver call the kubelet's /pods
+    # endpoint in addition to /stats/summary: the scraper fetches pod metadata
+    # when extra_metadata_labels is non-empty or when any limit/request
+    # utilization metric is enabled. That call is not incremental — when it
+    # fails the receiver returns no metrics at all for the interval, node and
+    # pod metrics included, not merely the attributes it could not resolve.
+    #
+    # /pods authorizes against nodes/proxy, which this chart's ClusterRole
+    # already grants. GKE Autopilot refuses to grant nodes/proxy at all, so on
+    # Autopilot these must be turned off with
+    # agent.kubeletStats.usePodsEndpoint=false or every scrape is lost.
     extra_metadata_labels: [k8s.volume.type]
+    metrics:
+      # Utilization against the container's own limits and requests, which is
+      # what alerts are written on. Not emitted by default.
+      k8s.container.cpu_limit_utilization:
+        enabled: true
+      k8s.container.cpu_request_utilization:
+        enabled: true
+      k8s.container.memory_limit_utilization:
+        enabled: true
+      k8s.container.memory_request_utilization:
+        enabled: true
+      # Pod-level equivalents. The limit variants are skipped by the receiver
+      # for any pod where a container has no limit set.
+      k8s.pod.cpu_limit_utilization:
+        enabled: true
+      k8s.pod.cpu_request_utilization:
+        enabled: true
+      k8s.pod.memory_limit_utilization:
+        enabled: true
+      k8s.pod.memory_request_utilization:
+        enabled: true
+{{- end }}
   host_metrics:
     root_path: /hostfs
     collection_interval: 10s
