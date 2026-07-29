@@ -16,19 +16,54 @@ receivers:
         name: pods
         mode: watch
 {{- end }}
+{{- if .Values.cluster.collectk8sevents }}
+  # A separate receiver instance, only so events can set
+  # include_initial_state: false — the field is receiver-wide and the pods stream
+  # above needs its snapshot. Sharing one would re-emit the API server's entire
+  # retained event window (an hour by default) on every collector restart, and a
+  # helm upgrade restarts this collector by design.
+  #
+  # field_selector filters at the API server, so Normal events are never watched
+  # or transferred. type is selectable on both core/v1 and events.k8s.io/v1, and
+  # applies to the initial list as well as the watch. Careful when editing: the
+  # API server rejects an unsupported selector name in a background goroutine, so
+  # a typo gives one log line and silence, not a startup failure.
+  #
+  # Repeated warnings are not de-duplicated; k8s_events gained dedup_interval for
+  # that in v0.155.0, above this chart's floor.
+  k8s_objects/events:
+    auth_type: serviceAccount
+    include_initial_state: false
+    objects:
+      - group: events.k8s.io
+        name: events
+        mode: watch
+        field_selector: type=Warning
+{{- end }}
 processors:
   memory_limiter:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
   batch:
-    # Trigger a send when the batch reaches 1000 items.
+    # Send at 5000 items, and cap batches at the same number so the timeout
+    # cannot build one larger than the exporter accepts.
     send_batch_size: 5000
-    # Enforce a hard limit of 5000 items per batch. This prevents the
-    # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+{{- end }}
+{{- if .Values.cluster.collectk8sevents }}
+  # k8s_objects sets no severity, and Tsuga normalizes a missing level to INFO,
+  # which would file every OOMKill as routine. No condition is needed because
+  # this pipeline only ever carries type=Warning records — and a condition would
+  # be a liability, since indexing a log body that is not a map errors once per
+  # record under error_mode: ignore.
+  transform/k8s_event_severity:
+    error_mode: ignore
+    log_statements:
+      - set(log.severity_text, "WARN")
+      - set(log.severity_number, SEVERITY_NUMBER_WARN)
 {{- end }}
   k8s_attributes:
     extract:
@@ -104,6 +139,7 @@ service:
 {{- if .Values.cluster.collectk8sobjects }}
         - k8s_objects
 {{- end }}
+
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
@@ -116,6 +152,27 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlp_http/tsuga
         {{- end }}
+{{- if .Values.cluster.collectk8sevents }}
+    # Its own pipeline so the severity transform only ever sees event records.
+    # k8s_attributes is absent deliberately: a k8s_objects watch record carries
+    # only k8s.namespace.name, which none of this chart's pod_association sources
+    # can match, so the processor would run and change nothing.
+    logs/events:
+      receivers:
+        - k8s_objects/events
+      processors:
+        - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resourcedetection
+{{- end }}
+        - transform/k8s_event_severity
+        - resource
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
+        - otlp_http/tsuga
+        {{- end }}
+{{- end }}
     metrics:
       receivers:
         - k8s_cluster

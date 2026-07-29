@@ -300,6 +300,22 @@ cluster:
   customConfig: {}
   # This is used in the Kubernetes view to show pod configuration
   collectk8sobjects: true
+  # Worth enabling. Events are the only source for OOMKilled, FailedScheduling,
+  # Evicted, ErrImagePull, FailedMount and failing probes — no metric receiver
+  # reports them, and RBAC for events is already granted so this costs no extra
+  # configuration.
+  #
+  # Off by default because the log volume follows cluster health, which is not
+  # something an upgrade should turn on for you.
+  #
+  # Only Warning events are collected, filtered by field_selector at the API
+  # server, so Normal events are never watched or transferred. They are the
+  # high-volume, low-value majority and largely restate what the pods object
+  # stream already carries.
+  #
+  # -- Collect Kubernetes Warning events as logs
+  # @default -- false
+  collectk8sevents: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects)
@@ -453,19 +469,22 @@ agent:
 
   # -- kubelet_stats receiver options
   kubeletStats:
-    # -- Use the kubelet /pods endpoint for pod metadata
-    #
-    # The receiver calls /pods in addition to /stats/summary whenever volume
-    # type labels or any limit/request utilization metric are requested. When
-    # that call fails the receiver discards the ENTIRE scrape for that interval,
-    # node and pod metrics included — not just the attributes it could not
-    # resolve.
+    # The receiver calls the kubelet /pods endpoint, on top of /stats/summary,
+    # whenever volume type labels or any limit/request utilization metric are
+    # requested. If that call fails it discards the ENTIRE scrape for the
+    # interval — node and pod metrics included, not just the attributes it could
+    # not resolve.
     #
     # /pods authorizes against the nodes/proxy subresource, which this chart's
     # ClusterRole grants. GKE Autopilot does not allow nodes/proxy to be granted
-    # at all, so on Autopilot set this to false: the collector then asks for
-    # neither volume type labels nor utilization metrics, and keeps the node,
-    # pod, container and volume metrics that only need /stats/summary.
+    # at all, so on Autopilot this MUST be false or every scrape is lost.
+    #
+    # Setting it to false costs the volume type labels and all eight
+    # limit/request utilization metrics — including the ratios alerts are
+    # usually written on. Node, pod, container and volume metrics are unaffected;
+    # they come from /stats/summary alone.
+    #
+    # -- Use the kubelet /pods endpoint for pod metadata
     # @default -- true
     usePodsEndpoint: true
 

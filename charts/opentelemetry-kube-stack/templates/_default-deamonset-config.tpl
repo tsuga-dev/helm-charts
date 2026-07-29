@@ -161,10 +161,9 @@ receivers:
 
 processors:
   batch:
-    # Trigger a send when the batch reaches 1000 items.
+    # Send at 5000 items, and cap batches at the same number so the timeout
+    # cannot build one larger than the exporter accepts.
     send_batch_size: 5000
-    # Enforce a hard limit of 5000 items per batch. This prevents the
-    # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}

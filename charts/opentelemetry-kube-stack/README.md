@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.10.4](https://img.shields.io/badge/Version-0.10.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.5](https://img.shields.io/badge/Version-0.10.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -341,7 +341,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
 | agent.kubeletStats | object | `{"usePodsEndpoint":true}` | kubelet_stats receiver options |
-| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata  The receiver calls /pods in addition to /stats/summary whenever volume type labels or any limit/request utilization metric are requested. When that call fails the receiver discards the ENTIRE scrape for that interval, node and pod metrics included — not just the attributes it could not resolve.  /pods authorizes against the nodes/proxy subresource, which this chart's ClusterRole grants. GKE Autopilot does not allow nodes/proxy to be granted at all, so on Autopilot set this to false: the collector then asks for neither volume type labels nor utilization metrics, and keeps the node, pod, container and volume metrics that only need /stats/summary. |
+| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
 | agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
@@ -352,6 +352,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
+| cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs |
 | cluster.collectk8sobjects | bool | `true` |  |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects) Default processors: memory_limiter, k8s_attributes, resource, batch |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
