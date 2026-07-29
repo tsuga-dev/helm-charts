@@ -1,9 +1,15 @@
 {{- define "tsuga-otel.cluster-receiver.config.default" -}}
+{{- $healthCheck := .Values.cluster.healthCheckEndpoint | default "" }}
+{{- if $healthCheck }}
+extensions:
+  health_check:
+    endpoint: {{ $healthCheck }}
+{{- end }}
 receivers:
   k8s_cluster:
-    collection_interval: 10s
-    allocatable_types_to_report: [cpu, memory, storage]
-    node_conditions_to_report: [Ready, MemoryPressure, DiskPressure, PIDPressure]
+    collection_interval: {{ .Values.cluster.collectionInterval | default "10s" }}
+    allocatable_types_to_report: {{ toYaml (.Values.cluster.allocatableTypesToReport | default (list "cpu" "memory" "storage")) | nindent 6 }}
+    node_conditions_to_report: {{ toYaml (.Values.cluster.nodeConditionsToReport | default (list "Ready" "MemoryPressure" "DiskPressure" "PIDPressure")) | nindent 6 }}
     metrics:
       k8s.pod.status_reason:
         enabled: true
@@ -45,11 +51,7 @@ processors:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
-  batch:
-    # Send at 5000 items, and cap batches at the same number so the timeout
-    # cannot build one larger than the exporter accepts.
-    send_batch_size: 5000
-    send_batch_max_size: 5000
+  {{- include "opentelemetry-kube-stack.batch" . | nindent 2 }}
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
@@ -68,16 +70,7 @@ processors:
   k8s_attributes:
     extract:
       metadata:
-        - k8s.namespace.name
-        - k8s.deployment.name
-        - k8s.statefulset.name
-        - k8s.daemonset.name
-        - k8s.cronjob.name
-        - k8s.job.name
-        - k8s.node.name
-        - k8s.pod.name
-        - k8s.pod.uid
-        - k8s.pod.start_time
+        {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
       labels:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -132,6 +125,10 @@ exporters:
   {}
 {{- end }}
 service:
+{{- if $healthCheck }}
+  extensions:
+    - health_check
+{{- end }}
   pipelines:
     logs:
       receivers:

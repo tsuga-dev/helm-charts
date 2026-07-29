@@ -122,6 +122,31 @@
                 "extraLabelMapping": {
                     "type": "array"
                 },
+                "fileLog": {
+                    "type": "object",
+                    "properties": {
+                        "exclude": {
+                            "type": "array"
+                        },
+                        "include": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "healthCheckEndpoint": {
+                    "type": "string"
+                },
+                "hostMetrics": {
+                    "type": "object",
+                    "properties": {
+                        "collectionInterval": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "hostNetwork": {
                     "type": "boolean"
                 },
@@ -131,6 +156,18 @@
                 "kubeletStats": {
                     "type": "object",
                     "properties": {
+                        "authType": {
+                            "type": "string"
+                        },
+                        "caFile": {
+                            "type": "string"
+                        },
+                        "collectionInterval": {
+                            "type": "string"
+                        },
+                        "insecureSkipVerify": {
+                            "type": "boolean"
+                        },
                         "metricGroups": {
                             "type": "array",
                             "items": {
@@ -145,8 +182,41 @@
                 "nodeSelector": {
                     "type": "object"
                 },
+                "otlp": {
+                    "type": "object",
+                    "properties": {
+                        "grpcEndpoint": {
+                            "type": "string"
+                        },
+                        "httpEndpoint": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "resources": {
                     "type": "object"
+                },
+                "spanMetrics": {
+                    "type": "object",
+                    "properties": {
+                        "dimensions": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "default": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
                 },
                 "tolerations": {
                     "type": "array"
@@ -176,11 +246,34 @@
                 }
             }
         },
+        "batch": {
+            "type": "object",
+            "properties": {
+                "sendBatchMaxSize": {
+                    "type": "integer"
+                },
+                "sendBatchSize": {
+                    "type": "integer"
+                },
+                "timeout": {
+                    "type": "string"
+                }
+            }
+        },
         "cluster": {
             "type": "object",
             "properties": {
                 "affinity": {
                     "type": "object"
+                },
+                "allocatableTypesToReport": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "collectionInterval": {
+                    "type": "string"
                 },
                 "collectk8sevents": {
                     "type": "boolean"
@@ -267,8 +360,17 @@
                 "extraLabelMapping": {
                     "type": "array"
                 },
+                "healthCheckEndpoint": {
+                    "type": "string"
+                },
                 "image": {
                     "type": "string"
+                },
+                "nodeConditionsToReport": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "nodeSelector": {
                     "type": "object"
@@ -289,6 +391,17 @@
         },
         "image": {
             "type": "string"
+        },
+        "k8sAttributes": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "nameOverride": {
             "type": "string"
@@ -503,6 +616,9 @@
                 "extraLabelMapping": {
                     "type": "array"
                 },
+                "healthCheckEndpoint": {
+                    "type": "string"
+                },
                 "image": {
                     "type": "string"
                 },
@@ -514,6 +630,9 @@
                 },
                 "resources": {
                     "type": "object"
+                },
+                "scrapeInterval": {
+                    "type": "string"
                 },
                 "tolerations": {
                     "type": "array"
@@ -559,6 +678,9 @@
                 "apiKey": {
                     "type": "string"
                 },
+                "compression": {
+                    "type": "string"
+                },
                 "enabledForClusterReceiver": {
                     "type": "boolean"
                 },
@@ -567,6 +689,9 @@
                 },
                 "enabledForStatefulset": {
                     "type": "boolean"
+                },
+                "encoding": {
+                    "type": "string"
                 },
                 "otlpEndpoint": {
                     "type": "string"

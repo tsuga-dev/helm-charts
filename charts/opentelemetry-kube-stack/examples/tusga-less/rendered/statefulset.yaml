@@ -135,8 +135,12 @@ spec:
           value: test-cluster
     exporters:
       debug: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
     service:
-      extensions: []
+      extensions:
+      - health_check
       pipelines:
         metrics:
           exporters:

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - agent.kubeletStats.metricGroups, for controlling kubelet metric cardinality
+- tsuga.encoding and tsuga.compression, for the OTLP exporter wire format
+- Collection intervals: agent.kubeletStats.collectionInterval, agent.hostMetrics.collectionInterval, cluster.collectionInterval, statefulset.scrapeInterval
+- agent.fileLog.include and agent.fileLog.exclude, for scoping log collection
+- agent.spanMetrics.enabled and agent.spanMetrics.dimensions
+- agent.otlp.grpcEndpoint, agent.otlp.httpEndpoint, and per-collector healthCheckEndpoint
+- Kubelet TLS settings: agent.kubeletStats.authType, insecureSkipVerify and caFile
+- Shared k8sAttributes.metadata and batch settings
+- cluster.nodeConditionsToReport and cluster.allocatableTypesToReport
+
+### Fixed
+- The cluster receiver and statefulset collectors now get a health_check extension, so they have a liveness probe
+- agent.fileLog.exclude is no longer discarded when agent.collectOtelLogs is true
 
 ## [opentelemetry-kube-stack-0.10.5] - 2026-07-28
 

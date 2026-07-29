@@ -1,4 +1,10 @@
 {{- define "tsuga-otel.statefulset.config.default" -}}
+{{- $healthCheck := .Values.statefulset.healthCheckEndpoint | default "" }}
+{{- if $healthCheck }}
+extensions:
+  health_check:
+    endpoint: {{ $healthCheck }}
+{{- end }}
 receivers:
   prometheus:
     config:
@@ -6,12 +12,12 @@ receivers:
         # This placeholder config is required but the Target Allocator
         # will override it with dynamically discovered targets
         - job_name: 'otel-collector'
-          scrape_interval: 30s
+          scrape_interval: {{ .Values.statefulset.scrapeInterval | default "30s" }}
           static_configs:
             - targets: ['localhost:8888']
     target_allocator:
       endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
-      interval: 30s
+      interval: {{ .Values.statefulset.scrapeInterval | default "30s" }}
       collector_id: ${POD_NAME}
 
 processors:
@@ -19,9 +25,7 @@ processors:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
-  batch:
-    send_batch_size: 5000
-    send_batch_max_size: 5000
+  {{- include "opentelemetry-kube-stack.batch" . | nindent 2 }}
   # Runs before enrichment in the pipeline: delta state is keyed on the full
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
@@ -32,16 +36,7 @@ processors:
   k8s_attributes:
     extract:
       metadata:
-        - k8s.namespace.name
-        - k8s.deployment.name
-        - k8s.statefulset.name
-        - k8s.daemonset.name
-        - k8s.cronjob.name
-        - k8s.job.name
-        - k8s.node.name
-        - k8s.pod.name
-        - k8s.pod.uid
-        - k8s.pod.start_time
+        {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
       labels:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -99,6 +94,10 @@ exporters:
   {}
 {{- end }}
 service:
+{{- if $healthCheck }}
+  extensions:
+    - health_check
+{{- end }}
   pipelines:
     metrics:
       receivers:

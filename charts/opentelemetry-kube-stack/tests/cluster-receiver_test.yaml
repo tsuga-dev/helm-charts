@@ -261,3 +261,55 @@ tests:
       - equal:
           path: spec.config.service.pipelines["logs/events"].processors
           value: [memory_limiter, resourcedetection, transform/k8s_event_severity, resource, batch]
+
+  - it: should give the cluster receiver a health_check extension
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Without this the deployment has no liveness probe, so a wedged cluster
+      # receiver is never restarted.
+      - equal:
+          path: spec.config.extensions.health_check.endpoint
+          value: ${env:MY_POD_IP}:13133
+      - equal:
+          path: spec.config.service.extensions
+          value: [health_check]
+
+  - it: should let the cluster collection interval and reported conditions change
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectionInterval: 60s
+      cluster.nodeConditionsToReport: [Ready, NetworkUnavailable]
+      cluster.allocatableTypesToReport: [cpu, memory, pods]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.k8s_cluster.collection_interval
+          value: 60s
+      - equal:
+          path: spec.config.receivers.k8s_cluster.node_conditions_to_report
+          value: [Ready, NetworkUnavailable]
+      - equal:
+          path: spec.config.receivers.k8s_cluster.allocatable_types_to_report
+          value: [cpu, memory, pods]
+
+  - it: should let the exporter encoding and compression change
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      tsuga.encoding: proto
+      tsuga.compression: zstd
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.exporters['otlp_http/tsuga'].encoding
+          value: proto
+      - equal:
+          path: spec.config.exporters['otlp_http/tsuga'].compression
+          value: zstd

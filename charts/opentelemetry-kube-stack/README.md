@@ -338,13 +338,29 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | agent.extraEnvs | list | [] | Extra environment variables for agent These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) |
 | agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
+| agent.fileLog | object | `{"exclude":[],"include":["/var/log/pods/*/*/*.log"]}` | file_log receiver paths (used when collectLogs is true) |
+| agent.fileLog.exclude | list | [] | Log file globs to skip. |
+| agent.fileLog.include | list | ["/var/log/pods/*/*/*.log"] | Log file globs to read. |
+| agent.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
+| agent.hostMetrics | object | `{"collectionInterval":"10s"}` | host_metrics receiver options |
+| agent.hostMetrics.collectionInterval | string | "10s" | How often to collect host metrics, e.g. `60s`. |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
-| agent.kubeletStats | object | `{"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options |
+| agent.kubeletStats | object | `{"authType":"serviceAccount","caFile":"","collectionInterval":"20s","insecureSkipVerify":true,"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options |
+| agent.kubeletStats.authType | string | "serviceAccount" | Kubelet authentication method. One of `serviceAccount`, `tls`, `none`. |
+| agent.kubeletStats.caFile | string | "" | CA bundle path used to verify the kubelet, e.g. `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`. Requires insecureSkipVerify to be false, and the file to be mounted in the pod. |
+| agent.kubeletStats.collectionInterval | string | "20s" | How often to collect kubelet metrics, e.g. `60s`. |
+| agent.kubeletStats.insecureSkipVerify | bool | true | Skip verification of the kubelet's serving certificate. |
 | agent.kubeletStats.metricGroups | list | [node, pod, container, volume] | Kubelet metric groups to collect |
-| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata  The receiver calls /pods in addition to /stats/summary whenever volume type labels or any limit/request utilization metric are requested. When that call fails the receiver discards the ENTIRE scrape for that interval, node and pod metrics included — not just the attributes it could not resolve.  /pods authorizes against the nodes/proxy subresource, which this chart's ClusterRole grants. GKE Autopilot does not allow nodes/proxy to be granted at all, so on Autopilot set this to false: the collector then asks for neither volume type labels nor utilization metrics, and keeps the node, pod, container and volume metrics that only need /stats/summary. |
+| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
+| agent.otlp | object | `{"grpcEndpoint":"${env:MY_POD_IP}:4317","httpEndpoint":"${env:MY_POD_IP}:4318"}` | OTLP receiver listen addresses |
+| agent.otlp.grpcEndpoint | string | "${env:MY_POD_IP}:4317" | gRPC listen address. Set to "" to disable the gRPC protocol. |
+| agent.otlp.httpEndpoint | string | "${env:MY_POD_IP}:4318" | HTTP listen address. Set to "" to disable the HTTP protocol. |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
+| agent.spanMetrics | object | `{"dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans) |
+| agent.spanMetrics.dimensions | list | see values.yaml | Span attributes to keep as metric dimensions. `default` supplies a value when the attribute is absent. |
+| agent.spanMetrics.enabled | bool | true | Generate metrics from spans. |
 | agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
 | autoInstrumentation.annotations | object | {} | Extra annotations to add to the Instrumentation resource |
 | autoInstrumentation.apiVersion | string | "opentelemetry.io/v1alpha1" | apiVersion for the Instrumentation CR (depends on operator version) Common values: "opentelemetry.io/v1alpha1" |
@@ -352,7 +368,13 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | autoInstrumentation.labels | object | {} | Extra labels to add to the Instrumentation resource |
 | autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
 | autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
+| batch.sendBatchMaxSize | int | 5000 | Hard cap on items per batch. Lower this if the backend rejects large requests. Keeping it equal to sendBatchSize means a timeout can never build an oversized batch. |
+| batch.sendBatchSize | int | 5000 | Item count that triggers a send. |
+| batch.timeout | string | "" | Maximum time to wait before sending an undersized batch, e.g. `5s`. Empty uses the processor's own default of 200ms. |
 | cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
+| cluster.allocatableTypesToReport | list | [cpu, memory, storage] | Node allocatable resource types reported as metrics. `pods` and `ephemeral-storage` are also valid. |
+| cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. |
+| cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs |
 | cluster.collectk8sobjects | bool | `true` |  |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"extraTelemetry":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects) Default processors: memory_limiter, k8s_attributes, resource, batch |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
@@ -377,13 +399,16 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.extraAnnotationsMapping | list | [] | Annotations mapping configuration for cluster receiver Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | cluster.extraEnvs | list | [] | Extra environment variables for cluster receiver These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) Example:   extraEnvs:     - name: CUSTOM_VAR       value: "custom-value" |
 | cluster.extraLabelMapping | list | [] | Label mapping configuration for cluster receiver Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
+| cluster.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
 | cluster.image | string | "" | OpenTelemetry Collector image for cluster receiver Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
+| cluster.nodeConditionsToReport | list | [Ready, MemoryPressure, DiskPressure, PIDPressure] | Node conditions reported as metrics. Add `NetworkUnavailable`, or the custom conditions node-problem-detector writes, to alert on them. |
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
 | cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
 | clusterName | string | "" (must be set) | REQUIRED. The name of the cluster, added to all telemetry as k8s.cluster.name.  Installation fails if this is empty. Telemetry from a cluster that does not name itself cannot be told apart from any other cluster's once it reaches Tsuga, and the omission only becomes visible during an incident, which is the worst time to discover it.    --set clusterName=<name>  |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
 | image | string | "" | Default OpenTelemetry Collector image Used as fallback when cluster.image or agent.image are not set Format: registry/repository:tag |
+| k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. |
 | nameOverride | string | "" | Override the chart name used in resource naming |
 | nodeSelector | object | {} | Node selector for daemonset mode (agent) Used as default when agent.nodeSelector is not set |
 | opentelemetry-operator.admissionWebhooks.failurePolicy | string | `"Ignore"` |  |
@@ -432,10 +457,12 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | statefulset.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
 | statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
 | statefulset.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
+| statefulset.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
 | statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector |
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
 | statefulset.resources | object | {} | StatefulSet-specific resource limits and requests |
+| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Also the interval at which the collector refreshes its target list from the Target Allocator. |
 | statefulset.tolerations | list | [] | StatefulSet-specific tolerations |
 | targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector |
 | targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
@@ -446,9 +473,11 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | targetAllocator.spec.prometheusCR.serviceMonitorSelector | object | {} | Selector for ServiceMonitor resources An empty selector ({}) matches all ServiceMonitors in all namespaces. |
 | tolerations | list | [] | Tolerations for daemonset mode (agent) Used as default when agent.tolerations is not set |
 | tsuga.apiKey | string | "" | Tsuga API key for authentication Set via: --set tsuga.apiKey="<TSUGA_API_KEY>" Or use external secrets: --set tsuga.apiKey="" |
+| tsuga.compression | string | "gzip" | Compression for the OTLP exporter. One of `gzip`, `zstd`, `snappy`, `none`. |
 | tsuga.enabledForClusterReceiver | bool | true | Enable Tsuga OTLP exporter for the cluster receiver (gateway) |
 | tsuga.enabledForDaemonset | bool | true | Enable Tsuga OTLP exporter for the agent DaemonSet |
 | tsuga.enabledForStatefulset | bool | true | Enable Tsuga OTLP exporter for the StatefulSet collector (when targetAllocator is enabled) |
+| tsuga.encoding | string | "json" | Payload encoding for the OTLP exporter. One of `json`, `proto`. |
 | tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint for telemetry data Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" |
 | validation | object | `{"enabled":true,"enforceNamingConventions":true,"maxNameLength":63}` | Resource naming validation |
 | validation.enabled | bool | true | Enable resource name validation When enabled, validates resource names meet Kubernetes requirements |
