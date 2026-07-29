@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.11.1] - 2026-07-29
+
+### Fixed
+- agent.collectProcesses no longer logs a permission error for every process on every scrape. Process collection is best effort — the agent reports what it can read on the node, and per-process details it has no access to are left off rather than logged
+
 ## [opentelemetry-kube-stack-0.11.0] - 2026-07-29
 
 ### Breaking Changes
