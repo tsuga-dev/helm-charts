@@ -93,10 +93,10 @@ tests:
       name: "test-release"
     asserts:
       - isNotNull:
-          path: spec.config.processors.cumulativetodelta
+          path: spec.config.processors.cumulative_to_delta
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
+          value: [memory_limiter, cumulative_to_delta, k8s_attributes, resource, batch]
 
   - it: should fail to render when clusterName is not set
     set:
@@ -118,11 +118,11 @@ tests:
       name: "test-release"
     asserts:
       - equal:
-          path: spec.config.processors.resourcedetection.detectors
+          path: spec.config.processors.resource_detection.detectors
           value: [env]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, batch]
+          value: [memory_limiter, cumulative_to_delta, resource_detection, k8s_attributes, resource, batch]
 
   - it: should give the statefulset collector a health_check extension
     set:
@@ -152,3 +152,35 @@ tests:
       - equal:
           path: spec.config.receivers.prometheus.target_allocator.interval
           value: 60s
+
+  - it: should pin a concrete collector image tag by default
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
+
+  - it: should associate pods only on sources the processor recognizes
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # net.host.name used to lead this list. Nothing in this pipeline sets that
+      # attribute, so the rule was skipped on every record.
+      - equal:
+          path: spec.config.processors.k8s_attributes.pod_association
+          value:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
