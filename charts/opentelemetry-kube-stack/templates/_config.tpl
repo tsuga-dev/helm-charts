@@ -46,6 +46,28 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
+The resourcedetection processor, shared by all three collectors.
+
+Type name is resourcedetection, not the canonical resource_detection, which does
+not exist below v0.153.0 — above this chart's collector floor. Same position as
+cumulativetodelta, canonical from v0.157.0.
+
+override: false, against the processor's own default of true, so a detected
+value never replaces a cloud.* or host.* attribute an instrumented application
+already set.
+
+timeout falls back to 15s rather than rendering as 0s, which would expire the
+per-detector context before the first call and fail Start().
+*/}}
+{{- define "opentelemetry-kube-stack.resourceDetection" -}}
+resourcedetection:
+  detectors:
+    {{- toYaml .Values.resourceDetection.detectors | nindent 4 }}
+  timeout: {{ .Values.resourceDetection.timeout | default "15s" }}
+  override: false
+{{- end }}
+
+{{/*
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}

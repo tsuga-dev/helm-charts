@@ -88,6 +88,49 @@ fullnameOverride: ""
 image: ""
 
 # =============================================================================
+# RESOURCE DETECTION
+# =============================================================================
+# Adds cloud and host attributes (cloud.provider, cloud.region,
+# cloud.account.id, host.id) so telemetry can be traced back to a specific
+# account, region and instance.
+#
+# Off by default: a detector that fails stops the collector from starting, and
+# no feature gate suppresses that at this chart's collector floor. Set the
+# detectors that match where you actually run:
+#
+#   AWS/EKS      detectors: [env, eks, ec2]
+#   GCP/GKE      detectors: [env, gcp]
+#   Azure/AKS    detectors: [env, aks, azure]
+#   Anywhere     detectors: [env]              # the default
+#
+# ec2 MUST come after eks, so cloud.platform stays aws_eks: eks itself supplies
+# only cloud.provider and cloud.platform, and ec2 is what adds cloud.region,
+# cloud.account.id, cloud.availability_zone, host.id and host.name.
+#
+# Do NOT list eks off EKS. KUBERNETES_SERVICE_HOST is set on every Kubernetes
+# cluster, so its check falls through to the Kubernetes API and can error on
+# GKE, AKS or kind, which prevents startup. ec2, gcp, azure and aks are safe to
+# list anywhere: they return an empty resource, without error, when their
+# metadata service is unreachable.
+#
+# k8snode is unsupported. It reads the node object from the Kubernetes API and
+# fails startup if that call fails, and the only attribute it adds that this
+# chart does not already set is k8s.node.uid.
+resourceDetection:
+  # -- Enable the resourcedetection processor
+  # @default -- false
+  enabled: false
+  # -- Detectors to run, in order. The first detector to supply an attribute
+  # wins; attributes already on the telemetry are never replaced.
+  # @default -- ["env"]
+  detectors:
+    - env
+  # -- Per-detector timeout. A failing detector retries with exponential
+  # backoff until this expires.
+  # @default -- "15s"
+  timeout: 15s
+
+# =============================================================================
 # AUTO-INSTRUMENTATION (APM) CONFIGURATION
 # =============================================================================
 #
