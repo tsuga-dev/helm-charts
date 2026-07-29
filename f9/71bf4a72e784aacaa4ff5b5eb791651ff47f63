@@ -10,6 +10,7 @@ charts/opentelemetry-kube-stack/Chart.yaml
   s_fd9bf2133441bf::t_d380d1271330c3 21
 charts/opentelemetry-kube-stack/README.md
   s_fd9bf2133441bf::t_040338cc570f6a 3,343-344
+  s_fd9bf2133441bf::t_e9b273d4195ab8 345
 charts/opentelemetry-kube-stack/values.schema.json
   s_fd9bf2133441bf::t_9cde0beb8ad285 134-139
 ---
