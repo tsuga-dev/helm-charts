@@ -44,9 +44,6 @@
                         "extraReceivers": {
                             "type": "object"
                         },
-                        "extraTelemetry": {
-                            "type": "object"
-                        },
                         "service": {
                             "type": "object",
                             "properties": {
@@ -294,9 +291,6 @@
                             "type": "object"
                         },
                         "extraReceivers": {
-                            "type": "object"
-                        },
-                        "extraTelemetry": {
                             "type": "object"
                         },
                         "service": {
@@ -567,9 +561,6 @@
                             "type": "object"
                         },
                         "extraReceivers": {
-                            "type": "object"
-                        },
-                        "extraTelemetry": {
                             "type": "object"
                         },
                         "service": {

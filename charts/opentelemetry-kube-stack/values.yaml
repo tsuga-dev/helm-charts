@@ -334,10 +334,8 @@ cluster:
     - MemoryPressure
     - DiskPressure
     - PIDPressure
-  # Valid names are cpu, memory, ephemeral-storage, pods, and anything else in the
-  # node's status.allocatable such as hugepages-2Mi. There is no `storage`, and an
-  # unrecognised name produces no metric and no error.
-  # -- Node allocatable resource types reported as metrics. `pods` is also valid.
+  # Any other key in the node's status.allocatable also works, e.g. hugepages-2Mi.
+  # -- Names from the node's `status.allocatable`: cpu, memory, ephemeral-storage, pods. There is no `storage`, and an unknown name is silently ignored.
   # @default -- [cpu, memory, ephemeral-storage]
   allocatableTypesToReport:
     - cpu
@@ -406,10 +404,6 @@ cluster:
   # Default processors: memory_limiter, resource_detection (when
   # resourceDetection.enabled), k8s_attributes, resource, batch
   config:
-    # -- Additional telemetry to merge into the collector configuration
-    # Merges with default telemetry
-    # @default -- {}
-    extraTelemetry: {}
     # -- Additional receivers to merge into the collector configuration
     # These are merged with default receivers (k8s_cluster, k8s_objects)
     # Example:
@@ -682,11 +676,6 @@ agent:
   # batch
   # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
-    # Does nothing: the template reads config.service.extraTelemetry instead, one
-    # level below this key, so anything set here is dropped.
-    # -- Additional telemetry to merge into the collector configuration (inert, see comment)
-    # @default -- {}
-    extraTelemetry: {}
     # -- Additional receivers to merge into the collector configuration
     # These are merged with default receivers
     # @default -- {}
@@ -914,9 +903,6 @@ statefulset:
   customConfig: {}
   # -- StatefulSet collector configuration (merge-based approach)
   config:
-    # -- Additional telemetry to merge into the collector configuration
-    # @default -- {}
-    extraTelemetry: {}
     # -- Additional receivers to merge into the collector configuration
     # @default -- {}
     extraReceivers: {}

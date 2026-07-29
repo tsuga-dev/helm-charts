@@ -71,15 +71,11 @@ processors:
 {{- end}}
     passthrough: false
     pod_association:
-      # k8s.pod.uid is the one the prometheus receiver actually sets.
-      - sources:
-        - from: resource_attribute
-          name: k8s.pod.ip
+      # The prometheus receiver sets this on every scraped target, so it is the
+      # only association this pipeline needs.
       - sources:
         - from: resource_attribute
           name: k8s.pod.uid
-      - sources:
-        - from: connection
   resource:
     attributes:
       - key: k8s.cluster.name

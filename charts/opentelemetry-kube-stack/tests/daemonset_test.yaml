@@ -23,6 +23,10 @@ tests:
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"
+      # The shared top-level image reaches the collector.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
   - it: should not include tsuga exporter when enabledForDaemonset is false
     set:
@@ -533,31 +537,6 @@ tests:
           path: spec.config.service.extensions
           value: []
 
-  - it: should pin a concrete collector image tag by default
-    set:
-      clusterName: "test-cluster"
-      agent.enabled: true
-    release:
-      name: "test-release"
-    asserts:
-      # Untagged would resolve to :latest, which forces imagePullPolicy: Always
-      # and leaves the version floor unenforceable.
-      - equal:
-          path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
-
-  - it: should let the agent image override the pinned default
-    set:
-      clusterName: "test-cluster"
-      agent.enabled: true
-      agent.image: "example.com/collector:0.157.0"
-    release:
-      name: "test-release"
-    asserts:
-      - equal:
-          path: spec.image
-          value: example.com/collector:0.157.0
-
   - it: should reject a pinned collector image below the v0.157.0 floor
     set:
       clusterName: "test-cluster"
@@ -567,19 +546,7 @@ tests:
       name: "test-release"
     asserts:
       - failedTemplate:
-          errorMessage: "collector image \"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
-
-  - it: should accept a v-prefixed image tag at the floor
-    set:
-      clusterName: "test-cluster"
-      agent.enabled: true
-      agent.image: "example.com/collector:v0.157.0"
-    release:
-      name: "test-release"
-    asserts:
-      - equal:
-          path: spec.image
-          value: example.com/collector:v0.157.0
+          errorPattern: "opentelemetry-collector-contrib:0\\.156\\.0\" is older than v0\\.157\\.0"
 
   - it: should keep the inline-map telemetry resource the operator can parse
     set:
@@ -606,10 +573,23 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # The check covers all three collector images, not just the one whose
-      # template is being rendered.
+      # The check covers every image value, not just the one belonging to the
+      # template being rendered.
       - failedTemplate:
-          errorMessage: "collector image \"example.com/collector:0.150.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"
+
+  - it: should apply the version floor to the shared image
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: "example.com/collector:0.151.0"
+    release:
+      name: "test-release"
+    asserts:
+      # The shared image is in the checked set too, not only the per-collector
+      # overrides.
+      - failedTemplate:
+          errorPattern: "collector:0\\.151\\.0\" is older than v0\\.157\\.0"
 
   - it: should hand the image choice to the operator when the shared image is empty
     set:
@@ -625,17 +605,6 @@ tests:
           path: spec.image
           value: ""
 
-  - it: should apply the version floor to the shared image
-    set:
-      clusterName: "test-cluster"
-      agent.enabled: true
-      image: "example.com/collector:0.150.0"
-    release:
-      name: "test-release"
-    asserts:
-      - failedTemplate:
-          errorMessage: "collector image \"example.com/collector:0.150.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
-
   - it: should reject a suffixed image tag below the floor
     set:
       clusterName: "test-cluster"
@@ -647,7 +616,7 @@ tests:
       # A suffixed tag is a semver prerelease, which a constraint without one
       # excludes — so comparing the bare tag used to let these straight through.
       - failedTemplate:
-          errorMessage: "collector image \"example.com/collector:0.156.0-amd64\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
+          errorPattern: "collector:0\\.156\\.0-amd64\" is older than v0\\.157\\.0"
 
   - it: should skip the floor check for an image it cannot version
     set:

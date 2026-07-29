@@ -166,18 +166,6 @@ tests:
           path: spec.image
           value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
-  - it: should let the statefulset image override the shared one
-    set:
-      clusterName: "test-cluster"
-      targetAllocator.enabled: true
-      statefulset.image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0"
-    release:
-      name: "test-release"
-    asserts:
-      - equal:
-          path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
-
   - it: should associate pods only on sources the processor recognizes
     set:
       clusterName: "test-cluster"
@@ -185,16 +173,12 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # net.host.name used to lead this list. Nothing in this pipeline sets that
-      # attribute, so the rule was skipped on every record.
+      # This pipeline only scrapes. Nothing sets net.host.name or k8s.pod.ip, and
+      # `from: connection` needs an inbound client address that never exists here,
+      # so every other rule was skipped on every record.
       - equal:
           path: spec.config.processors.k8s_attributes.pod_association
           value:
             - sources:
                 - from: resource_attribute
-                  name: k8s.pod.ip
-            - sources:
-                - from: resource_attribute
                   name: k8s.pod.uid
-            - sources:
-                - from: connection

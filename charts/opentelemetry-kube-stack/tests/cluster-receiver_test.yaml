@@ -19,6 +19,10 @@ tests:
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"
+      # The shared top-level image reaches the collector.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
   - it: should not include tsuga exporter when enabledForClusterReceiver is false
     set:
@@ -315,17 +319,6 @@ tests:
       - equal:
           path: spec.config.exporters['otlp_http/tsuga'].compression
           value: zstd
-
-  - it: should pin a concrete collector image tag by default
-    set:
-      clusterName: "test-cluster"
-      cluster.enabled: true
-    release:
-      name: "test-release"
-    asserts:
-      - equal:
-          path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
   - it: should report allocatable types the node object actually carries
     set:

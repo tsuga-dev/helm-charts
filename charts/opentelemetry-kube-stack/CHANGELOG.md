@@ -19,9 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - agent.image, cluster.image and statefulset.image are now per-collector overrides of the shared image rather than independent defaults
 
 ### Fixed
-- cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric
+- cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric, so k8s.node.allocatable_ephemeral_storage now appears where nothing did before
 - Warning events are no longer reported a second time when the API server expires them
-- Drop the net.host.name pod association from the statefulset collector, which never matched a record
+- Reduce the statefulset collector's pod association to k8s.pod.uid. The prometheus receiver is its only receiver and sets no other association source, so the net.host.name, k8s.pod.ip and connection rules never matched a record
 - Stop suffixed image tags such as 0.156.0-amd64 from bypassing the version floor check
 - Correct the documented image defaults for all three collectors
 - Fix the extra-service example, which referenced hostmetrics and otlphttp/tsuga rather than the keys the chart renders
@@ -29,13 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
 
 ### Upgrade notes
-- The top-level image key now does what its documentation always claimed: it sets the image for all three collectors, with agent.image, cluster.image and statefulset.image overriding it individually. Previously it set nothing and was read only by the version check, so a stale value there could fail an otherwise valid render.
-- The statefulset collector moves from opentelemetry-collector-k8s to contrib. If you relied on the smaller k8s image for that pod, set statefulset.image back to it — every component its config uses exists in both.
-- Collector images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. Pod restarts no longer depend on the registry being reachable, and the running collector can no longer drift away from the version the floor check validated. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.
+- If you pinned statefulset.image to the previously documented default, opentelemetry-collector-k8s, that value no longer matches the shared default and will diverge from the other two collectors on every future image bump. Drop the override to follow the shared image, or keep it and bump it yourself — every component the statefulset config uses exists in both distributions.
+- The top-level image key was previously read only by the version check and set nothing, so a stale value there could fail an otherwise valid render. It now sets the image for all three collectors.
+- Images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.
 - Collector 0.157.0 aggregates system.cpu.time and system.cpu.utilization across logical CPUs: the cpu attribute is now opt-in and absent by default. Anything grouping those metrics by cpu needs updating. Restore it by setting the metric's attributes to [cpu, state] through agent.config.extraReceivers.
 - Collector 0.157.0 enables system.cpu.logical.count by default, adding one series per node.
-- cluster.allocatableTypesToReport now yields k8s.node.allocatable_ephemeral_storage where it previously yielded nothing.
-- Collector self-telemetry still uses the legacy inline-map resource format. The collector prefers a resource.attributes array, but the bundled operator cannot parse it and would drop the block entirely, so that migration waits for the operator bump.
 
 ## [opentelemetry-kube-stack-0.10.6] - 2026-07-29
 
