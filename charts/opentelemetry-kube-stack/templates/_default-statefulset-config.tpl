@@ -71,11 +71,20 @@ processors:
 {{- end}}
     passthrough: false
     pod_association:
-      # The prometheus receiver sets this on every scraped target, so it is the
-      # only association this pipeline needs.
+      # k8s.pod.uid is what the prometheus receiver sets on scraped targets, so it
+      # is the only rule that resolves for the default pipeline. The two below are
+      # kept for receivers added through extraReceivers: an inbound OTLP receiver
+      # gives `connection` a client address, and an upstream collector running
+      # k8s_attributes in passthrough mode sets k8s.pod.ip. A rule that cannot
+      # resolve is skipped, so they cost nothing here.
       - sources:
         - from: resource_attribute
           name: k8s.pod.uid
+      - sources:
+        - from: resource_attribute
+          name: k8s.pod.ip
+      - sources:
+        - from: connection
   resource:
     attributes:
       - key: k8s.cluster.name

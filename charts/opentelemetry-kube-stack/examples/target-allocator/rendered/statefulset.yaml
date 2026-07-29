@@ -126,6 +126,11 @@ spec:
         - sources:
           - from: resource_attribute
             name: k8s.pod.uid
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: connection
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80

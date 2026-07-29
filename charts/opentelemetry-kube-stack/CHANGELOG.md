@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric, so k8s.node.allocatable_ephemeral_storage now appears where nothing did before
 - Warning events are no longer reported a second time when the API server expires them
-- Reduce the statefulset collector's pod association to k8s.pod.uid. The prometheus receiver is its only receiver and sets no other association source, so the net.host.name, k8s.pod.ip and connection rules never matched a record
+- Drop the net.host.name pod association from the statefulset collector. The prometheus receiver stopped setting that attribute when RemoveLegacyResourceAttributes went beta in collector 0.126.0, and 0.157.0 removes the gate entirely, so nothing can set it at this chart's floor
 - Stop suffixed image tags such as 0.156.0-amd64 from bypassing the version floor check
 - Correct the documented image defaults for all three collectors
 - Fix the extra-service example, which referenced hostmetrics and otlphttp/tsuga rather than the keys the chart renders

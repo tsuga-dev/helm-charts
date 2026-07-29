@@ -166,22 +166,27 @@ tests:
           path: spec.image
           value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
-  - it: should associate pods only on sources the processor recognizes
+  - it: should not associate pods on net.host.name
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
     release:
       name: "test-release"
     asserts:
-      # This pipeline only scrapes. Nothing sets net.host.name or k8s.pod.ip, and
-      # `from: connection` needs an inbound client address that never exists here,
-      # so every other rule was skipped on every record.
+      # Collector 0.157.0 removed the gate that made the prometheus receiver emit
+      # net.host.name, so no receiver can set it at this chart's floor. The other
+      # rules stay: they resolve for receivers added through extraReceivers.
       - equal:
           path: spec.config.processors.k8s_attributes.pod_association
           value:
             - sources:
                 - from: resource_attribute
                   name: k8s.pod.uid
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: connection
 
   - it: should apply the version floor to the statefulset collector's own image
     set:
