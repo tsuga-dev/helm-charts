@@ -389,6 +389,9 @@
         "fullnameOverride": {
             "type": "string"
         },
+        "image": {
+            "type": "string"
+        },
         "k8sAttributes": {
             "type": "object",
             "properties": {

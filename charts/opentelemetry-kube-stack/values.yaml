@@ -83,6 +83,13 @@ nameOverride: ""
 # @default -- ""
 fullnameOverride: ""
 
+# Override per collector with agent.image, cluster.image or statefulset.image.
+# Keep the tag: an untagged image resolves to :latest, which forces
+# imagePullPolicy: Always and skips the version floor check. Set to "" to let the
+# operator choose the image.
+# -- Collector image used by all three collectors
+image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+
 # =============================================================================
 # RESOURCE DETECTION
 # =============================================================================
@@ -327,10 +334,9 @@ cluster:
     - MemoryPressure
     - DiskPressure
     - PIDPressure
-  # Each entry is looked up verbatim in the node's status.allocatable, and a name
-  # that is not there produces no metric and only a debug-level log. Valid names
-  # are cpu, memory, ephemeral-storage and pods, plus anything else the node
-  # reports such as hugepages-2Mi. Note there is no `storage`.
+  # Valid names are cpu, memory, ephemeral-storage, pods, and anything else in the
+  # node's status.allocatable such as hugepages-2Mi. There is no `storage`, and an
+  # unrecognised name produces no metric and no error.
   # -- Node allocatable resource types reported as metrics. `pods` is also valid.
   # @default -- [cpu, memory, ephemeral-storage]
   allocatableTypesToReport:
@@ -341,8 +347,9 @@ cluster:
   # Set to "" to omit the extension entirely.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- OpenTelemetry Collector image for the cluster receiver
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+  # -- Overrides the top-level image for the cluster receiver only
+  # @default -- ""
+  image: ""
   # -- Extra environment variables for cluster receiver
   # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
   # Example:
@@ -519,11 +526,9 @@ agent:
   # When true, agent uses host networking for better performance
   # @default -- true
   hostNetwork: true
-  # Tagged deliberately: an untagged image resolves to :latest, which forces
-  # imagePullPolicy: Always and cannot be checked against the version floor.
-  # Set to "" to hand the choice to the operator, which also skips that check.
-  # -- OpenTelemetry Collector image for the agent
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+  # -- Overrides the top-level image for the agent only
+  # @default -- ""
+  image: ""
   # -- Extra environment variables for agent
   # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
   # @default -- []
@@ -677,10 +682,8 @@ agent:
   # batch
   # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
-    # Inert: the template reads this from config.service.extraTelemetry, one level
-    # below where it is declared, so anything set here is dropped. Kept because
-    # removing a published key is itself breaking. Wiring it up belongs with the
-    # change that fixes the extra* merge direction.
+    # Does nothing: the template reads config.service.extraTelemetry instead, one
+    # level below this key, so anything set here is dropped.
     # -- Additional telemetry to merge into the collector configuration (inert, see comment)
     # @default -- {}
     extraTelemetry: {}
@@ -900,10 +903,9 @@ statefulset:
   # Set to "" to omit the extension entirely.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # The k8s distribution, not contrib: it carries the prometheus receiver and
-  # every processor this collector's config uses, and the image is smaller.
-  # -- OpenTelemetry Collector image for the statefulset collector
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
+  # -- Overrides the top-level image for the statefulset collector only
+  # @default -- ""
+  image: ""
   # -- Extra environment variables for statefulset collector
   # @default -- []
   extraEnvs: []

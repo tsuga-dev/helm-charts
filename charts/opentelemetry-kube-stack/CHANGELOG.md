@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resource_detection has been canonical since collector 0.153.0, cumulative_to_delta since 0.157.0; the old spellings are deprecated aliases that log a warning on every startup. If your own extraProcessors or extraPipelines reference the old names, update them: a pipeline entry is matched against literal config keys, so a stale reference fails the collector at startup even though the render succeeds.
 
 ### Changed
-- Pin a concrete 0.157.0 image tag on all three collectors, replacing the untagged default, and declare it in values.yaml rather than inside the templates
-- Remove the top-level image key, which controlled no collector's image and could only fail the render
+- Pin a concrete 0.157.0 image tag, replacing the untagged default, and declare it once in values.yaml as a shared top-level image rather than three times inside the templates
+- All three collectors now run the contrib distribution. The statefulset collector previously used opentelemetry-collector-k8s; contrib is a strict superset of it, and the agent already pulls contrib onto every node, so the node running the statefulset stops pulling a second image
+- agent.image, cluster.image and statefulset.image are now per-collector overrides of the shared image rather than independent defaults
 
 ### Fixed
 - cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric
@@ -28,7 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
 
 ### Upgrade notes
-- The top-level image key is gone. It never set any collector's image — each collector reads agent.image, cluster.image or statefulset.image — but the version check read it, so a stale value there could fail an otherwise valid render. If you set it, move the value to the per-collector key you actually meant; setting it now does nothing.
+- The top-level image key now does what its documentation always claimed: it sets the image for all three collectors, with agent.image, cluster.image and statefulset.image overriding it individually. Previously it set nothing and was read only by the version check, so a stale value there could fail an otherwise valid render.
+- The statefulset collector moves from opentelemetry-collector-k8s to contrib. If you relied on the smaller k8s image for that pod, set statefulset.image back to it — every component its config uses exists in both.
 - Collector images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. Pod restarts no longer depend on the registry being reachable, and the running collector can no longer drift away from the version the floor check validated. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.
 - Collector 0.157.0 aggregates system.cpu.time and system.cpu.utilization across logical CPUs: the cpu attribute is now opt-in and absent by default. Anything grouping those metrics by cpu needs updating. Restore it by setting the metric's attributes to [cpu, state] through agent.config.extraReceivers.
 - Collector 0.157.0 enables system.cpu.logical.count by default, adding one series per node.

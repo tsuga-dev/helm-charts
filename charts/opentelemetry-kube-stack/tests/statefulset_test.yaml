@@ -153,10 +153,24 @@ tests:
           path: spec.config.receivers.prometheus.target_allocator.interval
           value: 60s
 
-  - it: should pin a concrete collector image tag by default
+  - it: should use the shared pinned collector image by default
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # contrib, shared with the other two collectors. It is a strict superset of
+      # the k8s distribution, and the agent already pulls it onto every node.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+
+  - it: should let the statefulset image override the shared one
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      statefulset.image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0"
     release:
       name: "test-release"
     asserts:

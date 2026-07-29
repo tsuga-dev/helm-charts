@@ -22,7 +22,7 @@ spec:
   {{- if .Values.statefulset.replicas }}
   replicas: {{ .Values.statefulset.replicas }}
   {{- end }}
-  image: {{ .Values.statefulset.image | quote }}
+  image: {{ .Values.statefulset.image | default .Values.image | quote }}
   {{- if or .Values.statefulset.resources .Values.resources }}
   resources:
     {{- if .Values.statefulset.resources }}

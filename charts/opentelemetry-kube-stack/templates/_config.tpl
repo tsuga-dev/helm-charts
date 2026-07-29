@@ -107,7 +107,7 @@ config at startup with `unknown type` and crash-loops. Only a parseable semver
 tag can be checked; ":latest" resolves at runtime and is skipped.
 */}}
 {{- define "opentelemetry-kube-stack.assertCollectorVersion" -}}
-{{- range list .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
+{{- range list .Values.image .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
 {{- if . -}}
 {{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
 {{/*

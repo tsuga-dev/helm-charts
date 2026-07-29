@@ -26,7 +26,7 @@ spec:
   # replicas to 1; setting it explicitly stops a `kubectl scale` (the CRD
   # exposes a scale subresource on .spec.replicas) from surviving a helm upgrade.
   replicas: 1
-  image: {{ .Values.cluster.image | quote }}
+  image: {{ .Values.cluster.image | default .Values.image | quote }}
   {{- if or .Values.cluster.resources .Values.resources }}
   resources:
     {{- if .Values.cluster.resources }}

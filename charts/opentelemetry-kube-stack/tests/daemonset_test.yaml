@@ -611,11 +611,11 @@ tests:
       - failedTemplate:
           errorMessage: "collector image \"example.com/collector:0.150.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
 
-  - it: should hand the image choice to the operator when set empty
+  - it: should hand the image choice to the operator when the shared image is empty
     set:
       clusterName: "test-cluster"
       agent.enabled: true
-      agent.image: ""
+      image: ""
     release:
       name: "test-release"
     asserts:
@@ -624,6 +624,17 @@ tests:
       - equal:
           path: spec.image
           value: ""
+
+  - it: should apply the version floor to the shared image
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorMessage: "collector image \"example.com/collector:0.150.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
 
   - it: should reject a suffixed image tag below the floor
     set:
