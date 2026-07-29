@@ -38,11 +38,13 @@
 #
 # This chart uses a flexible configuration system with two approaches:
 #
-# 1. MERGE-BASED (Recommended): Uses default configs + your overrides
-#    - Default configs are defined in _default-deamonset-config.tpl and
-#      _default-cluster-receiver-config.tpl
-#    - Use extraReceivers, extraProcessors, extraExporters to add to defaults
-#    - Example: agent.config.extraReceivers adds to default receivers
+# 1. MERGE-BASED (Recommended): Uses default configs + additions
+#    - Default configs are defined in _default-deamonset-config.tpl,
+#      _default-cluster-receiver-config.tpl and _default-statefulset-config.tpl
+#    - Use extraReceivers, extraProcessors, extraExporters to ADD components
+#    - These can only add. A key that the chart already sets is NOT overridden:
+#      the merge keeps the chart's value and silently drops yours. To change a
+#      default, use the dedicated value for it, or customConfig below.
 #
 # 2. FULL CUSTOM: Provide complete OpenTelemetry config
 #    - Set customConfig with your complete YAML configuration
@@ -369,7 +371,9 @@ cluster:
   #           exporters: [otlp_http/tsuga]
   # @default -- {}
   customConfig: {}
-  # This is used in the Kubernetes view to show pod configuration
+  # -- Watch pod objects and send them as logs. Powers the Kubernetes view,
+  # which uses them to show pod configuration.
+  # @default -- true
   collectk8sobjects: true
   # Worth enabling. Events are the only source for OOMKilled, FailedScheduling,
   # Evicted, ErrImagePull, FailedMount and failing probes — no metric receiver
@@ -389,8 +393,10 @@ cluster:
   collectk8sevents: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects)
-  # Default processors: memory_limiter, k8s_attributes, resource, batch
+  # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects),
+  # k8s_objects/events (when cluster.collectk8sevents)
+  # Default processors: memory_limiter, resourcedetection (when
+  # resourceDetection.enabled), k8s_attributes, resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry
@@ -664,9 +670,10 @@ agent:
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp
-  # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
-  # resource, resource/node, batch
-  # Default connectors: span_metrics
+  # Default processors: memory_limiter, cumulativetodelta, resourcedetection
+  # (when resourceDetection.enabled), k8s_attributes, resource, resource/node,
+  # batch
+  # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
