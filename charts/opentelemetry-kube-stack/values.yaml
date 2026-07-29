@@ -557,9 +557,9 @@ agent:
   # -- OTLP receiver listen addresses
   otlp:
     # With `hostNetwork: true` these bind on the node's own IP, so they conflict
-    # with any other agent on the node already holding the port — a Datadog
-    # agent or a second collector DaemonSet. Change the port here if that
-    # happens. Use `0.0.0.0:4317` to listen on all interfaces.
+    # with anything else on the node already holding the port — another
+    # monitoring agent, or a second collector DaemonSet. Change the port here if
+    # that happens. Use `0.0.0.0:4317` to listen on all interfaces.
     # -- gRPC listen address. Set to "" to disable the gRPC protocol.
     # @default -- "${env:MY_POD_IP}:4317"
     grpcEndpoint: "${env:MY_POD_IP}:4317"
