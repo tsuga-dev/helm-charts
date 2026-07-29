@@ -109,11 +109,16 @@ image: ""
 # only cloud.provider and cloud.platform, and ec2 is what adds cloud.region,
 # cloud.account.id, cloud.availability_zone, host.id and host.name.
 #
-# Do NOT list eks off EKS. KUBERNETES_SERVICE_HOST is set on every Kubernetes
-# cluster, so its check falls through to the Kubernetes API and can error on
-# GKE, AKS or kind, which prevents startup. ec2, gcp, azure and aks are safe to
-# list anywhere: they return an empty resource, without error, when their
-# metadata service is unreachable.
+# Prefer leaving eks out unless you are on EKS. KUBERNETES_SERVICE_HOST is set
+# on every Kubernetes cluster, so the detector's own check falls through to a
+# Kubernetes API call rather than short-circuiting. That call failing is what
+# would stop the collector from starting — not merely finding nothing. Tested
+# on Docker Desktop with [env, eks, ec2]: every collector started and the
+# detector returned an empty resource without error. So this is a risk to avoid
+# taking, not a guaranteed breakage.
+#
+# ec2, gcp, azure and aks are safe to list anywhere: they return an empty
+# resource, without error, when their metadata service is unreachable.
 #
 # k8snode is unsupported. It reads the node object from the Kubernetes API and
 # fails startup if that call fails, and the only attribute it adds that this
