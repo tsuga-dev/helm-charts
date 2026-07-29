@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop suffixed image tags such as 0.156.0-amd64 from bypassing the version floor check
 - Correct the documented image defaults for all three collectors, and the purpose of the top-level image key
 - Fix the extra-service example, which referenced hostmetrics and otlphttp/tsuga rather than the keys the chart renders
+- Correct the collector self-telemetry notes: internal metrics do reach Tsuga, and the operator does not override a user-supplied telemetry reader
+- Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
 
 ### Upgrade notes
 - Collector images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. Pod restarts no longer depend on the registry being reachable, and the running collector can no longer drift away from the version the floor check validated. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.

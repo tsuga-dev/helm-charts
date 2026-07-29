@@ -79,7 +79,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 
 Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
 
-Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga as OTLP. Because supplying a reader replaces the collector's default one, there is no Prometheus endpoint on `:8888` alongside it. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md) for the detail.
+Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga by the collector's own embedded SDK. Bypassing the pipelines is deliberate: it means these metrics still arrive when a pipeline is wedged, which is when they matter most. Because supplying a reader replaces the collector's default one, nothing is served on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md).
 
 **Default Spanmetrics Dimensions:**
 - `http.request.method`
