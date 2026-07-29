@@ -696,8 +696,9 @@ agent:
     #
     # The defaults it is meant to merge with are the k8s.cluster.name and
     # service.instance.id resource attributes, plus an OTLP metrics reader when
-    # Tsuga is enabled. The operator overrides `readers` with its own Prometheus
-    # reader on :8888 regardless — see docs/collector-internal-metrics.md.
+    # Tsuga is enabled. That reader does reach the collector unchanged, so
+    # self-metrics are pushed to Tsuga and nothing is served on :8888 — see
+    # docs/collector-internal-metrics.md.
     # -- Additional telemetry to merge into the collector configuration (inert, see comment)
     # @default -- {}
     extraTelemetry: {}

@@ -1,17 +1,13 @@
 # Collector Internal Metrics: Design Notes
 
-## Problem
+## Background
 
-The OpenTelemetry Operator permanently overrides `service.telemetry.metrics` in every collector
-ConfigMap it manages. No matter what the `OpenTelemetryCollector` CR specifies under
-`spec.config.service.telemetry.metrics`, the operator's mutating webhook replaces it with a
-Prometheus pull reader on port 8888 before the ConfigMap is written to Kubernetes.
-
-This means the intended OTLP-push path — configuring a `periodic` reader with an `otlp` exporter
-in the CR — is silently discarded at deploy time. Relevant upstream history:
+The operator used to overwrite `service.telemetry.metrics` in every collector ConfigMap it managed,
+replacing whatever the CR asked for with a Prometheus pull reader on port 8888 and silently
+discarding the intended OTLP-push path. Upstream history:
 
 - [#3730](https://github.com/open-telemetry/opentelemetry-operator/issues/3730) — operator ignores
-  user-configured readers and falls back to the deprecated `address` field; supposedly fixed by
+  user-configured readers and falls back to the deprecated `address` field; addressed by
   [PR #3874](https://github.com/open-telemetry/opentelemetry-operator/pull/3874)
 - [#3913](https://github.com/open-telemetry/opentelemetry-operator/issues/3913) — PR #3874
   introduced a regression where the intermediate Go type dropped all non-metrics telemetry fields
@@ -20,12 +16,20 @@ in the CR — is silently discarded at deploy time. Relevant upstream history:
   2025, first shipped in v0.149.0) — replaces the overwrite with `mergo.Merge` to preserve
   user-specified telemetry fields
 
-PR #3915 is included in the operator version this chart bundles (v0.152.0 via helm chart 0.114.1)
-and does fix the orthogonal regression from #3913 (non-metrics fields like `logs.level` are now
-preserved). However, **the metrics readers are still forced by the operator** — even with the fix,
-the webhook replaces `service.telemetry.metrics.readers` with its own prometheus pull reader on
-port 8888, discarding any user-configured periodic/OTLP reader. This was confirmed by inspecting
-the live ConfigMap after deployment with operator v0.152.0.
+**This is fixed in the operator version the chart bundles (v0.152.0 via helm chart 0.114.1), and the
+chart's OTLP reader now survives to the ConfigMap.** `ServiceApplyDefaults` in
+`internal/otelconfig/config.go` returns early when the parsed telemetry already has readers
+(`if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0`), so it never reaches the code that
+appends a Prometheus reader. Verified on a live cluster running this chart at 0.11.0: all three
+collectors' ConfigMaps contain only the chart's `periodic` OTLP reader, both `telemetry.resource`
+attributes are intact, and nothing is listening on `:8888`.
+
+An earlier revision of this document claimed the readers were still forced. That no longer
+reproduces; the note is kept because it explains why the block is shaped the way it is.
+
+One consequence worth knowing: because there is no Prometheus reader, `:8888` is not served. The
+statefulset collector's placeholder scrape config targets `localhost:8888` and logs
+`Failed to scrape Prometheus endpoint` until the Target Allocator replaces it with real targets.
 
 ## Current approach: `service::telemetry`
 
@@ -51,12 +55,15 @@ bump, not before.
 pointed at `${TSUGA_OTLP_ENDPOINT}/v1/metrics` with a bearer-token header. Emitted only when the
 Tsuga exporter is enabled; without credentials there is nowhere to push.
 
-This is the configuration the chart *asks* for. As described above, the operator webhook still
-replaces `readers` with its own Prometheus pull reader on `:8888`, so in practice internal metrics
-are exposed for scraping rather than pushed. The block is kept so the intended behaviour lands as
-soon as the operator stops overriding it. Getting those metrics into Tsuga today requires scraping
-`:8888` yourself — e.g. a `prometheus` receiver added via `agent.config.extraReceivers` plus a
-matching pipeline, or the Target Allocator statefulset.
+This reaches the ConfigMap unchanged, so internal metrics are pushed to Tsuga rather than exposed
+for scraping. Confirmed live: the collectors hold established connections to the intake on :443 and
+log no export failures.
+
+Note that supplying readers replaces the collector's own default reader rather than adding to it, so
+there is no Prometheus endpoint alongside the push path. Adding one back through
+`<collector>.config.service.extraTelemetry` does not work: that merge is destination-wins, and since
+`metrics` already exists in the default the supplied `readers` list is dropped. Getting a scrapable
+endpoint today means editing the default config, not merging into it.
 
 ## Why POD_UID, not POD_NAME
 
