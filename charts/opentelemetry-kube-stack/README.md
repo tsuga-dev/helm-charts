@@ -362,7 +362,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.hostMetrics | object | `{"collectionInterval":"10s"}` | host_metrics receiver options |
 | agent.hostMetrics.collectionInterval | string | "10s" | How often to collect host metrics, e.g. `60s`. |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
-| agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0 |
+| agent.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | OpenTelemetry Collector image for the agent |
 | agent.kubeletStats | object | `{"authType":"serviceAccount","caFile":"","collectionInterval":"20s","insecureSkipVerify":true,"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options |
 | agent.kubeletStats.authType | string | "serviceAccount" | Kubelet authentication method. One of `serviceAccount`, `tls`, `none`. |
 | agent.kubeletStats.caFile | string | "" | CA bundle path used to verify the kubelet, e.g. `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`. Requires insecureSkipVerify to be false, and the file to be mounted in the pod. |
@@ -417,14 +417,13 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | cluster.extraEnvs | list | [] | Extra environment variables for cluster receiver These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) Example:   extraEnvs:     - name: CUSTOM_VAR       value: "custom-value" |
 | cluster.extraLabelMapping | list | [] | Label mapping configuration for cluster receiver Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | cluster.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
-| cluster.image | string | "" | OpenTelemetry Collector image for cluster receiver Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0 |
+| cluster.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | OpenTelemetry Collector image for the cluster receiver |
 | cluster.nodeConditionsToReport | list | [Ready, MemoryPressure, DiskPressure, PIDPressure] | Node conditions reported as metrics. Add `NetworkUnavailable`, or the custom conditions node-problem-detector writes, to alert on them. |
 | cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
 | cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
 | cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
 | clusterName | string | "" (must be set) | REQUIRED. The name of the cluster, added to all telemetry as k8s.cluster.name.  Installation fails if this is empty. Telemetry from a cluster that does not name itself cannot be told apart from any other cluster's once it reaches Tsuga, and the omission only becomes visible during an incident, which is the worst time to discover it.    --set clusterName=<name>  |
 | fullnameOverride | string | "" | Override the full name used in resource naming |
-| image | string | "" | Collector image included in the version-floor check. Format: registry/repository:tag |
 | k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. |
 | nameOverride | string | "" | Override the chart name used in resource naming |
 | nodeSelector | object | {} | Node selector for daemonset mode (agent) Used as default when agent.nodeSelector is not set |
@@ -475,7 +474,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
 | statefulset.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | statefulset.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
-| statefulset.image | string | "" | OpenTelemetry Collector image for statefulset collector Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0 |
+| statefulset.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0"` | OpenTelemetry Collector image for the statefulset collector |
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
 | statefulset.resources | object | {} | StatefulSet-specific resource limits and requests |

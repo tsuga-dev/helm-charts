@@ -598,18 +598,32 @@ tests:
             k8s.cluster.name: test-cluster
             service.instance.id: ${POD_UID}
 
-  - it: should apply the version floor to the top-level image key
+  - it: should apply the version floor to every collector image
     set:
       clusterName: "test-cluster"
       agent.enabled: true
-      image: "example.com/collector:0.150.0"
+      cluster.image: "example.com/collector:0.150.0"
     release:
       name: "test-release"
     asserts:
-      # The top-level key is not a fallback for any collector image; the floor
-      # check is the only thing that reads it.
+      # The check covers all three collector images, not just the one whose
+      # template is being rendered.
       - failedTemplate:
           errorMessage: "collector image \"example.com/collector:0.150.0\" is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x."
+
+  - it: should hand the image choice to the operator when set empty
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: ""
+    release:
+      name: "test-release"
+    asserts:
+      # An empty image means the operator picks, which also means the floor
+      # check has nothing to verify.
+      - equal:
+          path: spec.image
+          value: ""
 
   - it: should reject a suffixed image tag below the floor
     set:

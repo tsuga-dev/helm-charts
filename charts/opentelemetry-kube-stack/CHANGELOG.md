@@ -14,19 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resource_detection has been canonical since collector 0.153.0, cumulative_to_delta since 0.157.0; the old spellings are deprecated aliases that log a warning on every startup. If your own extraProcessors or extraPipelines reference the old names, update them: a pipeline entry is matched against literal config keys, so a stale reference fails the collector at startup even though the render succeeds.
 
 ### Changed
-- Pin a concrete 0.157.0 image tag on all three collectors, replacing the untagged default
+- Pin a concrete 0.157.0 image tag on all three collectors, replacing the untagged default, and declare it in values.yaml rather than inside the templates
+- Remove the top-level image key, which controlled no collector's image and could only fail the render
 
 ### Fixed
 - cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric
 - Warning events are no longer reported a second time when the API server expires them
 - Drop the net.host.name pod association from the statefulset collector, which never matched a record
 - Stop suffixed image tags such as 0.156.0-amd64 from bypassing the version floor check
-- Correct the documented image defaults for all three collectors, and the purpose of the top-level image key
+- Correct the documented image defaults for all three collectors
 - Fix the extra-service example, which referenced hostmetrics and otlphttp/tsuga rather than the keys the chart renders
 - Correct the collector self-telemetry notes: internal metrics do reach Tsuga, and the operator does not override a user-supplied telemetry reader
 - Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
 
 ### Upgrade notes
+- The top-level image key is gone. It never set any collector's image — each collector reads agent.image, cluster.image or statefulset.image — but the version check read it, so a stale value there could fail an otherwise valid render. If you set it, move the value to the per-collector key you actually meant; setting it now does nothing.
 - Collector images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. Pod restarts no longer depend on the registry being reachable, and the running collector can no longer drift away from the version the floor check validated. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.
 - Collector 0.157.0 aggregates system.cpu.time and system.cpu.utilization across logical CPUs: the cpu attribute is now opt-in and absent by default. Anything grouping those metrics by cpu needs updating. Restore it by setting the metric's attributes to [cpu, state] through agent.config.extraReceivers.
 - Collector 0.157.0 enables system.cpu.logical.count by default, adding one series per node.

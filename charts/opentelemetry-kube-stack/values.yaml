@@ -83,14 +83,6 @@ nameOverride: ""
 # @default -- ""
 fullnameOverride: ""
 
-# Read only by the collector version check, which fails the render if any image
-# set here or on a collector is tagged below the chart's v0.157.0 floor. It is
-# NOT a fallback for the per-collector images: agent.image, cluster.image and
-# statefulset.image each fall back to their own pinned default, not to this key.
-# -- Collector image included in the version-floor check. Format: registry/repository:tag
-# @default -- ""
-image: ""
-
 # =============================================================================
 # RESOURCE DETECTION
 # =============================================================================
@@ -349,10 +341,8 @@ cluster:
   # Set to "" to omit the extension entirely.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- OpenTelemetry Collector image for cluster receiver
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
-  # @default -- ""
-  image: ""
+  # -- OpenTelemetry Collector image for the cluster receiver
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   # -- Extra environment variables for cluster receiver
   # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
   # Example:
@@ -529,10 +519,11 @@ agent:
   # When true, agent uses host networking for better performance
   # @default -- true
   hostNetwork: true
-  # -- OpenTelemetry Collector image for agent
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
-  # @default -- ""
-  image: ""
+  # Tagged deliberately: an untagged image resolves to :latest, which forces
+  # imagePullPolicy: Always and cannot be checked against the version floor.
+  # Set to "" to hand the choice to the operator, which also skips that check.
+  # -- OpenTelemetry Collector image for the agent
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   # -- Extra environment variables for agent
   # These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP)
   # @default -- []
@@ -909,10 +900,10 @@ statefulset:
   # Set to "" to omit the extension entirely.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- OpenTelemetry Collector image for statefulset collector
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
-  # @default -- ""
-  image: ""
+  # The k8s distribution, not contrib: it carries the prometheus receiver and
+  # every processor this collector's config uses, and the image is smaller.
+  # -- OpenTelemetry Collector image for the statefulset collector
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
   # -- Extra environment variables for statefulset collector
   # @default -- []
   extraEnvs: []

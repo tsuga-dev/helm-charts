@@ -26,8 +26,7 @@ spec:
   # replicas to 1; setting it explicitly stops a `kubectl scale` (the CRD
   # exposes a scale subresource on .spec.replicas) from surviving a helm upgrade.
   replicas: 1
-  {{- /* Tagged default — see the note in daemonset.yaml. */}}
-  image: {{ .Values.cluster.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0" }}
+  image: {{ .Values.cluster.image | quote }}
   {{- if or .Values.cluster.resources .Values.resources }}
   resources:
     {{- if .Values.cluster.resources }}
