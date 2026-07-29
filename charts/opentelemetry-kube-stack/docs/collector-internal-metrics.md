@@ -1,31 +1,80 @@
 # Collector Internal Metrics: Design Notes
 
-## Problem
+## Background
 
-The OpenTelemetry Operator permanently overrides `service.telemetry.metrics` in every collector
-ConfigMap it manages. No matter what the `OpenTelemetryCollector` CR specifies under
-`spec.config.service.telemetry.metrics`, the operator's mutating webhook replaces it with a
-Prometheus pull reader on port 8888 before the ConfigMap is written to Kubernetes.
+The chart configures collector self-telemetry through `service::telemetry`, using a `periodic`
+reader with an OTLP exporter that pushes to Tsuga. Internal metrics reach Tsuga this way — verified
+on a live cluster: the rendered ConfigMap contains the chart's reader, and `otelcol_*` series
+(e.g. `otelcol_exporter_sent_metric_points`, `otelcol_process_memory_rss`,
+`otelcol_exporter_queue_size`) arrive with `k8s.pod.name`, `k8s.namespace.name` and
+`k8s.node.name` attached.
 
-This means the intended OTLP-push path — configuring a `periodic` reader with an `otlp` exporter
-in the CR — is silently discarded at deploy time. Relevant upstream history:
+**An earlier version of this document claimed the operator's mutating webhook replaces
+`service.telemetry.metrics.readers` with a Prometheus pull reader on port 8888, discarding the OTLP
+block. That was wrong**, and it is corrected here because acting on it would have meant either
+deleting a working configuration or building a redundant second mechanism beside it.
 
-- [#3730](https://github.com/open-telemetry/opentelemetry-operator/issues/3730) — operator ignores
-  user-configured readers and falls back to the deprecated `address` field; supposedly fixed by
-  [PR #3874](https://github.com/open-telemetry/opentelemetry-operator/pull/3874)
-- [#3913](https://github.com/open-telemetry/opentelemetry-operator/issues/3913) — PR #3874
-  introduced a regression where the intermediate Go type dropped all non-metrics telemetry fields
-  (e.g. `logs.level`)
-- [PR #3915](https://github.com/open-telemetry/opentelemetry-operator/pull/3915) (merged April 16,
-  2025, first shipped in v0.149.0) — replaces the overwrite with `mergo.Merge` to preserve
-  user-specified telemetry fields
+The operator only supplies a Prometheus reader when the user has configured none. From
+`internal/otelconfig/config.go`, identical at operator v0.152.0 and v0.156.0:
 
-PR #3915 is included in the operator version this chart bundles (v0.152.0 via helm chart 0.114.1)
-and does fix the orthogonal regression from #3913 (non-metrics fields like `logs.level` are now
-preserved). However, **the metrics readers are still forced by the operator** — even with the fix,
-the webhook replaces `service.telemetry.metrics.readers` with its own prometheus pull reader on
-port 8888, discarding any user-configured periodic/OTLP reader. This was confirmed by inspecting
-the live ConfigMap after deployment with operator v0.152.0.
+```go
+if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
+    // The user already set the address or the readers, so we don't need to do anything
+    return events, nil
+}
+...
+reader := AddPrometheusMetricsEndpoint(host, port)
+tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
+```
+
+It returns early when readers are present, and otherwise *appends*. It never overwrites. Both call
+sites — the defaulting webhook and the ConfigMap builder — run the same function.
+
+Upstream history, for context on why the confusion was plausible:
+
+- [#3730](https://github.com/open-telemetry/opentelemetry-operator/issues/3730) — operator ignored
+  user-configured readers and fell back to the deprecated `address` field
+- [#3913](https://github.com/open-telemetry/opentelemetry-operator/issues/3913) — the fix for #3730
+  introduced a regression that dropped non-metrics telemetry fields such as `logs.level`
+- [PR #3915](https://github.com/open-telemetry/opentelemetry-operator/pull/3915) (first shipped in
+  v0.149.0) — replaced the overwrite with a merge that preserves user-specified telemetry fields
+
+So on any operator this chart supports, a user-supplied reader survives.
+
+## Why self-telemetry bypasses the pipelines
+
+`service::telemetry` configures the collector's own embedded OTel SDK, which sits outside the
+pipeline graph. There is no internal-telemetry receiver to wire into `service::pipelines`; routing
+self-telemetry through a pipeline would require exposing it as Prometheus on `:8888` and scraping
+`localhost` with a `prometheus` receiver.
+
+That is deliberately not done:
+
+- **It would die with the pipeline it is meant to observe.** `memory_limiter` runs first in every
+  default pipeline and sheds load under memory pressure, so memory metrics would disappear exactly
+  when memory is the problem. A full exporter queue would take `otelcol_exporter_queue_size` and
+  `otelcol_exporter_send_failed_*` with it.
+- **It would feed back on itself.** Metrics about exporting metrics would pass through the exporter
+  and generate more; `otelcol_cumulativetodelta_datapoints` would flow through `cumulativetodelta`.
+- **It would cost fidelity and timeliness.** Round-tripping OTLP through Prometheus and back loses
+  temporality and exemplar detail, and adds a scrape interval of latency.
+- **It would add moving parts** — the `:8888` reader, a receiver, a scrape job, and the operator's
+  port and annotation handling — in place of one config block.
+
+## Endpoint asymmetry
+
+The reader's endpoint carries the signal path (`${TSUGA_OTLP_ENDPOINT}/v1/metrics`) while the
+`otlp_http/tsuga` exporter takes the bare endpoint. This is required, because they are different
+exporters with opposite conventions:
+
+- the collector's `otlphttp` exporter takes a **base URL** and appends the signal path itself —
+  "for metrics `/v1/metrics` will be appended" ([exporter README](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlphttpexporter/README.md))
+- the SDK's declarative config takes the **full URL** — the OTel Configuration schema defines
+  `OtlpHttpExporter.endpoint` as "Configure endpoint, including the signal specific path", with a
+  default of `http://localhost:4318/v1/{signal}`
+  ([schema/common.yaml](https://github.com/open-telemetry/opentelemetry-configuration/blob/main/schema/common.yaml))
+
+Making the two consistent would silently break self-telemetry.
 
 ## Current approach: `service::telemetry`
 
@@ -43,12 +92,8 @@ The helper emits two things:
 pointed at `${TSUGA_OTLP_ENDPOINT}/v1/metrics` with a bearer-token header. Emitted only when the
 Tsuga exporter is enabled; without credentials there is nowhere to push.
 
-This is the configuration the chart *asks* for. As described above, the operator webhook still
-replaces `readers` with its own Prometheus pull reader on `:8888`, so in practice internal metrics
-are exposed for scraping rather than pushed. The block is kept so the intended behaviour lands as
-soon as the operator stops overriding it. Getting those metrics into Tsuga today requires scraping
-`:8888` yourself — e.g. a `prometheus` receiver added via `agent.config.extraReceivers` plus a
-matching pipeline, or the Target Allocator statefulset.
+This is the configuration the chart asks for, and — per the Background section above — the
+configuration that is actually deployed. No self-scrape of `:8888` is needed.
 
 ## Why POD_UID, not POD_NAME
 

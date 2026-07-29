@@ -125,7 +125,27 @@ resolve at runtime and cannot be verified here.
 {{- end -}}
 
 {{/*
-Generate Otel telemetry export
+Collector self-telemetry, shared by all three collectors.
+
+This deliberately bypasses the pipelines. service::telemetry configures the
+collector's own embedded OTel SDK, which sits outside the pipeline graph, so
+these metrics still arrive when a pipeline is wedged — memory_limiter shedding
+under pressure, an exporter queue full, a processor misconfigured. Routing them
+through the pipelines instead would lose exactly the diagnostics that explain
+the failure, and would feed metrics about exporting metrics back through the
+exporter.
+
+Note the endpoint: it carries the /v1/metrics path, while the otlp_http/tsuga
+exporter takes the bare endpoint. That asymmetry is required, not an oversight.
+The two are different exporters with opposite conventions:
+
+  - the collector's otlphttp exporter takes a base URL and appends the signal
+    path itself ("for metrics /v1/metrics will be appended")
+  - the SDK's declarative config takes the full URL: the OTel Configuration
+    schema defines OtlpHttpExporter.endpoint as "Configure endpoint, including
+    the signal specific path", defaulting to http://localhost:4318/v1/{signal}
+
+Harmonising them would silently break self-telemetry.
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
 {{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}

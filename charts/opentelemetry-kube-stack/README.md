@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.10.6](https://img.shields.io/badge/Version-0.10.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.7](https://img.shields.io/badge/Version-0.10.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -79,7 +79,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 
 Components in [brackets] are conditional: `resourcedetection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
 
-Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline — but be aware that **it does not currently reach Tsuga**: the operator's webhook replaces the configured OTLP reader with a Prometheus reader on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md) for the detail and the workaround.
+Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga by the collector's own embedded SDK. Bypassing the pipelines is deliberate: it means these metrics still arrive when a pipeline is wedged, which is when they matter most. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md).
 
 **Default Spanmetrics Dimensions:**
 - `http.request.method`

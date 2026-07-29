@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.10.7] - 2026-07-29
+
+### Fixed
+- Correct the collector self-telemetry notes: internal metrics do reach Tsuga, and the operator does not override a user-supplied telemetry reader
+- Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
+
 ## [opentelemetry-kube-stack-0.10.6] - 2026-07-29
 
 ### Added
