@@ -17,42 +17,20 @@ receivers:
         mode: watch
 {{- end }}
 {{- if .Values.cluster.collectk8sevents }}
-  # A separate instance, only so events can set include_initial_state: false —
-  # the field is receiver-wide, and the pods stream above needs the snapshot.
+  # A separate receiver instance, only so events can set
+  # include_initial_state: false — the field is receiver-wide and the pods stream
+  # above needs its snapshot. Sharing one would re-emit the API server's entire
+  # retained event window (an hour by default) on every collector restart, and a
+  # helm upgrade restarts this collector by design.
   #
-  # Without that, every collector restart re-emits the API server's whole
-  # retained event window (an hour by default) as new records. This chart
-  # restarts the cluster receiver on every helm upgrade by design, so shared
-  # settings would turn each upgrade into an hour of duplicated warnings. The
-  # receiver still lists once to obtain a resourceVersion, it just does not
-  # emit that snapshot, so the cost is only warnings raised while the collector
-  # was down.
+  # field_selector filters at the API server, so Normal events are never watched
+  # or transferred. type is selectable on both core/v1 and events.k8s.io/v1, and
+  # applies to the initial list as well as the watch. Careful when editing: the
+  # API server rejects an unsupported selector name in a background goroutine, so
+  # a typo gives one log line and silence, not a startup failure.
   #
-  # Kubernetes events are the only source for OOMKilled, FailedScheduling,
-  # Evicted, ErrImagePull, FailedMount and failing probes: no metric receiver
-  # reports them.
-  #
-  # field_selector filters at the API server, so Normal events are never
-  # watched, transferred or processed. type is a selectable field on both
-  # core/v1 and events.k8s.io/v1, and the receiver applies the selector to the
-  # initial list as well as the watch. Normal events are the high-volume,
-  # low-value majority and restate what the pods stream already carries.
-  #
-  # Worth knowing if this is ever edited: the API server rejects an unsupported
-  # selector name with "field label not supported", but the receiver logs that
-  # in a background goroutine rather than failing startup. A typo here yields one
-  # log line and silence, not a crash.
-  #
-  # Also: replicas is 1 but the rollout is unbounded, so a helm upgrade briefly
-  # runs two cluster receivers. Both watch, so warnings raised in that window
-  # arrive twice. include_initial_state: false keeps that to the overlap rather
-  # than the whole retained window.
-  #
-  # Not addressed here: repeated warnings are not de-duplicated. A
-  # CrashLoopBackOff bumping an event's count emits another record each time.
-  # The k8s_events receiver gained a dedup_interval for this, but only in
-  # v0.155.0, above this chart's floor, and its storage-based alternative needs
-  # a file_storage extension this chart does not ship.
+  # Repeated warnings are not de-duplicated; k8s_events gained dedup_interval for
+  # that in v0.155.0, above this chart's floor.
   k8s_objects/events:
     auth_type: serviceAccount
     include_initial_state: false
@@ -68,24 +46,19 @@ processors:
     limit_percentage: 80
     spike_limit_percentage: 25
   batch:
-    # Trigger a send when the batch reaches 1000 items.
+    # Send at 5000 items, and cap batches at the same number so the timeout
+    # cannot build one larger than the exporter accepts.
     send_batch_size: 5000
-    # Enforce a hard limit of 5000 items per batch. This prevents the
-    # timeout from creating a massive batch that would be rejected.
     send_batch_max_size: 5000
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
 {{- if .Values.cluster.collectk8sevents }}
-  # k8s_objects sets no severity on the records it emits, and Tsuga normalizes a
-  # missing or invalid level to INFO — which would file every OOMKill and
-  # FailedScheduling as routine. WARN is one of the values Tsuga recognizes.
-  #
-  # No condition, because this runs in a pipeline fed only by
-  # k8s_objects/events, and that receiver is filtered to type=Warning at the API
-  # server. Conditions here would also be a liability: indexing into a log body
-  # that is not a map errors per record, which under error_mode: ignore means a
-  # warning logged for every record.
+  # k8s_objects sets no severity, and Tsuga normalizes a missing level to INFO,
+  # which would file every OOMKill as routine. No condition is needed because
+  # this pipeline only ever carries type=Warning records — and a condition would
+  # be a liability, since indexing a log body that is not a map errors once per
+  # record under error_mode: ignore.
   transform/k8s_event_severity:
     error_mode: ignore
     log_statements:
@@ -181,11 +154,9 @@ service:
         {{- end }}
 {{- if .Values.cluster.collectk8sevents }}
     # Its own pipeline so the severity transform only ever sees event records.
-    #
-    # k8s_attributes is deliberately absent: a k8s_objects watch record carries
-    # only k8s.namespace.name as a resource attribute, and none of the
-    # pod_association sources this chart configures (k8s.pod.ip, k8s.pod.uid,
-    # connection) can match one, so the processor would run and change nothing.
+    # k8s_attributes is absent deliberately: a k8s_objects watch record carries
+    # only k8s.namespace.name, which none of this chart's pod_association sources
+    # can match, so the processor would run and change nothing.
     logs/events:
       receivers:
         - k8s_objects/events
