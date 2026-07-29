@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.10.3](https://img.shields.io/badge/Version-0.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.4](https://img.shields.io/badge/Version-0.10.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -340,6 +340,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
 | agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
 | agent.image | string | "" | OpenTelemetry Collector image for agent Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s |
+| agent.kubeletStats | object | `{"usePodsEndpoint":true}` | kubelet_stats receiver options |
+| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata  The receiver calls /pods in addition to /stats/summary whenever volume type labels or any limit/request utilization metric are requested. When that call fails the receiver discards the ENTIRE scrape for that interval, node and pod metrics included — not just the attributes it could not resolve.  /pods authorizes against the nodes/proxy subresource, which this chart's ClusterRole grants. GKE Autopilot does not allow nodes/proxy to be granted at all, so on Autopilot set this to false: the collector then asks for neither volume type labels nor utilization metrics, and keeps the node, pod, container and volume metrics that only need /stats/summary. |
 | agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
 | agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
 | agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
