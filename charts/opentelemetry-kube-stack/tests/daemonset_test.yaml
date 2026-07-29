@@ -299,6 +299,31 @@ tests:
       - isNull:
           path: spec.config.receivers.kubelet_stats.metrics["container.cpu.usage"]
 
+  - it: should collect only the kubelet metric groups asked for
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.metricGroups: [node, pod]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod]
+
+  - it: should fall back to a usable set of kubelet metric groups
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.metricGroups: null
+    release:
+      name: "test-release"
+    asserts:
+      # An empty metric_groups would collect nothing from the kubelet.
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod, container, volume]
+
   - it: should avoid the kubelet /pods endpoint when told to
     set:
       clusterName: "test-cluster"

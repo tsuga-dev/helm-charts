@@ -34,7 +34,8 @@ receivers:
     # container, which is the cost of being able to see which container in a pod
     # is consuming the pod's budget — the question a pod-level total cannot
     # answer. volume adds five per volume.
-    metric_groups: [node, pod, container, volume]
+    metric_groups:
+      {{- toYaml (.Values.agent.kubeletStats.metricGroups | default (list "node" "pod" "container" "volume")) | nindent 6 }}
 {{- if .Values.agent.kubeletStats.usePodsEndpoint }}
     # Both of the blocks below make the receiver call the kubelet's /pods
     # endpoint in addition to /stats/summary: the scraper fetches pod metadata

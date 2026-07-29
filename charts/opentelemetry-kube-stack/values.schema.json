@@ -131,6 +131,12 @@
                 "kubeletStats": {
                     "type": "object",
                     "properties": {
+                        "metricGroups": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
                         "usePodsEndpoint": {
                             "type": "boolean"
                         }

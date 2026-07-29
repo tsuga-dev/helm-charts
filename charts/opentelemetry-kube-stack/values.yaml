@@ -469,6 +469,17 @@ agent:
 
   # -- kubelet_stats receiver options
   kubeletStats:
+    # container adds roughly eleven default-on metrics per container and volume
+    # five per volume, so this is the knob for kubelet metric cardinality. node
+    # and pod are the minimum useful set.
+    # -- Kubelet metric groups to collect
+    # @default -- [node, pod, container, volume]
+    metricGroups:
+      - node
+      - pod
+      - container
+      - volume
+
     # The receiver calls the kubelet /pods endpoint, on top of /stats/summary,
     # whenever volume type labels or any limit/request utilization metric are
     # requested. If that call fails it discards the ENTIRE scrape for the
