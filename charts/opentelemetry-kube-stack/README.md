@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.10.2](https://img.shields.io/badge/Version-0.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.10.3](https://img.shields.io/badge/Version-0.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -389,6 +389,9 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` |  |
 | rbac | object | `{"create":true}` | RBAC configuration |
 | rbac.create | bool | true | Create RBAC resources (ClusterRole and ClusterRoleBinding) Required for collecting Kubernetes cluster metrics and metadata |
+| resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. |
+| resourceDetection.enabled | bool | false | Enable the resourcedetection processor |
+| resourceDetection.timeout | string | "15s" | Per-detector timeout. A failing detector retries with exponential backoff until this expires. |
 | resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits |
 | resources.limits.cpu | string | "500m" | CPU limit |
 | resources.limits.memory | string | "512Mi" | Memory limit |
