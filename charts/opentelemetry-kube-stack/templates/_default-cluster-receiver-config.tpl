@@ -140,7 +140,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
@@ -160,7 +160,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - transform/k8s_event_severity
         - resource
@@ -176,7 +176,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource

@@ -29,7 +29,7 @@ processors:
   # Runs before enrichment in the pipeline: delta state is keyed on the full
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
-  cumulativetodelta: {}
+  cumulative_to_delta: {}
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
@@ -104,9 +104,9 @@ service:
         - prometheus
       processors:
         - memory_limiter
-        - cumulativetodelta
+        - cumulative_to_delta
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
