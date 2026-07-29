@@ -1,10 +1,12 @@
 {{- if .Values.targetAllocator.enabled }}
 {{- /* StatefulSet collector is always deployed as a unit with the TargetAllocator. */ -}}
-{{- /*
-     First, render the default config and parse it into a map,
-     then build a new context that includes it as .defaultConfig
-*/ -}}
-{{- $default := include "tsuga-otel.statefulset.config.default" . | fromYaml }}
+{{- /* See the note in daemonset.yaml. */ -}}
+{{- $image := .Values.statefulset.image | default .Values.image }}
+{{- $default := dict }}
+{{- if not .Values.statefulset.customConfig }}
+{{- include "opentelemetry-kube-stack.assertCollectorVersion" $image }}
+{{- $default = include "tsuga-otel.statefulset.config.default" . | fromYaml }}
+{{- end }}
 {{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.statefulset.customConfig) .Values.statefulset.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
@@ -22,7 +24,7 @@ spec:
   {{- if .Values.statefulset.replicas }}
   replicas: {{ .Values.statefulset.replicas }}
   {{- end }}
-  image: {{ .Values.statefulset.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" }}
+  image: {{ $image | quote }}
   {{- if or .Values.statefulset.resources .Values.resources }}
   resources:
     {{- if .Values.statefulset.resources }}

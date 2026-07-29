@@ -46,11 +46,7 @@ Generate environment variables for OpenTelemetry Collector
 {{- end }}
 
 {{/*
-The resourcedetection processor, shared by all three collectors.
-
-Type name is resourcedetection, not the canonical resource_detection, which does
-not exist below v0.153.0 — above this chart's collector floor. Same position as
-cumulativetodelta, canonical from v0.157.0.
+The resource_detection processor, shared by all three collectors.
 
 override: false, against the processor's own default of true, so a detected
 value never replaces a cloud.* or host.* attribute an instrumented application
@@ -60,7 +56,7 @@ timeout falls back to 15s rather than rendering as 0s, which would expire the
 per-detector context before the first call and fail Start().
 */}}
 {{- define "opentelemetry-kube-stack.resourceDetection" -}}
-resourcedetection:
+resource_detection:
   detectors:
     {{- toYaml .Values.resourceDetection.detectors | nindent 4 }}
   timeout: {{ .Values.resourceDetection.timeout | default "15s" }}
@@ -104,31 +100,53 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
-Fail the render if a pinned collector image is older than v0.152.0, the release
-that renamed the kubeletstats receiver to kubelet_stats — the newest component
-name the default configs use. An older collector rejects the config at startup
-with `unknown type: "kubelet_stats"` and crash-loops. Only images with a
-parseable semver tag can be checked; untagged/":latest"/operator-default images
-resolve at runtime and cannot be verified here.
+Fail the render if the given collector image is older than v0.157.0, the oldest
+release carrying every component name the default configs use — cumulative_to_delta
+arrived there, resource_detection in v0.153.0. An older collector rejects the
+config at startup with `unknown type` and crash-loops.
+
+Takes one image string: the image the collector being rendered will actually run.
+Each collector template calls this for its own image, and only when it is
+rendering the default config — a collector using customConfig is not bound by
+what the default config happens to reference.
+
+Only a parseable semver tag can be checked; ":latest" resolves at runtime and is
+skipped.
 */}}
 {{- define "opentelemetry-kube-stack.assertCollectorVersion" -}}
-{{- range list .Values.image .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
 {{- if . -}}
 {{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
-{{- if regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
-{{- if semverCompare "< 0.152.0" $tag -}}
-{{- fail (printf "collector image %q is < v0.152.0; this chart's default config uses the kubelet_stats receiver type, which older collectors reject with `unknown type`. Pin a v0.152.0+ image." .) -}}
-{{- end -}}
+{{/*
+Compare only the leading major.minor.patch: semver treats a suffixed tag like
+0.156.0-amd64 as a prerelease, and excludes prereleases from a constraint that
+has none, so comparing the whole tag would let it past the floor.
+*/}}
+{{- $core := regexFind "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
+{{- if $core -}}
+{{- if semverCompare "< 0.157.0" $core -}}
+{{- fail (printf "collector image %q is older than v0.157.0. This chart's default config uses the cumulative_to_delta processor type, which collectors below v0.157.0 reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x." .) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Generate Otel telemetry export
+Collector self-telemetry, shared by all three collectors. This configures the
+collector's own embedded SDK, which sits outside the pipeline graph, so these
+metrics still arrive when a pipeline is wedged.
+
+The endpoint carries the /v1/metrics path while the otlp_http/tsuga exporter
+takes the bare endpoint. That asymmetry is required: the collector's otlphttp
+exporter appends the signal path itself, whereas the SDK's declarative config
+expects it already present. Harmonising them breaks self-telemetry.
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
-{{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}
+{{/*
+An inline map, not the resource.attributes array the collector prefers. The
+operator types resource as map[string]*string, so the array form fails to
+unmarshal and it replaces the whole telemetry block with an empty map, dropping
+both attributes. Migrate this with the operator bump, not before.
+*/}}
 resource:
   k8s.cluster.name: {{ include "opentelemetry-kube-stack.clusterName" . }}
   service.instance.id: ${POD_UID}

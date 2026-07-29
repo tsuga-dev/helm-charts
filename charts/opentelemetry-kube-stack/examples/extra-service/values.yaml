@@ -7,6 +7,6 @@ agent:
         extraPipelines:
           metrics/extra:
             receivers:
-              - hostmetrics
+              - host_metrics
             exporters:
-              - otlphttp/tsuga
+              - otlp_http/tsuga

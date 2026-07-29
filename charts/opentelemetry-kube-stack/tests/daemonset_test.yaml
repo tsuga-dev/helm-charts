@@ -23,6 +23,10 @@ tests:
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"
+      # The shared top-level image reaches the collector.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
   - it: should not include tsuga exporter when enabledForDaemonset is false
     set:
@@ -182,7 +186,7 @@ tests:
           value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch]
+          value: [memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
           value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
@@ -218,16 +222,17 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # A failing detector stops the collector from starting, and there is no
-      # feature gate to suppress that at this chart's floor.
+      # A failing detector stops the collector from starting, and no feature gate
+      # suppresses that: the one that controlled it went stable in v0.146.0 and
+      # was removed in v0.150.0, both below this chart's floor.
       - isNull:
-          path: spec.config.processors.resourcedetection
+          path: spec.config.processors.resource_detection
       - equal:
           path: spec.config.service.pipelines.logs.processors
           value: [memory_limiter, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch]
+          value: [memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, batch]
 
   - it: should detect resources when enabled
     set:
@@ -239,27 +244,27 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # resourcedetection, not resource_detection: the underscored alias only
-      # exists from v0.153.0, above this chart's floor.
+      # resource_detection, the canonical type from v0.153.0. The old
+      # resourcedetection spelling is a deprecated alias that warns on startup.
       - equal:
-          path: spec.config.processors.resourcedetection.detectors
+          path: spec.config.processors.resource_detection.detectors
           value: [env, eks, ec2]
       - equal:
-          path: spec.config.processors.resourcedetection.timeout
+          path: spec.config.processors.resource_detection.timeout
           value: 20s
       # Against the processor's own default of true, so a detected value never
       # replaces one an instrumented application already set.
       - equal:
-          path: spec.config.processors.resourcedetection.override
+          path: spec.config.processors.resource_detection.override
           value: false
-      # After cumulativetodelta, which this chart deliberately runs before
+      # After cumulative_to_delta, which this chart deliberately runs before
       # enrichment so delta state is not keyed on a resource that later grows.
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, resource/node, batch]
+          value: [memory_limiter, cumulative_to_delta, resource_detection, k8s_attributes, resource, resource/node, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
-          value: [memory_limiter, resourcedetection, k8s_attributes, resource, resource/node, batch]
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, resource/node, batch]
 
   - it: should fall back to a usable detection timeout
     set:
@@ -273,7 +278,7 @@ tests:
       # An empty timeout would render as 0s, expiring the per-detector context
       # before the first call and failing Start().
       - equal:
-          path: spec.config.processors.resourcedetection.timeout
+          path: spec.config.processors.resource_detection.timeout
           value: 15s
   - it: should collect container and volume metrics from the kubelet
     set:
@@ -531,3 +536,118 @@ tests:
       - equal:
           path: spec.config.service.extensions
           value: []
+
+  - it: should reject a pinned collector image below the v0.157.0 floor
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorPattern: "opentelemetry-collector-contrib:0\\.156\\.0\" is older than v0\\.157\\.0"
+
+  - it: should keep the inline-map telemetry resource the operator can parse
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Deliberately the legacy form. The collector prefers a resource.attributes
+      # array, but the operator types resource as map[string]*string, so the array
+      # form fails to unmarshal and the whole telemetry block gets replaced with
+      # an empty map — losing both attributes instead of just the format.
+      - equal:
+          path: spec.config.service.telemetry.resource
+          value:
+            k8s.cluster.name: test-cluster
+            service.instance.id: ${POD_UID}
+
+  - it: should not apply the version floor to another collector's image
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      cluster.image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      # The agent is unaffected by a stale image on a collector it does not run.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+
+  - it: should not apply the version floor when customConfig replaces the default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.com/collector:0.150.0"
+      agent.customConfig:
+        receivers:
+          otlp: {}
+        service:
+          pipelines:
+            metrics:
+              receivers: [otlp]
+    release:
+      name: "test-release"
+    asserts:
+      # The floor exists for component names the default config uses. A custom
+      # config does not use them, so it is not bound by them.
+      - equal:
+          path: spec.image
+          value: example.com/collector:0.150.0
+
+  - it: should apply the version floor to the shared image
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: "example.com/collector:0.151.0"
+    release:
+      name: "test-release"
+    asserts:
+      # The shared image is in the checked set too, not only the per-collector
+      # overrides.
+      - failedTemplate:
+          errorPattern: "collector:0\\.151\\.0\" is older than v0\\.157\\.0"
+
+  - it: should hand the image choice to the operator when the shared image is empty
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      image: ""
+    release:
+      name: "test-release"
+    asserts:
+      # An empty image means the operator picks, which also means the floor
+      # check has nothing to verify.
+      - equal:
+          path: spec.image
+          value: ""
+
+  - it: should reject a suffixed image tag below the floor
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.com/collector:0.156.0-amd64"
+    release:
+      name: "test-release"
+    asserts:
+      # A suffixed tag is a semver prerelease, which a constraint without one
+      # excludes — so comparing the bare tag used to let these straight through.
+      - failedTemplate:
+          errorPattern: "collector:0\\.156\\.0-amd64\" is older than v0\\.157\\.0"
+
+  - it: should skip the floor check for an image it cannot version
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.com/collector:latest"
+    release:
+      name: "test-release"
+    asserts:
+      # Nothing to compare, so the render must proceed rather than fail closed.
+      - equal:
+          path: spec.image
+          value: example.com/collector:latest

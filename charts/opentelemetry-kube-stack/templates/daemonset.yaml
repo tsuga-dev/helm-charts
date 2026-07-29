@@ -1,9 +1,16 @@
 {{- if .Values.agent.enabled }}
 {{- /*
-     First, render the default config and parse it into a map,
-     then build a new context that includes it as .defaultConfig
+     Render the default config and parse it into a map, then build a new context
+     that includes it as .defaultConfig. Skipped entirely when customConfig is
+     set, since that replaces the default outright — and the version floor only
+     applies to the components the default config references.
 */ -}}
-{{- $default := include "tsuga-otel.deamonset.config.default" . | fromYaml }}
+{{- $image := .Values.agent.image | default .Values.image }}
+{{- $default := dict }}
+{{- if not .Values.agent.customConfig }}
+{{- include "opentelemetry-kube-stack.assertCollectorVersion" $image }}
+{{- $default = include "tsuga-otel.deamonset.config.default" . | fromYaml }}
+{{- end }}
 {{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.agent.customConfig) .Values.agent.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
@@ -18,7 +25,7 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: {{ .Values.agent.hostNetwork }}
-  image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
+  image: {{ $image | quote }}
   {{- if or .Values.agent.resources .Values.resources }}
   resources:
     {{- if .Values.agent.resources }}

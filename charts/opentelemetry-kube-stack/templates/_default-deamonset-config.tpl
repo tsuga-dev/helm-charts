@@ -231,7 +231,7 @@ processors:
   # Runs before enrichment in the pipelines: delta state is keyed on the full
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
-  cumulativetodelta: {}
+  cumulative_to_delta: {}
   resource:
     attributes:
       - key: k8s.cluster.name
@@ -245,7 +245,7 @@ processors:
   # informer cache. Those are this node's either way: the operator gives
   # daemonset collectors a Service with internalTrafficPolicy: Local, so OTLP
   # reaches the agent on the sender's own node. Upstream's kube-stack chart
-  # does the same with resourcedetection(k8snode) and override: false.
+  # does the same with resource_detection(k8s_api) and override: false.
   resource/node:
     attributes:
       - key: k8s.node.name
@@ -282,7 +282,7 @@ service:
         # are appended after it).
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
@@ -302,9 +302,9 @@ service:
         - host_metrics
       processors:
         - memory_limiter
-        - cumulativetodelta
+        - cumulative_to_delta
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
@@ -325,7 +325,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource

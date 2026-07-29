@@ -29,7 +29,7 @@ processors:
   # Runs before enrichment in the pipeline: delta state is keyed on the full
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
-  cumulativetodelta: {}
+  cumulative_to_delta: {}
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
@@ -71,15 +71,18 @@ processors:
 {{- end}}
     passthrough: false
     pod_association:
-      - sources:
-        - from: resource_attribute
-          name: net.host.name
-      - sources:
-        - from: resource_attribute
-          name: k8s.pod.ip
+      # k8s.pod.uid is what the prometheus receiver sets on scraped targets, so it
+      # is the only rule that resolves for the default pipeline. The two below are
+      # kept for receivers added through extraReceivers: an inbound OTLP receiver
+      # gives `connection` a client address, and an upstream collector running
+      # k8s_attributes in passthrough mode sets k8s.pod.ip. A rule that cannot
+      # resolve is skipped, so they cost nothing here.
       - sources:
         - from: resource_attribute
           name: k8s.pod.uid
+      - sources:
+        - from: resource_attribute
+          name: k8s.pod.ip
       - sources:
         - from: connection
   resource:
@@ -104,9 +107,9 @@ service:
         - prometheus
       processors:
         - memory_limiter
-        - cumulativetodelta
+        - cumulative_to_delta
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource

@@ -19,6 +19,10 @@ tests:
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"
+      # The shared top-level image reaches the collector.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
 
   - it: should not include tsuga exporter when enabledForClusterReceiver is false
     set:
@@ -104,9 +108,9 @@ tests:
           path: spec.replicas
           value: 1
 
-  # k8s_cluster emits gauges and non-monotonic sums only, and cumulativetodelta
+  # k8s_cluster emits gauges and non-monotonic sums only, and cumulative_to_delta
   # converts neither, so it must not be configured here.
-  - it: should not run cumulativetodelta
+  - it: should not run cumulative_to_delta
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
@@ -116,7 +120,7 @@ tests:
       name: "test-release"
     asserts:
       - isNull:
-          path: spec.config.processors.cumulativetodelta
+          path: spec.config.processors.cumulative_to_delta
       - equal:
           path: spec.config.service.pipelines.logs.processors
           value: [memory_limiter, k8s_attributes, resource, batch]
@@ -145,16 +149,16 @@ tests:
       name: "test-release"
     asserts:
       - equal:
-          path: spec.config.processors.resourcedetection.detectors
+          path: spec.config.processors.resource_detection.detectors
           value: [env, gcp]
       - equal:
-          path: spec.config.processors.resourcedetection.override
+          path: spec.config.processors.resource_detection.override
           value: false
       # gcp can supply k8s.cluster.name, but the resource processor upserts
       # clusterName afterwards, so the explicit value stays authoritative.
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, resourcedetection, k8s_attributes, resource, batch]
+          value: [memory_limiter, resource_detection, k8s_attributes, resource, batch]
 
   - it: should collect only Warning events, filtered at the API server
     set:
@@ -171,6 +175,8 @@ tests:
               name: events
               mode: watch
               field_selector: type=Warning
+              exclude_watch_type:
+                - DELETED
       # A separate instance purely so events can skip the initial snapshot:
       # the field is receiver-wide and the pods stream needs it.
       - equal:
@@ -260,7 +266,7 @@ tests:
       # Otherwise events are the one signal with no cloud.* or host.id.
       - equal:
           path: spec.config.service.pipelines["logs/events"].processors
-          value: [memory_limiter, resourcedetection, transform/k8s_event_severity, resource, batch]
+          value: [memory_limiter, resource_detection, transform/k8s_event_severity, resource, batch]
 
   - it: should give the cluster receiver a health_check extension
     set:
@@ -313,3 +319,45 @@ tests:
       - equal:
           path: spec.config.exporters['otlp_http/tsuga'].compression
           value: zstd
+
+  - it: should report allocatable types the node object actually carries
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # ephemeral-storage, not storage: the receiver looks each name up verbatim
+      # in status.allocatable, where `storage` never appears, so it produced no
+      # metric and logged the miss at debug level only.
+      - equal:
+          path: spec.config.receivers.k8s_cluster.allocatable_types_to_report
+          value: [cpu, memory, ephemeral-storage]
+
+  - it: should not re-report warning events when the API server expires them
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+    release:
+      name: "test-release"
+    asserts:
+      # An expiry arrives on the watch as DELETED carrying the original event,
+      # which without this reads as a second occurrence hours later.
+      - equal:
+          path: spec.config.receivers["k8s_objects/events"].objects[0].exclude_watch_type
+          value: [DELETED]
+      - equal:
+          path: spec.config.receivers["k8s_objects/events"].objects[0].field_selector
+          value: type=Warning
+
+  - it: should apply the version floor to the cluster receiver's own image
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.11.0] - 2026-07-29
+
+### Breaking Changes
+- **BREAKING** Raise the collector version floor to 0.157.0
+  Pinning agent.image, cluster.image, statefulset.image or the top-level image to a tag below 0.157.0 now fails the render instead of letting the collector crash-loop on an unknown component type. Move to a 0.157.0+ image, or stay on chart 0.10.x.
+- **BREAKING** Rename the resourcedetection and cumulativetodelta processors to their canonical types
+  resource_detection has been canonical since collector 0.153.0, cumulative_to_delta since 0.157.0; the old spellings are deprecated aliases that log a warning on every startup. If your own extraProcessors or extraPipelines reference the old names, update them: a pipeline entry is matched against literal config keys, so a stale reference fails the collector at startup even though the render succeeds.
+
+### Changed
+- Pin a concrete 0.157.0 image tag, replacing the untagged default, and declare it once in values.yaml as a shared top-level image rather than three times inside the templates
+- All three collectors now run the contrib distribution. The statefulset collector previously used opentelemetry-collector-k8s; contrib is a strict superset of it, and the agent already pulls contrib onto every node, so the node running the statefulset stops pulling a second image
+- agent.image, cluster.image and statefulset.image are now per-collector overrides of the shared image rather than independent defaults
+
+### Fixed
+- cluster.allocatableTypesToReport now defaults to ephemeral-storage instead of storage, which is not a node allocatable type and silently produced no metric, so k8s.node.allocatable_ephemeral_storage now appears where nothing did before
+- Warning events are no longer reported a second time when the API server expires them
+- Drop the net.host.name pod association from the statefulset collector. The prometheus receiver stopped setting that attribute when RemoveLegacyResourceAttributes went beta in collector 0.126.0, and 0.157.0 removes the gate entirely, so nothing can set it at this chart's floor
+- Stop suffixed image tags such as 0.156.0-amd64 from bypassing the version floor check
+- Correct the documented image defaults for all three collectors
+- Fix the extra-service example, which referenced hostmetrics and otlphttp/tsuga rather than the keys the chart renders
+- Correct the collector self-telemetry notes: internal metrics do reach Tsuga, and the operator does not override a user-supplied telemetry reader
+- Document why self-telemetry bypasses the pipelines, and why its endpoint carries the signal path while the exporter's does not
+
+### Upgrade notes
+- If you pinned statefulset.image to the previously documented default, opentelemetry-collector-k8s, that value no longer matches the shared default and will diverge from the other two collectors on every future image bump. Drop the override to follow the shared image, or keep it and bump it yourself — every component the statefulset config uses exists in both distributions.
+- The top-level image key was previously read only by the version check and set nothing, so a stale value there could fail an otherwise valid render. It now sets the image for all three collectors.
+- Images now carry an explicit tag, so Kubernetes resolves imagePullPolicy to IfNotPresent instead of Always. If you mirror images, make sure 0.157.0 is present in your registry before upgrading.
+- Collector 0.157.0 aggregates system.cpu.time and system.cpu.utilization across logical CPUs: the cpu attribute is now opt-in and absent by default. Anything grouping those metrics by cpu needs updating. Restore it by setting the metric's attributes to [cpu, state] through agent.config.extraReceivers.
+- Collector 0.157.0 enables system.cpu.logical.count by default, adding one series per node.
+
 ## [opentelemetry-kube-stack-0.10.6] - 2026-07-29
 
 ### Added

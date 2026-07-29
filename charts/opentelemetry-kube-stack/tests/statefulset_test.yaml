@@ -93,10 +93,10 @@ tests:
       name: "test-release"
     asserts:
       - isNotNull:
-          path: spec.config.processors.cumulativetodelta
+          path: spec.config.processors.cumulative_to_delta
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, k8s_attributes, resource, batch]
+          value: [memory_limiter, cumulative_to_delta, k8s_attributes, resource, batch]
 
   - it: should fail to render when clusterName is not set
     set:
@@ -118,11 +118,11 @@ tests:
       name: "test-release"
     asserts:
       - equal:
-          path: spec.config.processors.resourcedetection.detectors
+          path: spec.config.processors.resource_detection.detectors
           value: [env]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, batch]
+          value: [memory_limiter, cumulative_to_delta, resource_detection, k8s_attributes, resource, batch]
 
   - it: should give the statefulset collector a health_check extension
     set:
@@ -152,3 +152,49 @@ tests:
       - equal:
           path: spec.config.receivers.prometheus.target_allocator.interval
           value: 60s
+
+  - it: should use the shared pinned collector image by default
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # contrib, shared with the other two collectors. It is a strict superset of
+      # the k8s distribution, and the agent already pulls it onto every node.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+
+  - it: should not associate pods on net.host.name
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Collector 0.157.0 removed the gate that made the prometheus receiver emit
+      # net.host.name, so no receiver can set it at this chart's floor. The other
+      # rules stay: they resolve for receivers added through extraReceivers.
+      - equal:
+          path: spec.config.processors.k8s_attributes.pod_association
+          value:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: connection
+
+  - it: should apply the version floor to the statefulset collector's own image
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      statefulset.image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"

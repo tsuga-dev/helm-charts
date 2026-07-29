@@ -8,7 +8,7 @@ extensions:
 receivers:
   k8s_cluster:
     collection_interval: {{ .Values.cluster.collectionInterval | default "10s" }}
-    allocatable_types_to_report: {{ toYaml (.Values.cluster.allocatableTypesToReport | default (list "cpu" "memory" "storage")) | nindent 6 }}
+    allocatable_types_to_report: {{ toYaml (.Values.cluster.allocatableTypesToReport | default (list "cpu" "memory" "ephemeral-storage")) | nindent 6 }}
     node_conditions_to_report: {{ toYaml (.Values.cluster.nodeConditionsToReport | default (list "Ready" "MemoryPressure" "DiskPressure" "PIDPressure")) | nindent 6 }}
     metrics:
       k8s.pod.status_reason:
@@ -35,8 +35,15 @@ receivers:
   # API server rejects an unsupported selector name in a background goroutine, so
   # a typo gives one log line and silence, not a startup failure.
   #
-  # Repeated warnings are not de-duplicated; k8s_events gained dedup_interval for
-  # that in v0.155.0, above this chart's floor.
+  # exclude_watch_type drops DELETED, matching upstream's kube-stack chart. The
+  # API server expires events after its retention window (--event-ttl, one hour
+  # by default), and that deletion arrives on the watch carrying the original
+  # event object — so without this every warning is reported a second time,
+  # about an hour after it happened.
+  #
+  # Repeated warnings are still not de-duplicated. dedup_interval, added in
+  # v0.154.0, is a k8s_events option, not a k8s_objects one, so adopting it means
+  # switching receivers rather than setting a field here.
   k8s_objects/events:
     auth_type: serviceAccount
     include_initial_state: false
@@ -45,6 +52,8 @@ receivers:
         name: events
         mode: watch
         field_selector: type=Warning
+        exclude_watch_type:
+          - DELETED
 {{- end }}
 processors:
   memory_limiter:
@@ -140,7 +149,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
@@ -160,7 +169,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - transform/k8s_event_severity
         - resource
@@ -176,7 +185,7 @@ service:
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
-        - resourcedetection
+        - resource_detection
 {{- end }}
         - k8s_attributes
         - resource
