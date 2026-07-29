@@ -18,7 +18,14 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: {{ .Values.agent.hostNetwork }}
-  image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
+  {{- /*
+The default carries a concrete tag, not a floating one. Untagged resolves to
+:latest, which makes Kubernetes force imagePullPolicy: Always — so every pod
+restart depended on the registry being reachable, and the running collector could
+drift to a version the floor check never saw (it can only read a parseable tag).
+A Helm comment, not a YAML one, so the rationale stays out of the applied CR.
+*/}}
+  image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0" }}
   {{- if or .Values.agent.resources .Values.resources }}
   resources:
     {{- if .Values.agent.resources }}
