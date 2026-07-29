@@ -651,3 +651,40 @@ tests:
       - equal:
           path: spec.image
           value: example.com/collector:latest
+
+  - it: should collect process metrics on a best-effort basis when enabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectProcesses: true
+    release:
+      name: "test-release"
+    asserts:
+      - isNotNull:
+          path: spec.config.receivers.host_metrics.scrapers.process
+      - isNotNull:
+          path: spec.config.receivers.host_metrics.scrapers.processes
+      # Per-process details the agent cannot read are left off rather than logged
+      # once per process per scrape.
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.process.mute_process_all_errors
+          value: true
+      # No privileges are granted for it: full detail would need root plus
+      # CAP_SYS_PTRACE, which this chart does not do for a metric.
+      - notExists:
+          path: spec.securityContext
+
+  - it: should add no process scrapers when collectProcesses is false
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectProcesses: false
+    release:
+      name: "test-release"
+    asserts:
+      - notExists:
+          path: spec.config.receivers.host_metrics.scrapers.process
+      - notExists:
+          path: spec.config.receivers.host_metrics.scrapers.processes
+      - notExists:
+          path: spec.securityContext

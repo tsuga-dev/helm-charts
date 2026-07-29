@@ -156,6 +156,16 @@ receivers:
       {{- if .Values.agent.collectProcesses }}
       processes:
       process:
+        # Best effort: the agent reports the processes it can read on the node, and
+        # per-process details it has no access to are left off rather than logged
+        # once per process per scrape.
+        mute_process_all_errors: true
+        resource_attributes:
+          # Emitted unconditionally, so it would be an empty string on every
+          # process whose exe symlink the agent cannot read. command_line carries
+          # the same information.
+          process.executable.path:
+            enabled: false
         metrics:
           process.uptime:
             enabled: true

@@ -653,12 +653,14 @@ agent:
     usePodsEndpoint: true
 
   # -- Collect host network metrics
-  # When true, enables network scraper in hostmetrics receiver
+  # When true, enables network scraper in the host_metrics receiver
   # @default -- false
   collectNetwork: false
 
+  # Reports every process on the node. A few per-process details the agent has no
+  # access to, such as the executable path and owner, are left off.
   # -- Collect host processes metrics
-  # When true, enables processes and process scrapers in hostmetrics receiver
+  # When true, enables processes and process scrapers in the host_metrics receiver
   # @default -- false
   collectProcesses: false
 
