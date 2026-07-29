@@ -48,11 +48,6 @@ Generate environment variables for OpenTelemetry Collector
 {{/*
 The resource_detection processor, shared by all three collectors.
 
-resource_detection is the canonical type from v0.153.0; the underscore-less
-resourcedetection is now only a deprecated alias, which a collector accepts but
-logs a warning for on every startup. This chart's collector floor is v0.157.0,
-so the canonical name is always available.
-
 override: false, against the processor's own default of true, so a detected
 value never replaces a cloud.* or host.* attribute an instrumented application
 already set.
@@ -105,24 +100,20 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
-Fail the render if a pinned collector image is older than v0.157.0, the release
-that renamed the cumulativetodelta processor to cumulative_to_delta — the newest
-component name the default configs use. An older collector rejects the config at
-startup with `unknown type: "cumulative_to_delta"` and crash-loops. Only images
-with a parseable semver tag can be checked; ":latest" and operator-default
-images resolve at runtime and cannot be verified here — which is why the three
-collector templates now pin a concrete default tag rather than leaving it to the
-registry.
+Fail the render if a pinned collector image is older than v0.157.0, the oldest
+release carrying every component name the default configs use — cumulative_to_delta
+arrived there, resource_detection in v0.153.0. An older collector rejects the
+config at startup with `unknown type` and crash-loops. Only a parseable semver
+tag can be checked; ":latest" resolves at runtime and is skipped.
 */}}
 {{- define "opentelemetry-kube-stack.assertCollectorVersion" -}}
 {{- range list .Values.image .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
 {{- if . -}}
 {{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
 {{/*
-Compare only the leading major.minor.patch. A suffixed tag like 0.156.0-amd64 or
-0.156.0-nightly.202607220306 is a prerelease as far as semverCompare is
-concerned, and semver excludes prereleases from a constraint that has none — so
-matching on the bare tag let every suffixed image below the floor through.
+Compare only the leading major.minor.patch: semver treats a suffixed tag like
+0.156.0-amd64 as a prerelease, and excludes prereleases from a constraint that
+has none, so comparing the whole tag would let it past the floor.
 */}}
 {{- $core := regexFind "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
 {{- if $core -}}
@@ -135,44 +126,22 @@ matching on the bare tag let every suffixed image below the floor through.
 {{- end -}}
 
 {{/*
-Collector self-telemetry, shared by all three collectors.
+Collector self-telemetry, shared by all three collectors. This configures the
+collector's own embedded SDK, which sits outside the pipeline graph, so these
+metrics still arrive when a pipeline is wedged.
 
-This deliberately bypasses the pipelines. service::telemetry configures the
-collector's own embedded OTel SDK, which sits outside the pipeline graph, so
-these metrics still arrive when a pipeline is wedged — memory_limiter shedding
-under pressure, an exporter queue full, a processor misconfigured. Routing them
-through the pipelines instead would lose exactly the diagnostics that explain
-the failure, and would feed metrics about exporting metrics back through the
-exporter.
-
-Note the endpoint: it carries the /v1/metrics path, while the otlp_http/tsuga
-exporter takes the bare endpoint. That asymmetry is required, not an oversight.
-The two are different exporters with opposite conventions:
-
-  - the collector's otlphttp exporter takes a base URL and appends the signal
-    path itself ("for metrics /v1/metrics will be appended")
-  - the SDK's declarative config takes the full URL: the OTel Configuration
-    schema defines OtlpHttpExporter.endpoint as "Configure endpoint, including
-    the signal specific path", defaulting to http://localhost:4318/v1/{signal}
-
-Harmonising them would silently break self-telemetry.
+The endpoint carries the /v1/metrics path while the otlp_http/tsuga exporter
+takes the bare endpoint. That asymmetry is required: the collector's otlphttp
+exporter appends the signal path itself, whereas the SDK's declarative config
+expects it already present. Harmonising them breaks self-telemetry.
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
 {{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}
 {{/*
-The legacy inline map of attribute name to value, deliberately, even though the
-collector has warned about it since v0.151.0 and prefers a resource.attributes
-array.
-
-The operator parses service::telemetry through its own intermediary struct,
-where resource is typed map[string]*string (internal/otelconfig/config.go at
-operator v0.152.0, which is what subchart 0.114.1 bundles). The array form does
-not unmarshal into that, GetTelemetry returns nil, and ServiceApplyDefaults then
-replaces the whole telemetry block with an empty map — dropping k8s.cluster.name
-and service.instance.id rather than just failing to migrate them.
-
-So the array form is strictly worse here until the operator subchart moves to a
-release that understands it. Migrate this and the operator bump together.
+An inline map, not the resource.attributes array the collector prefers. The
+operator types resource as map[string]*string, so the array form fails to
+unmarshal and it replaces the whole telemetry block with an empty map, dropping
+both attributes. Migrate this with the operator bump, not before.
 */}}
 resource:
   k8s.cluster.name: {{ include "opentelemetry-kube-stack.clusterName" . }}

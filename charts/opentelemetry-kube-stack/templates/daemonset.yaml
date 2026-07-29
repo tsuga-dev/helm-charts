@@ -19,11 +19,9 @@ spec:
   mode: daemonset
   hostNetwork: {{ .Values.agent.hostNetwork }}
   {{- /*
-The default carries a concrete tag, not a floating one. Untagged resolves to
-:latest, which makes Kubernetes force imagePullPolicy: Always — so every pod
-restart depended on the registry being reachable, and the running collector could
-drift to a version the floor check never saw (it can only read a parseable tag).
-A Helm comment, not a YAML one, so the rationale stays out of the applied CR.
+The default tag is concrete so Kubernetes resolves imagePullPolicy to
+IfNotPresent, and so the version the floor check reads is the version that runs.
+An untagged default would resolve to :latest, which the check cannot verify.
 */}}
   image: {{ .Values.agent.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0" }}
   {{- if or .Values.agent.resources .Values.resources }}

@@ -23,9 +23,9 @@ spec:
   replicas: {{ .Values.statefulset.replicas }}
   {{- end }}
   {{- /*
-Tagged default — see the note in daemonset.yaml. This collector is the one that
-runs the k8s distribution rather than contrib; the prometheus receiver and every
-processor it uses are present there, and the image is considerably smaller.
+Tagged default — see the note in daemonset.yaml. This collector runs the k8s
+distribution rather than contrib: it contains the prometheus receiver and every
+processor this config uses, and the image is smaller.
 */}}
   image: {{ .Values.statefulset.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0" }}
   {{- if or .Values.statefulset.resources .Values.resources }}

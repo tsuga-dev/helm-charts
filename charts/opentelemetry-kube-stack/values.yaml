@@ -335,12 +335,10 @@ cluster:
     - MemoryPressure
     - DiskPressure
     - PIDPressure
-  # The receiver looks each entry up verbatim in the node's status.allocatable,
-  # so only names that actually appear there produce a metric — notably cpu,
-  # memory, ephemeral-storage and pods, plus whatever else the node reports such
-  # as hugepages-2Mi or an extended resource. `storage` led this list until chart
-  # 0.11.0 and silently produced nothing — it is not a node allocatable type,
-  # and the receiver logs the miss at debug level only.
+  # Each entry is looked up verbatim in the node's status.allocatable, and a name
+  # that is not there produces no metric and only a debug-level log. Valid names
+  # are cpu, memory, ephemeral-storage and pods, plus anything else the node
+  # reports such as hugepages-2Mi. Note there is no `storage`.
   # -- Node allocatable resource types reported as metrics. `pods` is also valid.
   # @default -- [cpu, memory, ephemeral-storage]
   allocatableTypesToReport:
@@ -688,17 +686,10 @@ agent:
   # batch
   # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
-    # Currently inert: the template reads this from config.service.extraTelemetry,
-    # one level down from where it is declared here, so anything set at this path
-    # is silently dropped. Left in place rather than removed because deleting a
-    # published key is itself breaking; wiring it up belongs with the same change
-    # that fixes the extra* merge direction.
-    #
-    # The defaults it is meant to merge with are the k8s.cluster.name and
-    # service.instance.id resource attributes, plus an OTLP metrics reader when
-    # Tsuga is enabled. That reader does reach the collector unchanged, so
-    # self-metrics are pushed to Tsuga and nothing is served on :8888 — see
-    # docs/collector-internal-metrics.md.
+    # Inert: the template reads this from config.service.extraTelemetry, one level
+    # below where it is declared, so anything set here is dropped. Kept because
+    # removing a published key is itself breaking. Wiring it up belongs with the
+    # change that fixes the extra* merge direction.
     # -- Additional telemetry to merge into the collector configuration (inert, see comment)
     # @default -- {}
     extraTelemetry: {}
