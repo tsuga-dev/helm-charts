@@ -27,9 +27,11 @@ rather than just the format. Migrate this together with the operator bump, not b
 
 **The reader endpoint carries `/v1/metrics` while the `otlp_http/tsuga` exporter takes the bare
 endpoint.** These are different exporters with opposite conventions: the collector's `otlphttp`
-exporter appends the signal path itself, while the SDK's declarative config expects the full URL
-([schema](https://github.com/open-telemetry/opentelemetry-configuration/blob/main/schema/common.yaml)
-defines `endpoint` as "including the signal specific path"). Making them consistent breaks
+exporter appends the signal path itself — "for metrics `/v1/metrics` will be appended"
+([exporter README](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlphttpexporter/README.md))
+— while the SDK's declarative config expects the full URL, with
+[the schema](https://github.com/open-telemetry/opentelemetry-configuration/blob/main/schema/common.yaml)
+defining `endpoint` as "including the signal specific path". Making them consistent breaks
 self-telemetry.
 
 **Nothing is served on `:8888`.** Supplying a reader replaces the collector's default Prometheus one
