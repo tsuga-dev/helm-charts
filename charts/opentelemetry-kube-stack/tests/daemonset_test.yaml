@@ -299,6 +299,31 @@ tests:
       - isNull:
           path: spec.config.receivers.kubelet_stats.metrics["container.cpu.usage"]
 
+  - it: should collect only the kubelet metric groups asked for
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.metricGroups: [node, pod]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod]
+
+  - it: should fall back to a usable set of kubelet metric groups
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.metricGroups: null
+    release:
+      name: "test-release"
+    asserts:
+      # An empty metric_groups would collect nothing from the kubelet.
+      - equal:
+          path: spec.config.receivers.kubelet_stats.metric_groups
+          value: [node, pod, container, volume]
+
   - it: should avoid the kubelet /pods endpoint when told to
     set:
       clusterName: "test-cluster"
@@ -317,3 +342,192 @@ tests:
       - equal:
           path: spec.config.receivers.kubelet_stats.metric_groups
           value: [node, pod, container, volume]
+
+  - it: should let the kubelet TLS settings be tightened
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.insecureSkipVerify: false
+      agent.kubeletStats.caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.kubelet_stats.insecure_skip_verify
+          value: false
+      - equal:
+          path: spec.config.receivers.kubelet_stats.ca_file
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+  - it: should omit ca_file when it is not set
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # An empty ca_file would fail the receiver's own config validation.
+      - isNull:
+          path: spec.config.receivers.kubelet_stats.ca_file
+      - equal:
+          path: spec.config.receivers.kubelet_stats.insecure_skip_verify
+          value: true
+
+  - it: should apply the collection intervals
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.kubeletStats.collectionInterval: 60s
+      agent.hostMetrics.collectionInterval: 90s
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.kubelet_stats.collection_interval
+          value: 60s
+      - equal:
+          path: spec.config.receivers.host_metrics.collection_interval
+          value: 90s
+
+  - it: should honour a user log exclude even when collecting its own logs
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectOtelLogs: true
+      agent.fileLog.exclude: ["/var/log/pods/kube-system_*/*/*.log"]
+    release:
+      name: "test-release"
+    asserts:
+      # Regression guard: the exclude key used to live inside the
+      # `not collectOtelLogs` branch, so a user exclude vanished whenever
+      # collectOtelLogs was true.
+      - equal:
+          path: spec.config.receivers.file_log.exclude
+          value: ["/var/log/pods/kube-system_*/*/*.log"]
+
+  - it: should merge user excludes with the self-ingestion excludes
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.fileLog.exclude: ["/var/log/pods/kube-system_*/*/*.log"]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.file_log.exclude
+          value:
+            - /var/log/pods/kube-system_*/*/*.log
+            - /var/log/pods/*/otc-container/*.log
+            - /var/log/pods/*/otel-collector/*.log
+
+  - it: should narrow the log include paths
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.fileLog.include: ["/var/log/pods/prod_*/*/*.log"]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.file_log.include
+          value: ["/var/log/pods/prod_*/*/*.log"]
+
+  - it: should remove span metrics entirely when disabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.spanMetrics.enabled: false
+    release:
+      name: "test-release"
+    asserts:
+      # The connector and both pipeline references must all go, or the collector
+      # rejects the config with an unknown component reference.
+      - isNull:
+          path: spec.config.connectors
+      - equal:
+          path: spec.config.service.pipelines.metrics.receivers
+          value: [otlp, kubelet_stats, host_metrics]
+      - equal:
+          path: spec.config.service.pipelines.traces.exporters
+          value: [otlp_http/tsuga]
+
+  - it: should let span metric dimensions be replaced
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.spanMetrics.dimensions:
+        - name: rpc.method
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.connectors.span_metrics.dimensions
+          value:
+            - name: rpc.method
+
+  - it: should let the OTLP listen addresses be changed
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.otlp.grpcEndpoint: 0.0.0.0:14317
+      agent.otlp.httpEndpoint: ""
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.otlp.protocols.grpc.endpoint
+          value: 0.0.0.0:14317
+      # An empty endpoint drops the protocol rather than binding port 0.
+      - isNull:
+          path: spec.config.receivers.otlp.protocols.http
+
+  - it: should apply the shared batch and metadata settings
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      batch.sendBatchSize: 1000
+      batch.sendBatchMaxSize: 2000
+      batch.timeout: 5s
+      k8sAttributes.metadata: [k8s.namespace.name, k8s.node.name]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.batch.send_batch_size
+          value: 1000
+      - equal:
+          path: spec.config.processors.batch.send_batch_max_size
+          value: 2000
+      - equal:
+          path: spec.config.processors.batch.timeout
+          value: 5s
+      - equal:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          value: [k8s.namespace.name, k8s.node.name]
+
+  - it: should omit the batch timeout by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      # Left unset so the processor's own 200ms default applies.
+      - isNull:
+          path: spec.config.processors.batch.timeout
+
+  - it: should drop the health_check extension when the endpoint is empty
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.healthCheckEndpoint: ""
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.extensions
+      # buildService always emits the key, so it renders as an empty list
+      # rather than being omitted.
+      - equal:
+          path: spec.config.service.extensions
+          value: []

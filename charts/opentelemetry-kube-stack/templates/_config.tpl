@@ -68,6 +68,30 @@ resourcedetection:
 {{- end }}
 
 {{/*
+The batch processor, shared by all three collectors.
+
+send_batch_max_size defaults to the same value as send_batch_size so the timeout
+can never assemble a batch larger than the exporter will accept. timeout is only
+emitted when set, so the processor's own 200ms default applies otherwise.
+*/}}
+{{- define "opentelemetry-kube-stack.batch" -}}
+batch:
+  send_batch_size: {{ .Values.batch.sendBatchSize | default 5000 }}
+  send_batch_max_size: {{ .Values.batch.sendBatchMaxSize | default 5000 }}
+  {{- with .Values.batch.timeout }}
+  timeout: {{ . }}
+  {{- end }}
+{{- end }}
+
+{{/*
+The Kubernetes metadata that k8s_attributes attaches, shared by all three
+collectors. Emitted as a bare list, so callers supply their own indentation.
+*/}}
+{{- define "opentelemetry-kube-stack.k8sAttributesMetadata" -}}
+{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time")) }}
+{{- end }}
+
+{{/*
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}
@@ -75,8 +99,8 @@ otlp_http/tsuga:
   endpoint: ${TSUGA_OTLP_ENDPOINT}
   headers:
     Authorization: Bearer ${TSUGA_API_KEY}
-  encoding: json
-  compression: gzip
+  encoding: {{ .Values.tsuga.encoding | default "json" }}
+  compression: {{ .Values.tsuga.compression | default "gzip" }}
 {{- end }}
 
 {{/*

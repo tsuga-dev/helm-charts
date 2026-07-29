@@ -123,3 +123,32 @@ tests:
       - equal:
           path: spec.config.service.pipelines.metrics.processors
           value: [memory_limiter, cumulativetodelta, resourcedetection, k8s_attributes, resource, batch]
+
+  - it: should give the statefulset collector a health_check extension
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.extensions.health_check.endpoint
+          value: ${env:MY_POD_IP}:13133
+      - equal:
+          path: spec.config.service.extensions
+          value: [health_check]
+
+  - it: should apply the scrape interval to both the scrape config and the allocator
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      statefulset.scrapeInterval: 60s
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.prometheus.config.scrape_configs[0].scrape_interval
+          value: 60s
+      - equal:
+          path: spec.config.receivers.prometheus.target_allocator.interval
+          value: 60s

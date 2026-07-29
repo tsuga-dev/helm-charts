@@ -38,11 +38,13 @@
 #
 # This chart uses a flexible configuration system with two approaches:
 #
-# 1. MERGE-BASED (Recommended): Uses default configs + your overrides
-#    - Default configs are defined in _default-deamonset-config.tpl and
-#      _default-cluster-receiver-config.tpl
-#    - Use extraReceivers, extraProcessors, extraExporters to add to defaults
-#    - Example: agent.config.extraReceivers adds to default receivers
+# 1. MERGE-BASED (Recommended): Uses default configs + additions
+#    - Default configs are defined in _default-deamonset-config.tpl,
+#      _default-cluster-receiver-config.tpl and _default-statefulset-config.tpl
+#    - Use extraReceivers, extraProcessors, extraExporters to ADD components
+#    - These can only add. A key that the chart already sets is NOT overridden:
+#      the merge keeps the chart's value and silently drops yours. To change a
+#      default, use the dedicated value for it, or customConfig below.
 #
 # 2. FULL CUSTOM: Provide complete OpenTelemetry config
 #    - Set customConfig with your complete YAML configuration
@@ -107,11 +109,16 @@ image: ""
 # only cloud.provider and cloud.platform, and ec2 is what adds cloud.region,
 # cloud.account.id, cloud.availability_zone, host.id and host.name.
 #
-# Do NOT list eks off EKS. KUBERNETES_SERVICE_HOST is set on every Kubernetes
-# cluster, so its check falls through to the Kubernetes API and can error on
-# GKE, AKS or kind, which prevents startup. ec2, gcp, azure and aks are safe to
-# list anywhere: they return an empty resource, without error, when their
-# metadata service is unreachable.
+# Prefer leaving eks out unless you are on EKS. KUBERNETES_SERVICE_HOST is set
+# on every Kubernetes cluster, so the detector's own check falls through to a
+# Kubernetes API call rather than short-circuiting. That call failing is what
+# would stop the collector from starting — not merely finding nothing. Tested
+# on Docker Desktop with [env, eks, ec2]: every collector started and the
+# detector returned an empty resource without error. So this is a risk to avoid
+# taking, not a guaranteed breakage.
+#
+# ec2, gcp, azure and aks are safe to list anywhere: they return an empty
+# resource, without error, when their metadata service is unreachable.
 #
 # k8snode is unsupported. It reads the node object from the Kubernetes API and
 # fails startup if that call fails, and the only attribute it adds that this
@@ -216,6 +223,52 @@ tsuga:
   # -- Enable Tsuga OTLP exporter for the StatefulSet collector (when targetAllocator is enabled)
   # @default -- true
   enabledForStatefulset: true
+  # `proto` sends roughly 2-3x fewer bytes over the wire than `json`, even after
+  # compression, so it is the cheaper choice where the intake accepts it.
+  # -- Payload encoding for the OTLP exporter. One of `json`, `proto`.
+  # @default -- "json"
+  encoding: json
+  # -- Compression for the OTLP exporter. One of `gzip`, `zstd`, `snappy`, `none`.
+  # @default -- "gzip"
+  compression: gzip
+
+# =============================================================================
+# SHARED PROCESSOR CONFIGURATION
+# =============================================================================
+# Applies to all three collectors (agent, cluster receiver, statefulset).
+
+k8sAttributes:
+  # Every entry is added to each log record, metric series and span. Dropping
+  # `k8s.pod.name` and `k8s.pod.uid` cuts metric cardinality noticeably, because
+  # both change on every pod restart and so churn the series on each rollout —
+  # at the cost of not being able to identify individual pods.
+  # -- Kubernetes metadata to attach to telemetry.
+  # @default -- see values.yaml
+  metadata:
+    - k8s.namespace.name
+    - k8s.deployment.name
+    - k8s.statefulset.name
+    - k8s.daemonset.name
+    - k8s.cronjob.name
+    - k8s.job.name
+    - k8s.node.name
+    - k8s.pod.name
+    - k8s.pod.uid
+    - k8s.pod.start_time
+
+batch:
+  # -- Item count that triggers a send.
+  # @default -- 5000
+  sendBatchSize: 5000
+  # -- Hard cap on items per batch. Lower this if the backend rejects large
+  # requests. Keeping it equal to sendBatchSize means a timeout can never build
+  # an oversized batch.
+  # @default -- 5000
+  sendBatchMaxSize: 5000
+  # -- Maximum time to wait before sending an undersized batch, e.g. `5s`.
+  # Empty uses the processor's own default of 200ms.
+  # @default -- ""
+  timeout: ""
 
 # =============================================================================
 # SECRET CONFIGURATION
@@ -265,6 +318,31 @@ cluster:
   # -- Enable cluster receiver (gateway) deployment
   # @default -- true
   enabled: true
+  # Datapoint volume scales inversely with this: every object in the informer
+  # cache is re-reported on each pass, so 10s produces six times the datapoints
+  # of 60s. Raise it to cut ingest on large clusters.
+  # -- How often to collect cluster metrics, e.g. `30s`.
+  # @default -- "10s"
+  collectionInterval: 10s
+  # -- Node conditions reported as metrics. Add `NetworkUnavailable`, or the
+  # custom conditions node-problem-detector writes, to alert on them.
+  # @default -- [Ready, MemoryPressure, DiskPressure, PIDPressure]
+  nodeConditionsToReport:
+    - Ready
+    - MemoryPressure
+    - DiskPressure
+    - PIDPressure
+  # -- Node allocatable resource types reported as metrics. `pods` and
+  # `ephemeral-storage` are also valid.
+  # @default -- [cpu, memory, storage]
+  allocatableTypesToReport:
+    - cpu
+    - memory
+    - storage
+  # -- Address for the health_check extension, which backs the liveness probe.
+  # Set to "" to omit the extension entirely.
+  # @default -- "${env:MY_POD_IP}:13133"
+  healthCheckEndpoint: "${env:MY_POD_IP}:13133"
   # -- OpenTelemetry Collector image for cluster receiver
   # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
   # @default -- ""
@@ -298,7 +376,9 @@ cluster:
   #           exporters: [otlp_http/tsuga]
   # @default -- {}
   customConfig: {}
-  # This is used in the Kubernetes view to show pod configuration
+  # -- Watch pod objects and send them as logs. Powers the Kubernetes view,
+  # which uses them to show pod configuration.
+  # @default -- true
   collectk8sobjects: true
   # Worth enabling. Events are the only source for OOMKilled, FailedScheduling,
   # Evicted, ErrImagePull, FailedMount and failing probes — no metric receiver
@@ -318,8 +398,10 @@ cluster:
   collectk8sevents: false
   # -- Gateway collector configuration (merge-based approach)
   # Use this to extend the default configuration
-  # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects)
-  # Default processors: memory_limiter, k8s_attributes, resource, batch
+  # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects),
+  # k8s_objects/events (when cluster.collectk8sevents)
+  # Default processors: memory_limiter, resourcedetection (when
+  # resourceDetection.enabled), k8s_attributes, resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry
@@ -467,8 +549,94 @@ agent:
   # @default -- true
   addLogsVolumes: true
 
+  # -- Address for the health_check extension, which backs the liveness probe.
+  # Set to "" to omit the extension entirely.
+  # @default -- "${env:MY_POD_IP}:13133"
+  healthCheckEndpoint: "${env:MY_POD_IP}:13133"
+
+  # -- OTLP receiver listen addresses
+  otlp:
+    # With `hostNetwork: true` these bind on the node's own IP, so they conflict
+    # with anything else on the node already holding the port — another
+    # monitoring agent, or a second collector DaemonSet. Change the port here if
+    # that happens. Use `0.0.0.0:4317` to listen on all interfaces.
+    # -- gRPC listen address. Set to "" to disable the gRPC protocol.
+    # @default -- "${env:MY_POD_IP}:4317"
+    grpcEndpoint: "${env:MY_POD_IP}:4317"
+    # -- HTTP listen address. Set to "" to disable the HTTP protocol.
+    # @default -- "${env:MY_POD_IP}:4318"
+    httpEndpoint: "${env:MY_POD_IP}:4318"
+
+  # -- file_log receiver paths (used when collectLogs is true)
+  fileLog:
+    # -- Log file globs to read.
+    # @default -- ["/var/log/pods/*/*/*.log"]
+    include:
+      - /var/log/pods/*/*/*.log
+    # Narrowing this is the single biggest log-cost lever in the chart: excluding
+    # a noisy namespace, e.g. `/var/log/pods/kube-system_*/*/*.log`, drops those
+    # records before they are ever read. The collector's own logs are excluded
+    # separately, via collectOtelLogs.
+    # -- Log file globs to skip.
+    # @default -- []
+    exclude: []
+
+  # -- host_metrics receiver options
+  hostMetrics:
+    # Datapoint volume scales inversely with this, across every node in the
+    # cluster, so 10s costs six times what 60s does.
+    # -- How often to collect host metrics, e.g. `60s`.
+    # @default -- "10s"
+    collectionInterval: 10s
+
+  # -- span_metrics connector options (RED metrics generated from spans)
+  spanMetrics:
+    # -- Generate metrics from spans.
+    # @default -- true
+    enabled: true
+    # `http.route` is a route template in frameworks that expose one, and a raw
+    # path in those that do not (Express, raw net/http, some gRPC gateways) —
+    # where it becomes unbounded, one histogram set per distinct URL. Drop it if
+    # your services cannot template routes.
+    # -- Span attributes to keep as metric dimensions. `default` supplies a value
+    # when the attribute is absent.
+    # @default -- see values.yaml
+    dimensions:
+      - name: http.request.method
+        default: GET
+      - name: http.response.status_code
+      - name: http.route
+
   # -- kubelet_stats receiver options
   kubeletStats:
+    # -- How often to collect kubelet metrics, e.g. `60s`.
+    # @default -- "20s"
+    collectionInterval: 20s
+    # -- Kubelet authentication method. One of `serviceAccount`, `tls`, `none`.
+    # @default -- "serviceAccount"
+    authType: serviceAccount
+    # Kubelets normally serve a self-signed certificate, which is why this
+    # defaults to true. Set it to false and supply caFile where policy requires
+    # the kubelet's serving certificate to be verified.
+    # -- Skip verification of the kubelet's serving certificate.
+    # @default -- true
+    insecureSkipVerify: true
+    # -- CA bundle path used to verify the kubelet, e.g.
+    # `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`. Requires
+    # insecureSkipVerify to be false, and the file to be mounted in the pod.
+    # @default -- ""
+    caFile: ""
+    # container adds roughly eleven default-on metrics per container and volume
+    # five per volume, so this is the knob for kubelet metric cardinality. node
+    # and pod are the minimum useful set.
+    # -- Kubelet metric groups to collect
+    # @default -- [node, pod, container, volume]
+    metricGroups:
+      - node
+      - pod
+      - container
+      - volume
+
     # The receiver calls the kubelet /pods endpoint, on top of /stats/summary,
     # whenever volume type labels or any limit/request utilization metric are
     # requested. If that call fails it discards the ENTIRE scrape for the
@@ -507,9 +675,10 @@ agent:
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp
-  # Default processors: memory_limiter, cumulativetodelta, k8s_attributes,
-  # resource, resource/node, batch
-  # Default connectors: span_metrics
+  # Default processors: memory_limiter, cumulativetodelta, resourcedetection
+  # (when resourceDetection.enabled), k8s_attributes, resource, resource/node,
+  # batch
+  # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
     # -- Additional telemetry to merge into the collector configuration
     # Merges with default telemetry (Prometheus metrics on port 8888)
@@ -723,6 +892,14 @@ statefulset:
   # The Target Allocator distributes targets evenly across replicas.
   # @default -- 1
   replicas: 1
+  # -- How often to scrape Prometheus targets, e.g. `60s`. Also the interval at
+  # which the collector refreshes its target list from the Target Allocator.
+  # @default -- "30s"
+  scrapeInterval: 30s
+  # -- Address for the health_check extension, which backs the liveness probe.
+  # Set to "" to omit the extension entirely.
+  # @default -- "${env:MY_POD_IP}:13133"
+  healthCheckEndpoint: "${env:MY_POD_IP}:13133"
   # -- OpenTelemetry Collector image for statefulset collector
   # @default -- ""
   image: ""

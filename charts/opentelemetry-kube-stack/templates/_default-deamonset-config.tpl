@@ -1,19 +1,23 @@
 {{- define "tsuga-otel.deamonset.config.default" -}}
+{{- $healthCheck := .Values.agent.healthCheckEndpoint | default "" }}
+{{- if $healthCheck }}
 extensions:
   health_check:
-    endpoint: ${env:MY_POD_IP}:13133
+    endpoint: {{ $healthCheck }}
+{{- end }}
 receivers:
 {{- if .Values.agent.collectLogs }}
   file_log:
-  {{- if not .Values.agent.collectOtelLogs }}
-    # Exclude the collector's own container logs to avoid a self-ingestion
-    # feedback loop (the operator names the collector container "otc-container").
+    # User excludes and the self-ingestion excludes are merged here. Rendering
+    # them in one place matters: a user exclude used to be dropped whenever
+    # collectOtelLogs was true, because the whole key was inside that guard.
+    {{- $exclude := concat (.Values.agent.fileLog.exclude | default list) (ternary (list) (list "/var/log/pods/*/otc-container/*.log" "/var/log/pods/*/otel-collector/*.log") (.Values.agent.collectOtelLogs | default false)) }}
+    {{- if $exclude }}
     exclude:
-      - /var/log/pods/*/otc-container/*.log
-      - /var/log/pods/*/otel-collector/*.log
-  {{- end }}
+      {{- toYaml $exclude | nindent 6 }}
+    {{- end }}
     include:
-      - /var/log/pods/*/*/*.log
+      {{- toYaml (.Values.agent.fileLog.include | default (list "/var/log/pods/*/*/*.log")) | nindent 6 }}
     include_file_name: false
     include_file_path: true
     operators:
@@ -25,16 +29,20 @@ receivers:
     start_at: end
   {{- end }}
   kubelet_stats:
-    auth_type: serviceAccount
-    collection_interval: 20s
+    auth_type: {{ .Values.agent.kubeletStats.authType | default "serviceAccount" }}
+    collection_interval: {{ .Values.agent.kubeletStats.collectionInterval | default "20s" }}
     endpoint: ${env:NODE_IP}:10250
-    insecure_skip_verify: true
+    insecure_skip_verify: {{ ne .Values.agent.kubeletStats.insecureSkipVerify false }}
+    {{- with .Values.agent.kubeletStats.caFile }}
+    ca_file: {{ . }}
+    {{- end }}
     # container is included deliberately, reversing an earlier decision to omit
     # it "to manage cardinality". It adds eleven default-on metrics per
     # container, which is the cost of being able to see which container in a pod
     # is consuming the pod's budget — the question a pod-level total cannot
     # answer. volume adds five per volume.
-    metric_groups: [node, pod, container, volume]
+    metric_groups:
+      {{- toYaml (.Values.agent.kubeletStats.metricGroups | default (list "node" "pod" "container" "volume")) | nindent 6 }}
 {{- if .Values.agent.kubeletStats.usePodsEndpoint }}
     # Both of the blocks below make the receiver call the kubelet's /pods
     # endpoint in addition to /stats/summary: the scraper fetches pod metadata
@@ -72,7 +80,7 @@ receivers:
 {{- end }}
   host_metrics:
     root_path: /hostfs
-    collection_interval: 10s
+    collection_interval: {{ .Values.agent.hostMetrics.collectionInterval | default "10s" }}
     scrapers:
       paging:
         metrics:
@@ -154,33 +162,24 @@ receivers:
       {{- end }}
   otlp:
     protocols:
+      {{- with .Values.agent.otlp.grpcEndpoint }}
       grpc:
-        endpoint: ${env:MY_POD_IP}:4317
+        endpoint: {{ . }}
+      {{- end }}
+      {{- with .Values.agent.otlp.httpEndpoint }}
       http:
-        endpoint: ${env:MY_POD_IP}:4318
+        endpoint: {{ . }}
+      {{- end }}
 
 processors:
-  batch:
-    # Send at 5000 items, and cap batches at the same number so the timeout
-    # cannot build one larger than the exporter accepts.
-    send_batch_size: 5000
-    send_batch_max_size: 5000
+  {{- include "opentelemetry-kube-stack.batch" . | nindent 2 }}
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
   k8s_attributes:
     extract:
       metadata:
-        - k8s.namespace.name
-        - k8s.deployment.name
-        - k8s.statefulset.name
-        - k8s.daemonset.name
-        - k8s.cronjob.name
-        - k8s.job.name
-        - k8s.node.name
-        - k8s.pod.name
-        - k8s.pod.uid
-        - k8s.pod.start_time
+        {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
       labels:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -259,15 +258,16 @@ exporters:
   {}
 {{- end }}
 connectors:
+{{- if ne .Values.agent.spanMetrics.enabled false }}
   span_metrics:
     dimensions:
-      - name: http.request.method
-        default: GET
-      - name: http.response.status_code
-      - name: http.route
+      {{- toYaml .Values.agent.spanMetrics.dimensions | nindent 6 }}
+{{- end }}
 service:
+{{- if $healthCheck }}
   extensions:
     - health_check
+{{- end }}
   pipelines:
     logs:
       receivers:
@@ -296,7 +296,9 @@ service:
       receivers:
         - otlp
         - kubelet_stats
+{{- if ne .Values.agent.spanMetrics.enabled false }}
         - span_metrics
+{{- end }}
         - host_metrics
       processors:
         - memory_limiter
@@ -317,7 +319,9 @@ service:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
         - otlp_http/tsuga
         {{- end }}
+        {{- if ne .Values.agent.spanMetrics.enabled false }}
         - span_metrics
+        {{- end }}
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
