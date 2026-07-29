@@ -100,14 +100,20 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
-Fail the render if a pinned collector image is older than v0.157.0, the oldest
+Fail the render if the given collector image is older than v0.157.0, the oldest
 release carrying every component name the default configs use — cumulative_to_delta
 arrived there, resource_detection in v0.153.0. An older collector rejects the
-config at startup with `unknown type` and crash-loops. Only a parseable semver
-tag can be checked; ":latest" resolves at runtime and is skipped.
+config at startup with `unknown type` and crash-loops.
+
+Takes one image string: the image the collector being rendered will actually run.
+Each collector template calls this for its own image, and only when it is
+rendering the default config — a collector using customConfig is not bound by
+what the default config happens to reference.
+
+Only a parseable semver tag can be checked; ":latest" resolves at runtime and is
+skipped.
 */}}
 {{- define "opentelemetry-kube-stack.assertCollectorVersion" -}}
-{{- range list .Values.image .Values.statefulset.image .Values.agent.image .Values.cluster.image -}}
 {{- if . -}}
 {{- $tag := trimPrefix "v" (. | toString | splitList ":" | last) -}}
 {{/*
@@ -118,8 +124,7 @@ has none, so comparing the whole tag would let it past the floor.
 {{- $core := regexFind "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
 {{- if $core -}}
 {{- if semverCompare "< 0.157.0" $core -}}
-{{- fail (printf "collector image %q is older than v0.157.0. This chart's default config uses the cumulative_to_delta and resource_detection processor types, which collectors below v0.157.0 and v0.153.0 respectively reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x." .) -}}
-{{- end -}}
+{{- fail (printf "collector image %q is older than v0.157.0. This chart's default config uses the cumulative_to_delta processor type, which collectors below v0.157.0 reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x." .) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -136,7 +141,6 @@ exporter appends the signal path itself, whereas the SDK's declarative config
 expects it already present. Harmonising them breaks self-telemetry.
 */}}
 {{- define "opentelemetry-kube-stack.otelTelemetry" -}}
-{{- include "opentelemetry-kube-stack.assertCollectorVersion" . -}}
 {{/*
 An inline map, not the resource.attributes array the collector prefers. The
 operator types resource as map[string]*string, so the array form fails to

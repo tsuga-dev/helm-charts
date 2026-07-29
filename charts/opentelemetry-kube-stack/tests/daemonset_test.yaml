@@ -565,7 +565,7 @@ tests:
             k8s.cluster.name: test-cluster
             service.instance.id: ${POD_UID}
 
-  - it: should apply the version floor to every collector image
+  - it: should not apply the version floor to another collector's image
     set:
       clusterName: "test-cluster"
       agent.enabled: true
@@ -573,10 +573,31 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # The check covers every image value, not just the one belonging to the
-      # template being rendered.
-      - failedTemplate:
-          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"
+      # The agent is unaffected by a stale image on a collector it does not run.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+
+  - it: should not apply the version floor when customConfig replaces the default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.image: "example.com/collector:0.150.0"
+      agent.customConfig:
+        receivers:
+          otlp: {}
+        service:
+          pipelines:
+            metrics:
+              receivers: [otlp]
+    release:
+      name: "test-release"
+    asserts:
+      # The floor exists for component names the default config uses. A custom
+      # config does not use them, so it is not bound by them.
+      - equal:
+          path: spec.image
+          value: example.com/collector:0.150.0
 
   - it: should apply the version floor to the shared image
     set:

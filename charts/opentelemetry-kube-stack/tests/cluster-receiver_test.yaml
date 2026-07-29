@@ -350,3 +350,14 @@ tests:
       - equal:
           path: spec.config.receivers["k8s_objects/events"].objects[0].field_selector
           value: type=Warning
+
+  - it: should apply the version floor to the cluster receiver's own image
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"

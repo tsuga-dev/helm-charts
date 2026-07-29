@@ -182,3 +182,14 @@ tests:
             - sources:
                 - from: resource_attribute
                   name: k8s.pod.uid
+
+  - it: should apply the version floor to the statefulset collector's own image
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      statefulset.image: "example.com/collector:0.150.0"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"

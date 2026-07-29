@@ -1,10 +1,12 @@
 {{- if .Values.cluster.enabled }}
 
-{{- /*
-     First, render the default config and parse it into a map,
-     then build a new context that includes it as .defaultConfig
-*/ -}}
-{{- $default := include "tsuga-otel.cluster-receiver.config.default" . | fromYaml }}
+{{- /* See the note in daemonset.yaml. */ -}}
+{{- $image := .Values.cluster.image | default .Values.image }}
+{{- $default := dict }}
+{{- if not .Values.cluster.customConfig }}
+{{- include "opentelemetry-kube-stack.assertCollectorVersion" $image }}
+{{- $default = include "tsuga-otel.cluster-receiver.config.default" . | fromYaml }}
+{{- end }}
 {{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.cluster.customConfig) .Values.cluster.config }}
 {{- include "opentelemetry-kube-stack.validateResourceNames" . }}
 apiVersion: opentelemetry.io/v1beta1
@@ -26,7 +28,7 @@ spec:
   # replicas to 1; setting it explicitly stops a `kubectl scale` (the CRD
   # exposes a scale subresource on .spec.replicas) from surviving a helm upgrade.
   replicas: 1
-  image: {{ .Values.cluster.image | default .Values.image | quote }}
+  image: {{ $image | quote }}
   {{- if or .Values.cluster.resources .Values.resources }}
   resources:
     {{- if .Values.cluster.resources }}
