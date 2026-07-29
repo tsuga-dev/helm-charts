@@ -83,9 +83,11 @@ nameOverride: ""
 # @default -- ""
 fullnameOverride: ""
 
-# -- Default OpenTelemetry Collector image
-# Used as fallback when cluster.image or agent.image are not set
-# Format: registry/repository:tag
+# Read only by the collector version check, which fails the render if any image
+# set here or on a collector is tagged below the chart's v0.157.0 floor. It is
+# NOT a fallback for the per-collector images: agent.image, cluster.image and
+# statefulset.image each fall back to their own pinned default, not to this key.
+# -- Collector image included in the version-floor check. Format: registry/repository:tag
 # @default -- ""
 image: ""
 
@@ -120,11 +122,12 @@ image: ""
 # ec2, gcp, azure and aks are safe to list anywhere: they return an empty
 # resource, without error, when their metadata service is unreachable.
 #
-# k8snode is unsupported. It reads the node object from the Kubernetes API and
-# fails startup if that call fails, and the only attribute it adds that this
-# chart does not already set is k8s.node.uid.
+# k8s_api (and k8snode, which it deprecated in v0.154.0) is unsupported. It
+# reads the node object from the Kubernetes API and fails startup if that call
+# fails, and the only attribute it adds that this chart does not already set is
+# k8s.node.uid.
 resourceDetection:
-  # -- Enable the resourcedetection processor
+  # -- Enable the resource_detection processor
   # @default -- false
   enabled: false
   # -- Detectors to run, in order. The first detector to supply an attribute
@@ -332,19 +335,24 @@ cluster:
     - MemoryPressure
     - DiskPressure
     - PIDPressure
-  # -- Node allocatable resource types reported as metrics. `pods` and
-  # `ephemeral-storage` are also valid.
-  # @default -- [cpu, memory, storage]
+  # The receiver looks each entry up verbatim in the node's status.allocatable,
+  # so only names that actually appear there produce a metric — notably cpu,
+  # memory, ephemeral-storage and pods, plus whatever else the node reports such
+  # as hugepages-2Mi or an extended resource. `storage` led this list until chart
+  # 0.11.0 and silently produced nothing — it is not a node allocatable type,
+  # and the receiver logs the miss at debug level only.
+  # -- Node allocatable resource types reported as metrics. `pods` is also valid.
+  # @default -- [cpu, memory, ephemeral-storage]
   allocatableTypesToReport:
     - cpu
     - memory
-    - storage
+    - ephemeral-storage
   # -- Address for the health_check extension, which backs the liveness probe.
   # Set to "" to omit the extension entirely.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
   # -- OpenTelemetry Collector image for cluster receiver
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   # @default -- ""
   image: ""
   # -- Extra environment variables for cluster receiver
@@ -400,7 +408,7 @@ cluster:
   # Use this to extend the default configuration
   # Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects),
   # k8s_objects/events (when cluster.collectk8sevents)
-  # Default processors: memory_limiter, resourcedetection (when
+  # Default processors: memory_limiter, resource_detection (when
   # resourceDetection.enabled), k8s_attributes, resource, batch
   config:
     # -- Additional telemetry to merge into the collector configuration
@@ -524,7 +532,7 @@ agent:
   # @default -- true
   hostNetwork: true
   # -- OpenTelemetry Collector image for agent
-  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   # @default -- ""
   image: ""
   # -- Extra environment variables for agent
@@ -675,13 +683,22 @@ agent:
   # -- Agent collector configuration (merge-based approach)
   # Use this to extend the default configuration
   # Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp
-  # Default processors: memory_limiter, cumulativetodelta, resourcedetection
+  # Default processors: memory_limiter, cumulative_to_delta, resource_detection
   # (when resourceDetection.enabled), k8s_attributes, resource, resource/node,
   # batch
   # Default connectors: span_metrics (when agent.spanMetrics.enabled)
   config:
-    # -- Additional telemetry to merge into the collector configuration
-    # Merges with default telemetry (Prometheus metrics on port 8888)
+    # Currently inert: the template reads this from config.service.extraTelemetry,
+    # one level down from where it is declared here, so anything set at this path
+    # is silently dropped. Left in place rather than removed because deleting a
+    # published key is itself breaking; wiring it up belongs with the same change
+    # that fixes the extra* merge direction.
+    #
+    # The defaults it is meant to merge with are the k8s.cluster.name and
+    # service.instance.id resource attributes, plus an OTLP metrics reader when
+    # Tsuga is enabled. The operator overrides `readers` with its own Prometheus
+    # reader on :8888 regardless — see docs/collector-internal-metrics.md.
+    # -- Additional telemetry to merge into the collector configuration (inert, see comment)
     # @default -- {}
     extraTelemetry: {}
     # -- Additional receivers to merge into the collector configuration
@@ -733,7 +750,7 @@ agent:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, resource/node, batch)
+          # Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline
@@ -901,6 +918,7 @@ statefulset:
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
   # -- OpenTelemetry Collector image for statefulset collector
+  # Defaults to: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.157.0
   # @default -- ""
   image: ""
   # -- Extra environment variables for statefulset collector
@@ -940,7 +958,7 @@ statefulset:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the metrics pipeline
-          # Added to default processors (memory_limiter, cumulativetodelta, k8s_attributes, resource, batch)
+          # Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, batch)
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the metrics pipeline

@@ -39,6 +39,14 @@ The helper emits two things:
 **`telemetry.resource`** — a map of `k8s.cluster.name` (from `clusterName`) and
 `service.instance.id: ${POD_UID}` (see below).
 
+This is the legacy inline-map format. The collector has warned about it since v0.151.0 and prefers
+a `resource.attributes` array, but the chart cannot move yet: the operator types `resource` as
+`map[string]*string` in its own intermediary struct, so the array form fails to unmarshal,
+`GetTelemetry` returns nil, and `ServiceApplyDefaults` replaces the whole telemetry block with an
+empty map — losing both attributes instead of merely failing to migrate them. Verified against
+operator v0.152.0, the version subchart 0.114.1 bundles. Migrate this together with the operator
+bump, not before.
+
 **`telemetry.metrics.readers`** — a single `periodic` reader with an OTLP `http/protobuf` exporter
 pointed at `${TSUGA_OTLP_ENDPOINT}/v1/metrics` with a bearer-token header. Emitted only when the
 Tsuga exporter is enabled; without credentials there is nowhere to push.

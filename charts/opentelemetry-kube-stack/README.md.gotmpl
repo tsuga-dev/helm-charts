@@ -50,7 +50,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline, so load is shed before the pipeline spends work on data it is about to reject.
 - **Cumulative To Delta**: Converts cumulative counters to delta. Wired into the metrics pipeline only, and placed before enrichment: delta state is keyed on the full resource, so a series that starts unenriched and later gains pod metadata would look like a brand-new series and lose a datapoint.
-- **Resource Detection** (`resourcedetection`): Adds cloud and host attributes (`cloud.provider`, `cloud.region`, `host.id`). **Off by default** — enable with `resourceDetection.enabled=true`. When enabled it runs first among the enrichment processors, in every pipeline.
+- **Resource Detection** (`resource_detection`): Adds cloud and host attributes (`cloud.provider`, `cloud.region`, `host.id`). **Off by default** — enable with `resourceDetection.enabled=true`. When enabled it runs first among the enrichment processors, in every pipeline.
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations. The attribute list is configurable via `k8sAttributes.metadata`.
 - **Resource**: Adds `k8s.cluster.name` to everything
 - **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API with action `insert`, so it only writes when the attribute is missing and anything that already carries a node name keeps it. `kubelet_stats` sets it on its node metric group and `k8s_attributes` sets it for every pod it could associate; what is left is `host_metrics`, which reads the node's kernel and touches no pod so `k8s_attributes` can never associate it, plus records whose pod missed the informer cache. Those all belong to this node: the operator gives `daemonset` collectors a Service with `internalTrafficPolicy: Local`, so OTLP sent to the agent Service reaches the agent on the sender's own node.
@@ -63,11 +63,11 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resourcedetection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulativetodelta`, [`resourcedetection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `memory_limiter`, [`resourcedetection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`, [`span_metrics`]
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`, [`span_metrics`]
 
-Components in [brackets] are conditional: `resourcedetection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
+Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
 
 Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline — but be aware that **it does not currently reach Tsuga**: the operator's webhook replaces the configured OTLP reader with a Prometheus reader on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md) for the detail and the workaround.
 
@@ -118,21 +118,21 @@ agent:
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.
-- **Resource Detection** (`resourcedetection`): As on the agent. Off by default.
+- **Resource Detection** (`resource_detection`): As on the agent. Off by default.
 - **K8s Attributes**: Enriches telemetry with Kubernetes metadata and selected pod labels/annotations
 - **Transform** (`transform/k8s_event_severity`): Sets `WARN` severity on event records. Only present when `cluster.collectk8sevents=true`, and only in the events pipeline — `k8s_objects` sets no severity, and a missing level would be normalized to `INFO`.
 - **Resource**: Adds `k8s.cluster.name`
 - **Batch**: Batches telemetry for efficient processing. Last in every default pipeline; user `extraProcessors` are appended after it.
 
-There is no `cumulativetodelta` in this collector. `k8s_cluster` emits gauges and non-monotonic sums, and the processor only converts monotonic sums, histograms and exponential histograms, so there is nothing for it to convert.
+There is no `cumulative_to_delta` in this collector. `k8s_cluster` emits gauges and non-monotonic sums, and the processor only converts monotonic sums, histograms and exponential histograms, so there is nothing for it to convert.
 
 **Default Exporters:**
 - **otlp_http/tsuga**: Forwards to the Tsuga endpoint (enabled unless `tsuga.enabledForClusterReceiver=false`)
 
 **Service Pipelines:**
-- **Metrics**: `k8s_cluster` → `memory_limiter`, [`resourcedetection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, [`resourcedetection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resourcedetection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
+- **Metrics**: `k8s_cluster` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
+- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resource_detection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
 
 Components in [brackets] are conditional, as above.
 
@@ -141,7 +141,7 @@ Components in [brackets] are conditional, as above.
 Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Prometheus scraping, where the Target Allocator shards scrape jobs across collector replicas so no two replicas scrape the same target.
 
 - **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. The static config in the chart is a placeholder the allocator replaces.
-- **Processors**: `memory_limiter`, `cumulativetodelta`, [`resourcedetection`], `k8s_attributes`, `resource`, `batch`
+- **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
 - **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
