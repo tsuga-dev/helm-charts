@@ -707,11 +707,9 @@ targetAllocator:
   # @default -- false
   enabled: false
   # -- TargetAllocator CR spec (full passthrough)
-  # All fields are passed directly to the TargetAllocator CR spec. Avoid setting
-  # spec.serviceAccount here; the chart writes that field itself, so setting it
-  # emits the key twice. Nothing in the helm or kubectl path rejects that and the
-  # last value wins, so yours takes effect, but the manifest is invalid YAML and
-  # strict consumers such as Flux and kubeconform refuse it.
+  # All fields are passed directly to the TargetAllocator CR spec. A
+  # spec.serviceAccount here overrides the account the chart would otherwise set,
+  # and is emitted in place of it rather than alongside it.
   # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
   # @default -- {}
   spec:
@@ -1066,10 +1064,13 @@ serviceAccount:
   # -- Create a service account for the OpenTelemetry collectors.
   # @default -- true
   create: true
-  # -- Name of the service account, defaulting to the release fullname. Only
-  # applied to the collectors while serviceAccount.create is true; with create
-  # false they fall back to a service account the operator names itself, which the
-  # chart's ClusterRoleBinding does not cover, so every Kubernetes read is denied.
+  # -- Name of the service account, defaulting to the release fullname. Set it
+  # together with create=false to run the collectors under an account you manage;
+  # the chart's ClusterRoleBinding targets this name either way, and the operator
+  # verifies the account's permissions before deploying. Leaving both create=false
+  # and this empty is the one unsupported combination: the operator then provisions
+  # an account of its own naming that the ClusterRoleBinding does not cover, so
+  # every Kubernetes read is denied.
   # @default -- ""
   name: ""
   # -- Annotations to add to the service account
