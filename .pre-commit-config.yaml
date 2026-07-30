@@ -31,17 +31,6 @@ repos:
         args:
           [
             "--values",
-            "./charts/opentelemetry-demo/values.yaml",
-            "-o",
-            "./charts/opentelemetry-demo/values.schema.json",
-          ]
-  - repo: https://github.com/losisin/helm-values-schema-json
-    rev: v2.3.1
-    hooks:
-      - id: helm-schema
-        args:
-          [
-            "--values",
             "./charts/opentelemetry-kube-stack/values.yaml",
             "-o",
             "./charts/opentelemetry-kube-stack/values.schema.json",
@@ -88,12 +77,6 @@ repos:
         entry: bash -c 'GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}" git cliff -c charts/opentelemetry-kube-stack/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-kube-stack/CHANGELOG.md'
         language: system
         files: ^charts/opentelemetry-kube-stack/
-        pass_filenames: false
-      - id: changelog-demo
-        name: Update CHANGELOG.md for opentelemetry-demo
-        entry: bash -c 'GITHUB_TOKEN="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)}" git cliff -c charts/opentelemetry-demo/cliff.toml && perl -0pi -e "s/\n{3,}/\n\n/g" charts/opentelemetry-demo/CHANGELOG.md'
-        language: system
-        files: ^charts/opentelemetry-demo/
         pass_filenames: false
       - id: changelog-gremlin
         name: Update CHANGELOG.md for tsuga-spicy-gremlin
