@@ -707,9 +707,11 @@ targetAllocator:
   # @default -- false
   enabled: false
   # -- TargetAllocator CR spec (full passthrough)
-  # All fields are passed directly to the TargetAllocator CR spec. Do not set
+  # All fields are passed directly to the TargetAllocator CR spec. Avoid setting
   # spec.serviceAccount here; the chart writes that field itself, so setting it
-  # produces a duplicate key the API server rejects.
+  # emits the key twice. Nothing in the helm or kubectl path rejects that and the
+  # last value wins, so yours takes effect, but the manifest is invalid YAML and
+  # strict consumers such as Flux and kubeconform refuse it.
   # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
   # @default -- {}
   spec:
