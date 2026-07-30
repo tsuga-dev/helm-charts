@@ -106,7 +106,6 @@ You can check the [examples](https://github.com/tsuga-dev/helm-charts/tree/main/
 Each chart has its own README with full configuration and values reference:
 
 - **[opentelemetry-kube-stack](./charts/opentelemetry-kube-stack/README.md)**: OpenTelemetry Kubernetes operator with Tsuga integration — dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready telemetry collection.
-- **[opentelemetry-demo](./charts/opentelemetry-demo/README.md)**: Tsuga Observability Demo stack wiring the OpenTelemetry demo app with Tsuga-focused defaults.
 - **[opentelemetry-database-monitoring](./charts/opentelemetry-database-monitoring/README.md)**: Deep monitoring for PostgreSQL via an OpenTelemetry sidecar collector — installs stored functions, a dedicated monitoring user, and emits metrics over OTLP.
 - **[tsuga-spicy-gremlin](./charts/tsuga-spicy-gremlin/README.md)**: A minimal chart to run spicy-gremlin against OpenTelemetry Demo feature flags.
 
