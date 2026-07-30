@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.12.0] - 2026-07-30
+
+### Added
+- agent.deriveServiceIdentity resolves service.name and service.version from Kubernetes metadata, following the chain OpenTelemetry's semantic conventions define: the resource.opentelemetry.io/service.name annotation, then the app.kubernetes.io/instance and app.kubernetes.io/name labels, then the name of the owning workload. Off by default. It also clears the SDK placeholder first, which is what makes the chain apply at all: an instrumented workload that never set a name emits service.name=unknown_service:<executable>, and the k8s_attributes processor writes only to a key that is absent or empty, so without this every service name it derives for such a pod is computed and discarded. Agent only — the cluster receiver watches Kubernetes objects rather than service-emitted telemetry.
+
+### Upgrade notes
+- deriveServiceIdentity is off by default and the rendered config is unchanged until you set it. Semantic conventions ask that deriving identity from well-known labels be opt-in, because users may not know their labels are being read this way.
+- Enabling it on an existing install renames services. Anything reporting as unknown_service:* becomes its workload name, and container logs and pod metrics that carry no service name today start creating one service entry per workload — on a 21-pod test cluster, kubeletstats went from 2 distinct service names to 15.
+- A workload that sets its own name via OTEL_SERVICE_NAME keeps it, but that name is invisible to Kubernetes, so the same pod's container logs and pod metrics resolve to the workload name instead and the workload appears under two identities. Give such pods a resource.opentelemetry.io/service.name annotation matching their OTEL_SERVICE_NAME to keep every signal on one name.
+- If you map your own label keys, prefer extraAnnotationsMapping over extraLabelMapping. The processor copies the well-known app.kubernetes.io labels over user label rules with an unconditional write, so on a pod carrying both, an extraLabelMapping rule targeting service.name loses — and because that rule works while the flag is off, enabling the flag renames such a pod away from the value it already had. Annotation rules are applied last and win over both.
+- service.version falls back to the container image tag when no version label or annotation is present, so pods running an untagged image report a version of latest.
+
 ## [opentelemetry-kube-stack-0.11.1] - 2026-07-29
 
 ### Fixed

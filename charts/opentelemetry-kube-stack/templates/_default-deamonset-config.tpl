@@ -186,10 +186,22 @@ processors:
 {{- if .Values.resourceDetection.enabled }}
   {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
 {{- end }}
+{{- if .Values.agent.deriveServiceIdentity }}
+  {{- include "opentelemetry-kube-stack.clearUnknownService" . | nindent 2 }}
+{{- end }}
   k8s_attributes:
     extract:
       metadata:
         {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
+{{- if .Values.agent.deriveServiceIdentity }}
+        # Off by default in the processor, so listing them is what turns the
+        # semconv resolution chain on: the resource.opentelemetry.io/service.name
+        # annotation, then app.kubernetes.io/instance, then /name, then the
+        # owning workload's name. service.version resolves from
+        # app.kubernetes.io/version or the container image tag.
+        - service.name
+        - service.version
+{{- end }}
       labels:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -294,6 +306,9 @@ service:
 {{- if .Values.resourceDetection.enabled }}
         - resource_detection
 {{- end }}
+{{- if .Values.agent.deriveServiceIdentity }}
+        - transform/clear_unknown_service
+{{- end }}
         - k8s_attributes
         - resource
         - resource/node
@@ -316,6 +331,9 @@ service:
 {{- if .Values.resourceDetection.enabled }}
         - resource_detection
 {{- end }}
+{{- if .Values.agent.deriveServiceIdentity }}
+        - transform/clear_unknown_service
+{{- end }}
         - k8s_attributes
         - resource
         - resource/node
@@ -336,6 +354,9 @@ service:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
         - resource_detection
+{{- end }}
+{{- if .Values.agent.deriveServiceIdentity }}
+        - transform/clear_unknown_service
 {{- end }}
         - k8s_attributes
         - resource
