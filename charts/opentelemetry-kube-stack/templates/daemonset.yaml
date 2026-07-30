@@ -83,8 +83,8 @@ spec:
     {{- toYaml .Values.affinity | nindent 4 }}
     {{- end }}
   {{- end }}
-  {{- if .Values.serviceAccount.create }}
-  serviceAccount: {{ .Values.serviceAccount.name | default (include "opentelemetry-kube-stack.serviceAccountName" .) }}
+  {{- with include "opentelemetry-kube-stack.collectorServiceAccountName" . }}
+  serviceAccount: {{ . }}
   {{- end }}
   env:
     {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}

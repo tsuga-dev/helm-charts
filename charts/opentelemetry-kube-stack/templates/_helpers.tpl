@@ -62,6 +62,35 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+The service account to put on a collector (or TargetAllocator) spec, or empty
+when the field should be left off entirely.
+
+Non-empty whenever the chart knows which account the workloads must run as: the
+one it creates, or one the user named. `serviceAccount.create: false` with an
+explicit `serviceAccount.name` is the bring-your-own-account idiom, and the
+chart's ClusterRoleBinding already binds that name -- so the collectors have to
+be told to use it. Left off, the operator self-provisions an account of its own
+naming instead, which nothing grants the ClusterRole to, and every Kubernetes
+read is denied.
+
+Empty only when `create` is false and no name was given, which leaves the field
+off and the operator self-provisioning `<collector-name>-collector` (it does not
+fall back to the namespace default -- see ServiceAccountName in
+internal/manifests/collector/serviceaccount.go). That account is outside this
+chart's ClusterRoleBinding, so the path stays broken; it is left as-is
+deliberately, because the alternative -- emitting `serviceAccount: default` --
+would bind the chart's cluster-wide read permissions to the namespace default
+account that every unconfigured pod in the namespace inherits. Giving the user
+no service account is a smaller problem than that, and picking the other
+trade-off is the chart owner's call, not a bug fix's.
+*/}}
+{{- define "opentelemetry-kube-stack.collectorServiceAccountName" -}}
+{{- if or .Values.serviceAccount.create .Values.serviceAccount.name -}}
+{{- include "opentelemetry-kube-stack.serviceAccountName" . -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Get the secret name to use
 */}}
 {{- define "opentelemetry-kube-stack.secretName" -}}

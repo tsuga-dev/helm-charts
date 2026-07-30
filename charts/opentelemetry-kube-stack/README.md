@@ -241,7 +241,10 @@ autoInstrumentation:
   apiVersion: opentelemetry.io/v1alpha1
   spec:
     exporter:
-      endpoint: http://otel-collector:4318
+      # The agent runs with `hostNetwork`, so its OTLP ports are on the node's own
+      # IP, and the operator injects `OTEL_NODE_IP` into every instrumented
+      # container — so each pod reaches the agent on the node it is running on.
+      endpoint: http://$(OTEL_NODE_IP):4318
     propagators: [tracecontext, baggage]
     sampler:
       type: parentbased_traceidratio

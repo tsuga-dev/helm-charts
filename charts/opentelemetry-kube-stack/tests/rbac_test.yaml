@@ -64,6 +64,26 @@ tests:
           content:
             apiGroups: ["discovery.k8s.io"]
 
+  # The binding subject a bring-your-own-account install produces. Paired with the
+  # collector-side assertion in target-allocator_test.yaml: the two must name the
+  # same account, or the install comes up healthy and then 403s every Kubernetes
+  # read.
+  - it: should bind the user-supplied service account when create is false
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      serviceAccount.create: false
+      serviceAccount.name: "my-sa"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: "my-sa"
+
   - it: should include endpointslices permission when targetAllocator enabled
     set:
       clusterName: "test-cluster"
