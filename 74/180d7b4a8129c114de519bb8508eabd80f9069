@@ -1,0 +1,61 @@
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_255f6a827deb1f::t_f2ea84dcb39f6a 8-13
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_255f6a827deb1f::t_bbc2bf6438c35e 21
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/instrumentation.yaml
+  s_255f6a827deb1f::t_b62ed40696f5e4 1-26
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/rbac.yaml
+  s_255f6a827deb1f::t_90e99136173c97 1-88
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/secret.yaml
+  s_255f6a827deb1f::t_d570826065e182 1-21
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_f39c3d609c2ea3 1-15
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/rbac.yaml
+  s_255f6a827deb1f::t_b01368bf9fa682 1-88
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/secret.yaml
+  s_255f6a827deb1f::t_0bbcd7d9a445b8 1-21
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_b9f19afc4d90fc 1-15
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/rbac.yaml
+  s_255f6a827deb1f::t_e4537f8b32865b 1-88
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_5dfeb4e5a0956d 1-15
+charts/opentelemetry-kube-stack/examples/default/rendered/rbac.yaml
+  s_255f6a827deb1f::t_17761bef1ac514 1-88
+charts/opentelemetry-kube-stack/examples/default/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_9f38061e627dd2 1-15
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/rbac.yaml
+  s_255f6a827deb1f::t_00463de8af6588 1-88
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_2765e668c841df 1-15
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/rbac.yaml
+  s_255f6a827deb1f::t_0293ec11c961d4 1-88
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_fc9464cf529c99 1-15
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/rbac.yaml
+  s_255f6a827deb1f::t_465354db5e6bc9 1-88
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_13bdca88477d7c 1-15
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/rbac.yaml
+  s_255f6a827deb1f::t_a0df794ca3bddf 1-92
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/serviceaccount.yaml
+  s_255f6a827deb1f::t_ec46d9e80e2c2f 1-15
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/target-allocator.yaml
+  s_255f6a827deb1f::t_dc3d5fa4f709e2 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "74180d7b4a8129c114de519bb8508eabd80f9069",
+  "prompts": {},
+  "sessions": {
+    "s_255f6a827deb1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cb5e6ed-cae5-434c-b305-53e0df042357",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}

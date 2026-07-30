@@ -1,0 +1,45 @@
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_c9df139a0da466::t_63c77d4f7d8179 21
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_c9df139a0da466::t_e52a04a1558c36 69-87
+charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/README.md
+  s_c9df139a0da466::t_3fbce12d802116 3
+  s_c9df139a0da466::t_38c92b3e21b041 130,139-140
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_c9df139a0da466::t_bbf797bc5966fd 120,129-130
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 141-144,164,174
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  s_c9df139a0da466::t_727c3833c1a053 20-23
+  s_c9df139a0da466::t_f3cf481c04443d 118,132
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_c9df139a0da466::t_a2f3d43ed2b0a0 131-134,149,159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "236203c52900b1cfe200b35805edaef574f89a0c",
+  "prompts": {},
+  "sessions": {
+    "s_c9df139a0da466": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c777e76a-3579-4ffe-b96d-9346237b9ce1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}

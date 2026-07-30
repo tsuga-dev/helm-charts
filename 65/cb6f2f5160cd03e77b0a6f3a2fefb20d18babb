@@ -1,0 +1,21 @@
+charts/opentelemetry-kube-stack/templates/cluster-receiver.yaml
+  s_255f6a827deb1f::t_e13b289c15b2f9 35-44
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_255f6a827deb1f::t_baf32b2fa061b8 171-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "65cb6f2f5160cd03e77b0a6f3a2fefb20d18babb",
+  "prompts": {},
+  "sessions": {
+    "s_255f6a827deb1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cb5e6ed-cae5-434c-b305-53e0df042357",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}

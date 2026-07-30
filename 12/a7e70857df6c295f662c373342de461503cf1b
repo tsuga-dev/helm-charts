@@ -1,0 +1,39 @@
+charts/opentelemetry-kube-stack/tests/AUTO_INSTRUMENTATION_TESTING.md
+  s_3555f581ef25dc::t_b20056ce59d35f 106,232,248,277
+README.md
+  s_3555f581ef25dc::t_b20056ce59d35f 60,72,80,92-93
+charts/opentelemetry-kube-stack/deploy.sh
+  s_3555f581ef25dc::t_b20056ce59d35f 540
+charts/opentelemetry-kube-stack/tests/integration/test-deployment.sh
+  s_3555f581ef25dc::t_b20056ce59d35f 29,47,69
+charts/opentelemetry-kube-stack/tests/README.md
+  s_3555f581ef25dc::t_b20056ce59d35f 156,182
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_3555f581ef25dc::t_1c19fc676ec069 176,195-197,248,260,271,282,363
+charts/opentelemetry-kube-stack/values.yaml
+  s_3555f581ef25dc::t_1c19fc676ec069 18,24
+charts/opentelemetry-kube-stack/README.md
+  s_3555f581ef25dc::t_ebf4ed235a03dd 186,205-207,269,280,291,523
+charts/opentelemetry-kube-stack/tests/integration/test-auto-instrumentation.sh
+  s_3555f581ef25dc::t_b20056ce59d35f 106,322,360
+charts/opentelemetry-kube-stack/Makefile
+  s_3555f581ef25dc::t_b20056ce59d35f 74,88,96
+charts/opentelemetry-kube-stack/tests/security/security-scan.sh
+  s_3555f581ef25dc::t_b20056ce59d35f 28,35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "12a7e70857df6c295f662c373342de461503cf1b",
+  "prompts": {},
+  "sessions": {
+    "s_3555f581ef25dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "360c4230-1465-42aa-8c8d-016abf202fe3",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}

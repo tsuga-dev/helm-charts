@@ -1,0 +1,55 @@
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 230-232
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 230-232
+charts/opentelemetry-kube-stack/templates/_config.tpl
+  s_255f6a827deb1f::t_92d7721113e51e 69-95
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 220-222
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 230-232
+charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 240-242
+charts/opentelemetry-kube-stack/examples/default/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 230-232
+charts/opentelemetry-kube-stack/examples/target-allocator/rendered/statefulset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 127-129
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/statefulset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 117-119
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 148-150
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 438-466
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/cluster-receiver.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 158-160
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/daemonset.yaml
+  s_255f6a827deb1f::t_7e8500fb6a83ef 230-232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3629eee3882d0c81a6608cd206ef69dfb9279718",
+  "prompts": {},
+  "sessions": {
+    "s_255f6a827deb1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4cb5e6ed-cae5-434c-b305-53e0df042357",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
