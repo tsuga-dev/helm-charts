@@ -1,0 +1,21 @@
+charts/opentelemetry-kube-stack/values.yaml
+  s_811d56f20fd5b9::t_41ec70ddc81591 110-113
+  s_811d56f20fd5b9::t_e6a07cbf583231 114-124
+  s_811d56f20fd5b9::t_0cfbadf8525259 83,86-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0f85f42f774f2d1a824634faa4fccfd68ac6fb24",
+  "prompts": {},
+  "sessions": {
+    "s_811d56f20fd5b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5be13045-e30d-465e-bedc-64de0efe1b8a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Nicolas Narbais <nicolas.narbais@gmail.com>"
+    }
+  }
+}
