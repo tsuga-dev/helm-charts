@@ -1,0 +1,43 @@
+charts/opentelemetry-kube-stack/values.schema.json
+  s_1696eb0a807a2f::t_b09027cb64e067 341-351
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  s_1696eb0a807a2f::t_daa5d82ca6bb0a 151-154
+  s_1696eb0a807a2f::t_a1f8f7c1579e33 222-224
+  s_1696eb0a807a2f::t_e285a7099288be 198-200
+  s_1696eb0a807a2f::t_e5bbcac4a9c9a6 242-244
+charts/opentelemetry-kube-stack/README.md
+  s_1696eb0a807a2f::t_ffbe70b263dc4f 297-300,303-309,313
+  s_1696eb0a807a2f::t_d302621778ec7c 3
+  s_1696eb0a807a2f::t_b964995b40f338 314-318
+  s_1696eb0a807a2f::t_f152658ef0628f 301-302,310-312,414-415
+  s_1696eb0a807a2f::t_e3b0a87e38eb2c 66,75-77,81
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_1696eb0a807a2f::t_d9b91a04b3027c 56,65-67,71,287-290,293-299
+  s_1696eb0a807a2f::t_f152658ef0628f 291-292,300-302
+  s_1696eb0a807a2f::t_b964995b40f338 304-308
+  s_1696eb0a807a2f::t_36b0eca1d34b8f 303
+charts/opentelemetry-kube-stack/values.yaml
+  s_1696eb0a807a2f::t_db71d60852faf8 217-221,224-225
+  s_1696eb0a807a2f::t_2118d6f24a8ff9 207-210,216,222-223,226-279
+  s_1696eb0a807a2f::t_a8bc477b9c7453 211-215
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_1696eb0a807a2f::t_d302621778ec7c 20
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_1696eb0a807a2f::t_3d2618d6c18400 65-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "39083ba68ce19f5cef90db58bb11f68ce6d9c298",
+  "prompts": {},
+  "sessions": {
+    "s_1696eb0a807a2f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c50b9156-915e-4053-805d-aad738fc531d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Nicolas Narbais <nicolas.narbais@gmail.com>"
+    }
+  }
+}
