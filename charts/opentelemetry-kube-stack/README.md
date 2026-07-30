@@ -321,182 +321,169 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| affinity | object | {} | Affinity rules for pod scheduling Used as default when agent.affinity is not set |
-| agent.addLogsVolumes | bool | true | Add logs volumes to the agent When true, adds volumes for log collection Even if collectLogs is false, the volumes are added |
-| agent.affinity | object | {} | Agent-specific affinity rules If not set, inherits from global affinity configuration |
-| agent.collectLogs | bool | true | Collect logs from the host and containers When true, enables the file_log receiver to collect logs from /var/log/pods Also mounts required volumes for log collection |
-| agent.collectNetwork | bool | false | Collect host network metrics When true, enables network scraper in the host_metrics receiver |
-| agent.collectOtelLogs | bool | false | Collect OpenTelemetry collector logs When false (default), excludes the collector's own container logs to avoid a self-ingestion feedback loop that produces container-parser errors |
-| agent.collectProcesses | bool | false | Collect host processes metrics When true, enables processes and process scrapers in the host_metrics receiver |
-| agent.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Agent collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp Default processors: memory_limiter, cumulative_to_delta, resource_detection (when resourceDetection.enabled), k8s_attributes, resource, resource/node, batch Default connectors: span_metrics (when agent.spanMetrics.enabled) |
-| agent.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
-| agent.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |
-| agent.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration These are merged with default extensions (health_check) |
-| agent.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors |
-| agent.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers |
-| agent.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
-| agent.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration Added to default extensions (health_check) |
-| agent.config.service.pipelines | object | `{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
-| agent.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration |
-| agent.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline Added to default exporter (otlp_http/tsuga) |
-| agent.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch) |
-| agent.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline Added to default receivers (otlp, file_log) |
-| agent.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration |
-| agent.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline Added to default exporter (otlp_http/tsuga) |
-| agent.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, batch) |
-| agent.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receivers (otlp, kubelet_stats, span_metrics, host_metrics) |
-| agent.config.service.pipelines.traces | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Traces pipeline configuration |
-| agent.config.service.pipelines.traces.extraExporters | list | [] | Additional exporters to add to the traces pipeline Added to default exporters (otlp_http/tsuga, span_metrics) |
-| agent.config.service.pipelines.traces.extraProcessors | list | [] | Additional processors to add to the traces pipeline Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch) |
-| agent.config.service.pipelines.traces.extraReceivers | list | [] | Additional receivers to add to the traces pipeline Added to default receivers (otlp) |
-| agent.customConfig | object | {} | Replace default config with complete custom configuration When set, this completely replaces the default collector configuration Use this for full control over the OpenTelemetry Collector config See cluster.customConfig for example format |
-| agent.enabled | bool | true | Enable agent daemonset deployment |
-| agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
-| agent.extraEnvs | list | [] | Extra environment variables for agent These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) |
-| agent.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
-| agent.fileLog | object | `{"exclude":[],"include":["/var/log/pods/*/*/*.log"]}` | file_log receiver paths (used when collectLogs is true) |
-| agent.fileLog.exclude | list | [] | Log file globs to skip. |
+| affinity | object | {} | Affinity rules applied to every collector. Overridden per collector by agent.affinity, cluster.affinity or statefulset.affinity. |
+| agent.addLogsVolumes | bool | true | Mount the /var/log/pods and /var/lib/docker/containers hostPaths even when collectLogs is false. Has no effect while collectLogs is true, which already mounts them. |
+| agent.affinity | object | {} | Agent-specific affinity rules. If not set, inherits from global affinity configuration. |
+| agent.collectLogs | bool | true | Collect logs from the host and containers. When true, enables the file_log receiver to collect logs from /var/log/pods. Also mounts required volumes for log collection. |
+| agent.collectNetwork | bool | false | Collect host network metrics. When true, enables network scraper in the host_metrics receiver. |
+| agent.collectOtelLogs | bool | false | Collect OpenTelemetry collector logs. When false (default), excludes the collector's own container logs to avoid a self-ingestion feedback loop that produces container-parser errors. |
+| agent.collectProcesses | bool | false | Collect host processes metrics. When true, enables processes and process scrapers in the host_metrics receiver. |
+| agent.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"traces":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Agent collector configuration (merge-based approach). Use this to extend the default configuration. Default receivers: file_log (when agent.collectLogs), kubelet_stats, host_metrics, otlp. Default processors: memory_limiter, cumulative_to_delta, resource_detection (when resourceDetection.enabled), k8s_attributes, resource, resource/node, batch. Default connectors: span_metrics (when agent.spanMetrics.enabled). Default extensions: health_check (when agent.healthCheckEndpoint is set). |
+| agent.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration. These are merged with default connectors. |
+| agent.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with default exporters (otlp_http/tsuga). |
+| agent.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration. These are merged with the default health_check extension, which is present only when agent.healthCheckEndpoint is set. |
+| agent.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration. These are merged with default processors. |
+| agent.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration. These are merged with default receivers. |
+| agent.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when agent.healthCheckEndpoint is set. |
+| agent.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default ones. |
+| agent.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline. Added to default exporter (otlp_http/tsuga). |
+| agent.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch). |
+| agent.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline. Added to default receivers (otlp, file_log). |
+| agent.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline. Added to default exporter (otlp_http/tsuga). |
+| agent.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline. Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, batch). |
+| agent.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline. Added to default receivers (otlp, kubelet_stats, span_metrics, host_metrics). |
+| agent.config.service.pipelines.traces.extraExporters | list | [] | Additional exporters to add to the traces pipeline. Added to default exporters (otlp_http/tsuga, span_metrics). |
+| agent.config.service.pipelines.traces.extraProcessors | list | [] | Additional processors to add to the traces pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, resource/node, batch). |
+| agent.config.service.pipelines.traces.extraReceivers | list | [] | Additional receivers to add to the traces pipeline. Added to default receivers (otlp). |
+| agent.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration. Use this for full control over the OpenTelemetry Collector config See cluster.customConfig for example format. |
+| agent.enabled | bool | true | Deploy the agent, a DaemonSet with one pod per node. It collects host metrics, kubelet metrics and pod logs, and is the OTLP endpoint instrumented applications send to, so turning it off removes all four. |
+| agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
+| agent.extraEnvs | list | [] | Extra environment variables for the agent. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
+| agent.extraLabelMapping | list | [] | Label mapping configuration for agent. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Format: List of objects with tag_name, key, and from fields, where from is one of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job` and defaults to `pod`. |
+| agent.fileLog | object | `{"exclude":[],"include":["/var/log/pods/*/*/*.log"]}` | file_log receiver paths (used when collectLogs is true). |
+| agent.fileLog.exclude | list | [] | Log file globs to skip. Narrowing this is the biggest log-cost lever in the chart: excluding a noisy namespace, e.g. `/var/log/pods/kube-system_*/*/*.log`, drops those records before they are ever read. |
 | agent.fileLog.include | list | ["/var/log/pods/*/*/*.log"] | Log file globs to read. |
-| agent.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
-| agent.hostMetrics | object | `{"collectionInterval":"10s"}` | host_metrics receiver options |
-| agent.hostMetrics.collectionInterval | string | "10s" | How often to collect host metrics, e.g. `60s`. |
-| agent.hostNetwork | bool | true | Enable host network for agent (recommended for optimal performance) When true, agent uses host networking for better performance |
-| agent.image | string | "" | Overrides the top-level image for the agent only |
-| agent.kubeletStats | object | `{"authType":"serviceAccount","caFile":"","collectionInterval":"20s","insecureSkipVerify":true,"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options |
-| agent.kubeletStats.authType | string | "serviceAccount" | Kubelet authentication method. One of `serviceAccount`, `tls`, `none`. |
+| agent.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension, and the liveness probe with it. |
+| agent.hostMetrics | object | `{"collectionInterval":"10s"}` | host_metrics receiver options. |
+| agent.hostMetrics.collectionInterval | string | "10s" | How often to collect host metrics, e.g. `60s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
+| agent.hostNetwork | bool | true | Run the agent in the host network namespace, so its OTLP ports are reachable at the node's own IP. Those ports then bind on the node, so anything already holding 4317 or 4318, another monitoring agent or a second collector DaemonSet, makes the pod crash-loop until agent.otlp is repointed. Set it false where the node network namespace is not available to pods. |
+| agent.image | string | "" | Overrides the top-level image for the agent only. |
+| agent.kubeletStats | object | `{"authType":"serviceAccount","caFile":"","collectionInterval":"20s","insecureSkipVerify":true,"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options. |
+| agent.kubeletStats.authType | string | "serviceAccount" | Kubelet authentication method. One of `serviceAccount`, `tls`, `kubeConfig`, `none`. |
 | agent.kubeletStats.caFile | string | "" | CA bundle path used to verify the kubelet, e.g. `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`. Requires insecureSkipVerify to be false, and the file to be mounted in the pod. |
-| agent.kubeletStats.collectionInterval | string | "20s" | How often to collect kubelet metrics, e.g. `60s`. |
+| agent.kubeletStats.collectionInterval | string | "20s" | How often to collect kubelet metrics, e.g. `60s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
 | agent.kubeletStats.insecureSkipVerify | bool | true | Skip verification of the kubelet's serving certificate. |
-| agent.kubeletStats.metricGroups | list | [node, pod, container, volume] | Kubelet metric groups to collect |
-| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata |
-| agent.nodeSelector | object | {} | Agent-specific node selector If not set, inherits from global nodeSelector configuration |
-| agent.otlp | object | `{"grpcEndpoint":"${env:MY_POD_IP}:4317","httpEndpoint":"${env:MY_POD_IP}:4318"}` | OTLP receiver listen addresses |
+| agent.kubeletStats.metricGroups | list | [node, pod, container, volume] | Kubelet metric groups to collect. Any of `node`, `pod`, `container`, `volume`. node and pod are the minimum useful set; container adds eleven metrics per container and volume five per volume, so those two drive kubelet metric cardinality. |
+| agent.kubeletStats.usePodsEndpoint | bool | true | Use the kubelet /pods endpoint for pod metadata. It is what supplies the volume type labels and the eight limit/request utilization metrics, and it authorizes against the nodes/proxy subresource: a failing call discards the whole scrape, not just those attributes, so set this false on clusters that cannot grant nodes/proxy, GKE Autopilot in particular. |
+| agent.nodeSelector | object | {} | Agent-specific node selector. If not set, inherits from global nodeSelector configuration. |
+| agent.otlp | object | `{"grpcEndpoint":"${env:MY_POD_IP}:4317","httpEndpoint":"${env:MY_POD_IP}:4318"}` | OTLP receiver listen addresses. |
 | agent.otlp.grpcEndpoint | string | "${env:MY_POD_IP}:4317" | gRPC listen address. Set to "" to disable the gRPC protocol. |
-| agent.otlp.httpEndpoint | string | "${env:MY_POD_IP}:4318" | HTTP listen address. Set to "" to disable the HTTP protocol. |
-| agent.resources | object | {} | Agent-specific resource limits and requests If not set, inherits from global resources configuration |
-| agent.spanMetrics | object | `{"dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans) |
+| agent.otlp.httpEndpoint | string | "${env:MY_POD_IP}:4318" | HTTP listen address. Set to "" to disable the HTTP protocol. Emptying both endpoints leaves the otlp receiver with no protocol, which the collector rejects at startup. |
+| agent.resources | object | {} | Resource limits and requests for the agent. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
+| agent.spanMetrics | object | `{"dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans). |
 | agent.spanMetrics.dimensions | list | see values.yaml | Span attributes to keep as metric dimensions. `default` supplies a value when the attribute is absent. |
-| agent.spanMetrics.enabled | bool | true | Generate metrics from spans. |
-| agent.tolerations | list | [] | Agent-specific tolerations If not set, inherits from global tolerations configuration |
-| autoInstrumentation.annotations | object | {} | Extra annotations to add to the Instrumentation resource |
-| autoInstrumentation.apiVersion | string | "opentelemetry.io/v1alpha1" | apiVersion for the Instrumentation CR (depends on operator version) Common values: "opentelemetry.io/v1alpha1" |
-| autoInstrumentation.enabled | bool | false | Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR) Requires the OpenTelemetry Operator to be installed in the cluster. |
-| autoInstrumentation.labels | object | {} | Extra labels to add to the Instrumentation resource |
-| autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource If empty, defaults to "<release-fullname>-instrumentation" |
-| autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough) This is passed directly to the Instrumentation Custom Resource spec. It can include (non-exhaustive): exporter, propagators, sampler, env, resource, and language blocks like java, nodejs, python, dotnet, go, apacheHttpd. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
+| agent.spanMetrics.enabled | bool | true | Generate request count and duration metrics from spans, one series per service and per combination of the dimensions below. Disabling it removes those metrics; the spans themselves are unaffected. |
+| agent.tolerations | list | [] | Agent-specific tolerations. If not set, inherits from global tolerations configuration. |
+| autoInstrumentation.annotations | object | {} | Extra annotations to add to the Instrumentation resource. |
+| autoInstrumentation.apiVersion | string | "opentelemetry.io/v1alpha1" | apiVersion for the Instrumentation CR. The CR is v1alpha1 on current operator releases. |
+| autoInstrumentation.enabled | bool | false | Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR). Requires the OpenTelemetry Operator to be installed in the cluster. |
+| autoInstrumentation.labels | object | {} | Extra labels to add to the Instrumentation resource. |
+| autoInstrumentation.nameOverride | string | "" | Override the name of the Instrumentation resource. If empty, defaults to "<release-fullname>-instrumentation". |
+| autoInstrumentation.spec | object | {} | Instrumentation spec (full passthrough). This is passed directly to the Instrumentation Custom Resource spec. It can include, among others, exporter, propagators, sampler, env, resource, and language blocks such as java, nodejs, python, dotnet, go and apacheHttpd. The empty default creates an Instrumentation with no exporter endpoint, so set spec.exporter.endpoint to the agent's OTLP address before annotating a workload. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#instrumentation |
 | batch.sendBatchMaxSize | int | 5000 | Hard cap on items per batch. Lower this if the backend rejects large requests. Keeping it equal to sendBatchSize means a timeout can never build an oversized batch. |
 | batch.sendBatchSize | int | 5000 | Item count that triggers a send. |
 | batch.timeout | string | "" | Maximum time to wait before sending an undersized batch, e.g. `5s`. Empty uses the processor's own default of 200ms. |
-| cluster.affinity | object | {} | Cluster-specific affinity rules If not set, inherits from global affinity configuration |
-| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage] | Names from the node's `status.allocatable`: cpu, memory, ephemeral-storage, pods. There is no `storage`, and an unknown name is silently ignored. |
-| cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. |
-| cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs |
-| cluster.collectk8sobjects | bool | true | Watch pod objects and send them as logs. Powers the Kubernetes view, which uses them to show pod configuration. |
-| cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Gateway collector configuration (merge-based approach) Use this to extend the default configuration Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects), k8s_objects/events (when cluster.collectk8sevents) Default processors: memory_limiter, resource_detection (when resourceDetection.enabled), k8s_attributes, resource, batch |
-| cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration These are merged with default connectors |
-| cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration These are merged with default exporters (otlp_http/tsuga) |
-| cluster.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration These are merged with default processors (memory_limiter, k8s_attributes, resource, batch) |
-| cluster.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration These are merged with default receivers (k8s_cluster, k8s_objects) Example:   extraReceivers:     prometheus:       config:         scrape_configs:           - job_name: 'my-service' |
-| cluster.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
-| cluster.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration Added to default extensions |
-| cluster.config.service.pipelines | object | `{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
-| cluster.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration These are completely new pipelines (not extending default ones) Example:   extraPipelines:     custom-logs:       receivers: [custom-receiver]       processors: [batch]       exporters: [custom-exporter] |
-| cluster.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration (Kubernetes entity events) |
-| cluster.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline Added to default exporter (otlp_http/tsuga) |
-| cluster.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline Added to default processors (memory_limiter, k8s_attributes, resource, batch) |
-| cluster.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline Added to default receivers (k8s_cluster, plus k8s_objects when cluster.collectk8sobjects) |
-| cluster.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration |
-| cluster.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline Added to default exporter (otlp_http/tsuga) |
-| cluster.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (memory_limiter, k8s_attributes, resource, batch) |
-| cluster.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receiver (k8s_cluster) |
-| cluster.customConfig | object | {} | Replace default config with complete custom configuration When set, this completely replaces the default collector configuration Use this for full control over the OpenTelemetry Collector config Example:   customConfig: |-     receivers:       k8s_cluster:         collection_interval: 30s     processors:       batch: {}     exporters:       otlp_http/tsuga:         endpoint: ${TSUGA_OTLP_ENDPOINT}     service:       pipelines:         metrics:           receivers: [k8s_cluster]           processors: [batch]           exporters: [otlp_http/tsuga] |
-| cluster.enabled | bool | true | Enable cluster receiver (gateway) deployment |
-| cluster.extraAnnotationsMapping | list | [] | Annotations mapping configuration for cluster receiver Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
-| cluster.extraEnvs | list | [] | Extra environment variables for cluster receiver These are in addition to automatic secret env vars (TSUGA_API_KEY, TSUGA_OTLP_ENDPOINT, MY_POD_IP) Example:   extraEnvs:     - name: CUSTOM_VAR       value: "custom-value" |
-| cluster.extraLabelMapping | list | [] | Label mapping configuration for cluster receiver Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
-| cluster.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
-| cluster.image | string | "" | Overrides the top-level image for the cluster receiver only |
-| cluster.nodeConditionsToReport | list | [Ready, MemoryPressure, DiskPressure, PIDPressure] | Node conditions reported as metrics. Add `NetworkUnavailable`, or the custom conditions node-problem-detector writes, to alert on them. |
-| cluster.nodeSelector | object | {} | Cluster-specific node selector If not set, inherits from global nodeSelector configuration |
-| cluster.resources | object | {} | Cluster-specific resource limits and requests If not set, inherits from global resources configuration |
-| cluster.tolerations | list | [] | Cluster-specific tolerations If not set, inherits from global tolerations configuration |
-| clusterName | string | "" (must be set) | REQUIRED. The name of the cluster, added to all telemetry as k8s.cluster.name.  Installation fails if this is empty. Telemetry from a cluster that does not name itself cannot be told apart from any other cluster's once it reaches Tsuga, and the omission only becomes visible during an incident, which is the worst time to discover it.    --set clusterName=<name>  |
-| fullnameOverride | string | "" | Override the full name used in resource naming |
-| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image used by all three collectors |
-| k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. |
-| nameOverride | string | "" | Override the chart name used in resource naming |
-| nodeSelector | object | {} | Node selector for daemonset mode (agent) Used as default when agent.nodeSelector is not set |
-| opentelemetry-operator.admissionWebhooks.failurePolicy | string | `"Ignore"` |  |
-| opentelemetry-operator.crds.create | bool | `false` |  |
-| opentelemetry-operator.enabled | bool | `false` |  |
-| opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` |  |
-| rbac | object | `{"create":true}` | RBAC configuration |
-| rbac.create | bool | true | Create RBAC resources (ClusterRole and ClusterRoleBinding) Required for collecting Kubernetes cluster metrics and metadata |
-| resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. |
-| resourceDetection.enabled | bool | false | Enable the resource_detection processor |
-| resourceDetection.timeout | string | "15s" | Per-detector timeout. A failing detector retries with exponential backoff until this expires. |
-| resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits |
-| resources.limits.cpu | string | "500m" | CPU limit |
-| resources.limits.memory | string | "512Mi" | Memory limit |
-| resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Resource requests |
-| resources.requests.cpu | string | "100m" | CPU request |
-| resources.requests.memory | string | "128Mi" | Memory request |
-| secret.create | bool | false | Create a Kubernetes secret for OpenTelemetry configuration If true: creates a secret with values from tsuga configuration If false: uses an existing secret (must be created separately) |
-| secret.keyMapping | object | `{"TSUGA_API_KEY":"TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT":"TSUGA_OTLP_ENDPOINT"}` | Key mapping for existing secret (used when create=false) Maps chart expected keys to keys in the existing secret Example: If your secret uses "<API_KEY_SECRET_KEY>" instead of "TSUGA_API_KEY", set:   keyMapping:     TSUGA_API_KEY: "<API_KEY_SECRET_KEY>" |
-| secret.keyMapping.TSUGA_API_KEY | string | "TSUGA_API_KEY" | Key name in the secret for Tsuga API key |
-| secret.keyMapping.TSUGA_OTLP_ENDPOINT | string | "TSUGA_OTLP_ENDPOINT" | Key name in the secret for Tsuga OTLP endpoint |
-| secret.name | string | "otel-secret" | Name of the secret Used when create=true (name of secret to create) Used when create=false (name of existing secret to use) |
-| secret.validation | object | `{"mandatoryKeys":["TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT"],"requireMandatoryKeys":true}` | Validation settings |
-| secret.validation.mandatoryKeys | list | ["TSUGA_API_KEY", "TSUGA_OTLP_ENDPOINT"] | Mandatory keys that must be present in the secret |
-| secret.validation.requireMandatoryKeys | bool | true | Require all mandatory keys to be present in the secret When true, chart will fail if required keys are missing |
-| serviceAccount | object | `{"annotations":{},"create":true,"name":""}` | Service account configuration |
-| serviceAccount.annotations | object | {} | Annotations to add to the service account Useful for IRSA (IAM Roles for Service Accounts) or workload identity |
-| serviceAccount.create | bool | true | Create a service account for the OpenTelemetry collectors |
-| serviceAccount.name | string | "" | Name of the service account If not set, will be auto-generated based on release name |
-| statefulset.affinity | object | {} | StatefulSet-specific affinity rules |
-| statefulset.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | StatefulSet collector configuration (merge-based approach) |
-| statefulset.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration |
-| statefulset.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration |
-| statefulset.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration |
-| statefulset.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration |
-| statefulset.config.service | object | `{"extraExtensions":[],"pipelines":{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}` | Service configuration |
-| statefulset.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration |
-| statefulset.config.service.pipelines | object | `{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}` | Pipeline configuration |
-| statefulset.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration |
-| statefulset.config.service.pipelines.metrics | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Metrics pipeline configuration |
-| statefulset.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline Added to default exporter (otlp_http/tsuga) |
-| statefulset.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, batch) |
-| statefulset.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline Added to default receiver (prometheus) |
-| statefulset.customConfig | object | {} | Replace default config with complete custom configuration |
-| statefulset.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent Maps Kubernetes pod annotations to OpenTelemetry resource attributes These are appended to default annotation mappings Format: List of objects with tag_name, key, and from fields |
-| statefulset.extraEnvs | list | [] | Extra environment variables for statefulset collector |
-| statefulset.extraLabelMapping | list | [] | Label mapping configuration for agent Maps Kubernetes pod labels to OpenTelemetry resource attributes These are appended to default label mappings Format: List of objects with tag_name, key, and from fields Example:   extraLabelMapping:     - tag_name: "app.version"       key: "app.version"       from: "pod" |
-| statefulset.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension entirely. |
-| statefulset.image | string | "" | Overrides the top-level image for the statefulset collector only |
-| statefulset.nodeSelector | object | {} | StatefulSet-specific node selector |
-| statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets evenly across replicas. |
-| statefulset.resources | object | {} | StatefulSet-specific resource limits and requests |
+| cluster.affinity | object | {} | Cluster-specific affinity rules. If not set, inherits from global affinity configuration. |
+| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
+| cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
+| cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs. Events are the only source for OOMKilled, FailedScheduling, Evicted, ErrImagePull, FailedMount and failing probes, since no metric receiver reports them. Off by default because the volume follows cluster health. Only Warning events are collected, filtered at the API server, so Normal events are never transferred. |
+| cluster.collectk8sobjects | bool | true | Watch pod objects and send them as logs. Powers the Kubernetes view, which uses them to show pod configuration. Costs one log record per pod change, plus a full snapshot of every pod on each collector restart. |
+| cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Cluster receiver configuration (merge-based approach). Use this to extend the default configuration. Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects), k8s_objects/events (when cluster.collectk8sevents). Default processors: memory_limiter, batch, resource_detection (when resourceDetection.enabled), transform/k8s_event_severity (when cluster.collectk8sevents), k8s_attributes, resource. Default extensions: health_check (when cluster.healthCheckEndpoint is set). |
+| cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration. These are merged with default connectors. |
+| cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with default exporters (otlp_http/tsuga). |
+| cluster.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration. These are merged with default processors (memory_limiter, batch, k8s_attributes, resource, plus resource_detection when resourceDetection.enabled and transform/k8s_event_severity when cluster.collectk8sevents). |
+| cluster.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration. These are merged with default receivers (k8s_cluster, plus k8s_objects when cluster.collectk8sobjects and k8s_objects/events when cluster.collectk8sevents). |
+| cluster.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when cluster.healthCheckEndpoint is set. |
+| cluster.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default ones. |
+| cluster.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration (Kubernetes entity events). |
+| cluster.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline. Added to default exporter (otlp_http/tsuga). |
+| cluster.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, batch). |
+| cluster.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline. Added to default receivers (k8s_cluster, plus k8s_objects when cluster.collectk8sobjects). |
+| cluster.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline. Added to default exporter (otlp_http/tsuga). |
+| cluster.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, batch). |
+| cluster.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline. Added to default receiver (k8s_cluster). |
+| cluster.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration. Use this for full control over the OpenTelemetry Collector config. |
+| cluster.enabled | bool | true | Deploy the cluster receiver, a single-replica Deployment that reads cluster-level metrics, pod objects and Warning events from the API server. The agent collects none of those, so turning it off loses them. |
+| cluster.extraAnnotationsMapping | list | [] | Annotations mapping configuration for the cluster receiver. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
+| cluster.extraEnvs | list | [] | Extra environment variables for the cluster receiver. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
+| cluster.extraLabelMapping | list | [] | Label mapping configuration for the cluster receiver. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Same shape as agent.extraLabelMapping. |
+| cluster.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension, and the liveness probe with it. |
+| cluster.image | string | "" | Overrides the top-level image for the cluster receiver only. |
+| cluster.nodeConditionsToReport | list | [Ready, MemoryPressure, DiskPressure, PIDPressure] | Node conditions reported as metrics. Any condition type works, so `NetworkUnavailable` or the custom conditions node-problem-detector writes can be added. A name no node reports emits a permanent -1 gauge rather than nothing, so check the spelling. |
+| cluster.nodeSelector | object | {} | Cluster-specific node selector. If not set, inherits from global nodeSelector configuration. |
+| cluster.resources | object | {} | Resource limits and requests for the cluster receiver. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
+| cluster.tolerations | list | [] | Cluster-specific tolerations. If not set, inherits from global tolerations configuration. |
+| clusterName | string | "" (must be set) | REQUIRED. Name of the cluster, attached to all telemetry as k8s.cluster.name. The install fails while this is empty and any collector is rendering the chart's default config. |
+| fullnameOverride | string | "" | Override the full name used in resource naming. |
+| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image used by all three collectors. Must be v0.157.0 or newer: the default config uses the cumulative_to_delta processor, and the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
+| k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. Dropping `k8s.pod.name` and `k8s.pod.uid` is the largest cardinality saving available here, at the cost of per-pod identification. An unsupported field name fails the collector at startup. |
+| nameOverride | string | "" | Override the chart name used in resource naming. |
+| nodeSelector | object | {} | Node selector applied to every collector. Overridden per collector by agent.nodeSelector, cluster.nodeSelector or statefulset.nodeSelector. |
+| opentelemetry-operator.admissionWebhooks.failurePolicy | string | `"Ignore"` | Failure policy for the operator's admission webhooks. `Ignore` lets the operator and the custom resources it manages be installed in the same pass. |
+| opentelemetry-operator.crds.create | bool | `false` | Let the operator subchart install the CRDs. Keep this false: it races with helm, and this chart ships the CRDs through its own otel-crds dependency instead. |
+| opentelemetry-operator.enabled | bool | `false` | Install the OpenTelemetry Operator and its CRDs as subchart dependencies. Leave this false when the operator is already installed in the cluster; the custom resources this chart creates need it either way. |
+| opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` | Collector image repository the operator falls back to for any OpenTelemetryCollector that does not set an image of its own. This chart always sets one, so it applies only when the top-level image is "". |
+| rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
+| resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. Use [env, eks, ec2] on EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty list, stops the collector from starting. |
+| resourceDetection.enabled | bool | false | Add cloud and host attributes such as cloud.provider, cloud.region, cloud.account.id and host.id, via the resource_detection processor. Off by default because a detector that fails stops the collector from starting, so match the detectors below to where you actually run. |
+| resourceDetection.timeout | string | "15s" | Deadline for the whole detection pass, and the HTTP client timeout the detectors use. Not per detector. |
+| resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits. |
+| resources.limits.cpu | string | "500m" | CPU limit. |
+| resources.limits.memory | string | "512Mi" | Memory limit. Also what memory_limiter is scaled from: it starts refusing data at 80% of this. With no limit set it reads the node's total memory instead, so the pod is OOMKilled before it ever sheds load. |
+| resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Resource requests. |
+| resources.requests.cpu | string | "100m" | CPU request. |
+| resources.requests.memory | string | "128Mi" | Memory request. |
+| secret.create | bool | false | Create the Kubernetes secret holding the Tsuga credentials. Leave this false only when a secret named secret.name already exists: every collector reads TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT from it, and a missing secret leaves the pods in CreateContainerConfigError. |
+| secret.keyMapping | object | `{"TSUGA_API_KEY":"TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT":"TSUGA_OTLP_ENDPOINT"}` | Key mapping for existing secret (used when create=false). Maps chart expected keys to keys in the existing secret. |
+| secret.keyMapping.TSUGA_API_KEY | string | "TSUGA_API_KEY" | Key name in the secret for Tsuga API key. |
+| secret.keyMapping.TSUGA_OTLP_ENDPOINT | string | "TSUGA_OTLP_ENDPOINT" | Key name in the secret for Tsuga OTLP endpoint. |
+| secret.name | string | "otel-secret" | Name of the secret. Used when create=true (name of secret to create). Used when create=false (name of existing secret to use). |
+| secret.validation | object | `{"mandatoryKeys":["TSUGA_API_KEY","TSUGA_OTLP_ENDPOINT"],"requireMandatoryKeys":true}` | Validation settings. |
+| secret.validation.mandatoryKeys | list | ["TSUGA_API_KEY", "TSUGA_OTLP_ENDPOINT"] | Mandatory keys that must be present in the secret. Currently unused: the set requireMandatoryKeys checks is hardcoded in the chart's validation helper, so editing this list has no effect. |
+| secret.validation.requireMandatoryKeys | bool | true | Fail the install when the Tsuga credentials the chart is about to write into the secret are empty. Only applies while secret.create is true; the chart cannot inspect an existing secret. |
+| serviceAccount.annotations | object | {} | Annotations to add to the service account Useful for IRSA (IAM Roles for Service Accounts) or workload identity. |
+| serviceAccount.create | bool | true | Create a service account for the OpenTelemetry collectors. |
+| serviceAccount.name | string | "" | Name of the service account, defaulting to the release fullname. Only applied to the collectors while serviceAccount.create is true; with create false they fall back to a service account the operator names itself, which the chart's ClusterRoleBinding does not cover, so every Kubernetes read is denied. |
+| statefulset.affinity | object | {} | StatefulSet-specific affinity rules. If not set, inherits from global affinity configuration. |
+| statefulset.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | StatefulSet collector configuration (merge-based approach). Use this to extend the default configuration. Default receivers: prometheus. Default processors: memory_limiter, batch, cumulative_to_delta, resource_detection (when resourceDetection.enabled), k8s_attributes, resource. Default extensions: health_check (when statefulset.healthCheckEndpoint is set). |
+| statefulset.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration The default config defines no connectors. |
+| statefulset.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with the default exporter (otlp_http/tsuga). |
+| statefulset.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration. These are merged with default processors (memory_limiter, batch, cumulative_to_delta, k8s_attributes, resource). |
+| statefulset.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration. These are merged with the default receiver (prometheus). |
+| statefulset.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when statefulset.healthCheckEndpoint is set. |
+| statefulset.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default ones. |
+| statefulset.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline. Added to default exporter (otlp_http/tsuga). |
+| statefulset.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline. Added to default processors (memory_limiter, cumulative_to_delta, k8s_attributes, resource, batch). |
+| statefulset.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline. Added to default receiver (prometheus). |
+| statefulset.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration See cluster.customConfig for example format. |
+| statefulset.extraAnnotationsMapping | list | [] | Annotations mapping configuration for the StatefulSet collector. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
+| statefulset.extraEnvs | list | [] | Extra environment variables for the StatefulSet collector. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
+| statefulset.extraLabelMapping | list | [] | Label mapping configuration for the StatefulSet collector. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Same shape as agent.extraLabelMapping. |
+| statefulset.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension, and the liveness probe with it. |
+| statefulset.image | string | "" | Overrides the top-level image for the StatefulSet collector only. |
+| statefulset.nodeSelector | object | {} | StatefulSet-specific node selector. If not set, inherits from global nodeSelector configuration. |
+| statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets across replicas according to targetAllocator.spec.allocationStrategy. |
+| statefulset.resources | object | {} | Resource limits and requests for the StatefulSet collector. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
 | statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Also the interval at which the collector refreshes its target list from the Target Allocator. |
-| statefulset.tolerations | list | [] | StatefulSet-specific tolerations |
-| targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector |
-| targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
-| targetAllocator.spec.allocationStrategy | string | "consistent-hashing" | Allocation strategy for distributing targets across collector replicas Options: consistent-hashing (default), least-weighted, per-node |
-| targetAllocator.spec.prometheusCR | object | `{"enabled":false,"podMonitorSelector":{},"serviceMonitorSelector":{}}` | PrometheusCR configuration When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs. Requires monitoring.coreos.com RBAC rules (added automatically when enabled). |
-| targetAllocator.spec.prometheusCR.enabled | bool | false | Enable ServiceMonitor/PodMonitor discovery |
+| statefulset.tolerations | list | [] | StatefulSet-specific tolerations. If not set, inherits from global tolerations configuration. |
+| targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector. |
+| targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Do not set spec.serviceAccount here; the chart writes that field itself, so setting it produces a duplicate key the API server rejects. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
+| targetAllocator.spec.allocationStrategy | string | "consistent-hashing" | How the Target Allocator spreads targets across collector replicas. One of `consistent-hashing`, `least-weighted`, `per-node`. per-node assigns only targets that resolve to a node, so anything else is left unscraped. |
+| targetAllocator.spec.prometheusCR | object | `{"enabled":false,"podMonitorSelector":{},"serviceMonitorSelector":{}}` | PrometheusCR configuration. When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs. Requires monitoring.coreos.com RBAC rules (added automatically when enabled). |
+| targetAllocator.spec.prometheusCR.enabled | bool | false | Enable ServiceMonitor/PodMonitor discovery. |
 | targetAllocator.spec.prometheusCR.podMonitorSelector | object | {} | Selector for PodMonitor resources An empty selector ({}) matches all PodMonitors in all namespaces. |
 | targetAllocator.spec.prometheusCR.serviceMonitorSelector | object | {} | Selector for ServiceMonitor resources An empty selector ({}) matches all ServiceMonitors in all namespaces. |
-| tolerations | list | [] | Tolerations for daemonset mode (agent) Used as default when agent.tolerations is not set |
-| tsuga.apiKey | string | "" | Tsuga API key for authentication Set via: --set tsuga.apiKey="<TSUGA_API_KEY>" Or use external secrets: --set tsuga.apiKey="" |
-| tsuga.compression | string | "gzip" | Compression for the OTLP exporter. One of `gzip`, `zstd`, `snappy`, `none`. |
-| tsuga.enabledForClusterReceiver | bool | true | Enable Tsuga OTLP exporter for the cluster receiver (gateway) |
-| tsuga.enabledForDaemonset | bool | true | Enable Tsuga OTLP exporter for the agent DaemonSet |
-| tsuga.enabledForStatefulset | bool | true | Enable Tsuga OTLP exporter for the StatefulSet collector (when targetAllocator is enabled) |
+| tolerations | list | [] | Tolerations applied to every collector. Overridden per collector by agent.tolerations, cluster.tolerations or statefulset.tolerations. |
+| tsuga.apiKey | string | "" | Tsuga API key, sent as an `Authorization: Bearer` header. Only written into the secret while secret.create is true. |
+| tsuga.compression | string | "gzip" | Compression for the OTLP exporter. One of `gzip`, `zlib`, `deflate`, `snappy`, `zstd`, `lz4`, `none`. |
+| tsuga.enabledForClusterReceiver | bool | true | Enable the Tsuga OTLP exporter in the cluster receiver's default config. |
+| tsuga.enabledForDaemonset | bool | true | Enable the Tsuga OTLP exporter in the agent's default config. |
+| tsuga.enabledForStatefulset | bool | true | Enable the Tsuga OTLP exporter in the StatefulSet collector's default config. |
 | tsuga.encoding | string | "json" | Payload encoding for the OTLP exporter. One of `json`, `proto`. |
-| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint for telemetry data Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" |
-| validation | object | `{"enabled":true,"enforceNamingConventions":true,"maxNameLength":63}` | Resource naming validation |
-| validation.enabled | bool | true | Enable resource name validation When enabled, validates resource names meet Kubernetes requirements |
-| validation.enforceNamingConventions | bool | true | Validate naming conventions Enforces Kubernetes naming conventions (lowercase alphanumeric and hyphens) |
-| validation.maxNameLength | int | 63 | Maximum length for resource names (Kubernetes limit is 63 characters) |
+| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
+| validation.enabled | bool | true | Fail the render when a generated resource name would not meet Kubernetes requirements. |
+| validation.enforceNamingConventions | bool | true | Require generated names to be lowercase alphanumeric with hyphens. Only applies while validation.enabled is true. |
+| validation.maxNameLength | int | 63 | Maximum length for resource names, against the Kubernetes limit of 63. Only the release fullname is measured, and the chart then appends up to 17 characters for `-cluster-receiver`, so keep the fullname to 46 or fewer. |
 
 ## Contributing
 
