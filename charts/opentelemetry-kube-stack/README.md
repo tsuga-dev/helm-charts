@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.11.1](https://img.shields.io/badge/Version-0.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.11.2](https://img.shields.io/badge/Version-0.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -64,6 +64,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations. The attribute list is configurable via `k8sAttributes.metadata`.
 - **Resource**: Adds `k8s.cluster.name` to everything
 - **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API with action `insert`, so it only writes when the attribute is missing and anything that already carries a node name keeps it. `kubelet_stats` sets it on its node metric group and `k8s_attributes` sets it for every pod it could associate; what is left is `host_metrics`, which reads the node's kernel and touches no pod so `k8s_attributes` can never associate it, plus records whose pod missed the informer cache. Those all belong to this node: the operator gives `daemonset` collectors a Service with `internalTrafficPolicy: Local`, so OTLP sent to the agent Service reaches the agent on the sender's own node.
+- **Redaction** (`redaction`): Masks credentials in attributes and log bodies. **Off by default** — enable with `redaction.enabled=true`. When enabled it runs after the enrichment processors and before `batch`, in every pipeline, so it also sees what enrichment added; `redaction.config.ignored_key_patterns` is what keeps it from masking the identity those processors set. See [Redaction](#redaction).
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Last in every default pipeline. User `extraProcessors` are appended after the default list, so anything you add runs on already-batched data.
 
 **Default Connectors:**
@@ -73,11 +74,11 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`, [`span_metrics`]
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`, [`span_metrics`]
 
-Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
+Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, `redaction` only when `redaction.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
 
 Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga by the collector's own embedded SDK. Bypassing the pipelines is deliberate: it means these metrics still arrive when a pipeline is wedged, which is when they matter most. Because supplying a reader replaces the collector's default one, nothing is served on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md).
 
@@ -315,6 +316,23 @@ EOF
 helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 ```
 
+## Redaction
+
+The agent can mask credentials before telemetry leaves the cluster, using the collector [`redaction` processor](https://app.tsuga.com/documentation/data-collection/guides/how-to-use-the-opentelemetry-redaction-processor). It is off by default:
+
+```yaml
+redaction:
+  enabled: true
+```
+
+The shipped rules are documented at `redaction.config` in [values.yaml](values.yaml) — credential key names, cloud and SaaS key formats, JWTs, private keys and credentials in connection strings. They cover credentials only, not PII. Validate them against your own telemetry: `redaction.config.summary=debug` names the keys it changed on each record, which is the fastest way to see what a rule matches. Set it back to `silent` afterwards, because at `info` and `debug` the processor stamps `redaction.*.count` on every record it touched, and on metrics those attributes land on datapoints and split the series.
+
+Two things worth knowing before you extend the defaults. The `url_sanitizer` and `db_sanitizer` options are deliberately left off: their `attributes` lists scope only span and metric attributes, and on a logs pipeline the sanitizers run against the whole log body, so enabling them rewrites every log line rather than just the URLs and queries in it. And `redaction` is now a processor name the chart owns — an existing `agent.config.extraProcessors.redaction` is silently replaced by these defaults, and listing it in `extraProcessors` for a pipeline as well makes the collector reject the config as a duplicate reference.
+
+To hash instead of mask, set `config.hash_function: hmac-sha256` and `config.hmac_key: ${env:REDACTION_HMAC_KEY}`, and supply the key (minimum 32 bytes) through `agent.extraEnvs`. Hashing keeps values correlatable across records; masking does not. The processor ships in the collector-contrib distribution that `image` points at by default; an override must point at a distribution that includes it.
+
+> **Note:** Tsuga also has a [sensitive data scanner](https://app.tsuga.com/documentation/process/sensitive-data-scanner), which keeps the rules in the platform instead of in every collector. It runs at ingest, so it covers logs only and cannot reach logs already stored. Use it alongside collector redaction, not instead of it: only the collector keeps the raw value from leaving the cluster.
+
 ## Configuration
 
 ## Values
@@ -424,6 +442,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | opentelemetry-operator.enabled | bool | `false` | Install the OpenTelemetry Operator and its CRDs as subchart dependencies. Leave this false when the operator is already installed in the cluster; the custom resources this chart creates need it either way. |
 | opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` | Collector image repository the operator falls back to for any OpenTelemetryCollector that does not set an image of its own. This chart always sets one, so it applies only when the top-level image is "". |
 | rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
+| redaction.config | object | see values.yaml | Redaction processor configuration, passed to the collector as-is, so any option the processor accepts can be set. Maps merge with these defaults but lists replace them, so overriding `blocked_key_patterns` must repeat the entries you want to keep. An empty config fails the render, because the processor's own default deletes every attribute it sees. |
+| redaction.enabled | bool | false | Mask credentials in the agent's logs, metrics and traces pipelines, via the redaction processor. Off by default because the rules have to match your own key and secret formats: an over-broad pattern silently masks data you need, and a missing one silently ships a secret. Validate against real telemetry either way. |
 | resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. Use [env, eks, ec2] on EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty list, stops the collector from starting. |
 | resourceDetection.enabled | bool | false | Add cloud and host attributes such as cloud.provider, cloud.region, cloud.account.id and host.id, via the resource_detection processor. Off by default because a detector that fails stops the collector from starting, so match the detectors below to where you actually run. |
 | resourceDetection.timeout | string | "15s" | Deadline for the whole detection pass, and the HTTP client timeout the detectors use. Not per detector. |
