@@ -77,12 +77,14 @@ Empty only when `create` is false and no name was given, which leaves the field
 off and the operator self-provisioning `<collector-name>-collector` (it does not
 fall back to the namespace default -- see ServiceAccountName in
 internal/manifests/collector/serviceaccount.go). That account is outside this
-chart's ClusterRoleBinding, so the path stays broken; it is left as-is
-deliberately, because the alternative -- emitting `serviceAccount: default` --
-would bind the chart's cluster-wide read permissions to the namespace default
-account that every unconfigured pod in the namespace inherits. Giving the user
-no service account is a smaller problem than that, and picking the other
-trade-off is the chart owner's call, not a bug fix's.
+chart's ClusterRoleBinding, so the path stays broken, and it is left as-is
+deliberately -- but not for the reason it might appear. `serviceAccountName`
+already resolves to `default` here, so the ClusterRoleBinding ALREADY grants this
+chart's cluster-wide permissions to the namespace default account that every
+unconfigured pod inherits. Pointing the collectors at that account as well would
+not fix anything, it would just run them under it. The real fix is to bind
+nothing when no name was given, which changes rendered output for existing
+releases and is the chart owner's call, not a bug fix's.
 */}}
 {{- define "opentelemetry-kube-stack.collectorServiceAccountName" -}}
 {{- if or .Values.serviceAccount.create .Values.serviceAccount.name -}}

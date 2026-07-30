@@ -1066,11 +1066,11 @@ serviceAccount:
   create: true
   # -- Name of the service account, defaulting to the release fullname. Set it
   # together with create=false to run the collectors under an account you manage;
-  # the chart's ClusterRoleBinding targets this name either way, and the operator
-  # verifies the account's permissions before deploying. Leaving both create=false
-  # and this empty is the one unsupported combination: the operator then provisions
-  # an account of its own naming that the ClusterRoleBinding does not cover, so
-  # every Kubernetes read is denied.
+  # the chart's ClusterRoleBinding targets this name either way. Leaving both
+  # create=false and this empty is the one unsupported combination: the operator
+  # then provisions an account of its own naming that the ClusterRoleBinding does
+  # not cover, so the collectors reach Ready and only then does every Kubernetes
+  # read start being denied.
   # @default -- ""
   name: ""
   # -- Annotations to add to the service account
