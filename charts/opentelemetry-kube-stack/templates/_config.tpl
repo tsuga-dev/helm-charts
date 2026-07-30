@@ -53,7 +53,9 @@ value never replaces a cloud.* or host.* attribute an instrumented application
 already set.
 
 timeout falls back to 15s rather than rendering as 0s, which would expire the
-per-detector context before the first call and fail Start().
+detection context before the first call and fail Start(). Config squashes
+confighttp.ClientConfig, so this one value is both the HTTP client timeout and
+the deadline for the whole detection pass — it is not applied per detector.
 */}}
 {{- define "opentelemetry-kube-stack.resourceDetection" -}}
 resource_detection:
