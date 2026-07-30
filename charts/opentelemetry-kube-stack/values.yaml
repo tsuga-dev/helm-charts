@@ -80,17 +80,12 @@ fullnameOverride: ""
 image: ""
 
 # =============================================================================
-# AUTO-INSTRUMENTATION (APM) CONFIGURATION
+# OPENTELEMETRY OPERATOR (subchart)
 # =============================================================================
 #
-# This creates an OpenTelemetry Operator `Instrumentation` resource.
-# Workloads can then opt-in via pod annotations like:
-#   instrumentation.opentelemetry.io/inject-java: "true"
-#   instrumentation.opentelemetry.io/inject-python: "true"
-#   instrumentation.opentelemetry.io/inject-nodejs: "true"
-#   instrumentation.opentelemetry.io/inject-dotnet: "true"
-#
-# Top level field related to the OpenTelemetry Operator
+# Installs the OpenTelemetry Operator itself. Required by autoInstrumentation
+# below, but can be left disabled if the operator is already installed in the
+# cluster.
 opentelemetry-operator:
   # Field indicating whether the operator is enabled or not
   enabled: false
@@ -112,6 +107,21 @@ opentelemetry-operator:
   crds:
     create: false
 
+# =============================================================================
+# AUTO-INSTRUMENTATION (APM) CONFIGURATION
+# =============================================================================
+#
+# This creates an OpenTelemetry Operator `Instrumentation` resource in the
+# release namespace. Workloads opt-in via pod annotations like:
+#   instrumentation.opentelemetry.io/inject-java: "<release-namespace>/<cr-name>"
+#   instrumentation.opentelemetry.io/inject-python: "<release-namespace>/<cr-name>"
+#   instrumentation.opentelemetry.io/inject-nodejs: "<release-namespace>/<cr-name>"
+#   instrumentation.opentelemetry.io/inject-dotnet: "<release-namespace>/<cr-name>"
+# The shorthand "true" only works for pods in the same namespace as the CR.
+#
+# NOTE: `spec` below is empty by default. Without an exporter endpoint the
+# operator defaults to http://localhost:4317 and telemetry goes nowhere — set
+# spec.exporter.endpoint to your collector when enabling this.
 autoInstrumentation:
   # -- Enable OpenTelemetry Operator auto-instrumentation (Instrumentation CR)
   # Requires the OpenTelemetry Operator to be installed in the cluster.
