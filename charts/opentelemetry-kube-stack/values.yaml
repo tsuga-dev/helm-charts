@@ -749,6 +749,52 @@ agent:
           # @default -- []
           extraReceivers: []
         extraPipelines: {}
+  # Resolves service.name and service.version from Kubernetes metadata, using
+  # the chain OpenTelemetry's semantic conventions define: the
+  # resource.opentelemetry.io/service.name annotation, then the
+  # app.kubernetes.io/instance and app.kubernetes.io/name labels, then the name
+  # of the owning Deployment / StatefulSet / DaemonSet / CronJob / Job.
+  # service.version resolves from app.kubernetes.io/version or the image tag.
+  #
+  # Also clears the SDK placeholder first. An instrumented workload that never
+  # set a service name emits service.name=unknown_service:<executable>, which
+  # k8s_attributes will not overwrite — so without this, spans and metrics from
+  # every such workload stay anonymous no matter what labels the pod carries.
+  # Only that prefix is cleared: a workload that sets its own name, via
+  # OTEL_SERVICE_NAME or otherwise, keeps it.
+  #
+  # Off by default, and deliberately. Semconv asks that deriving identity from
+  # well-known labels be opt-in, because users may not know their labels are
+  # being read this way. On an existing install, turning this on renames
+  # services: anything reporting as unknown_service:* becomes its workload name,
+  # and container logs and pod metrics that carry no service name today will
+  # start creating one service entry per workload.
+  #
+  # For a cluster whose labels do not follow the convention, map your own keys
+  # with extraLabelMapping or extraAnnotationsMapping below.
+  #
+  # If you do, prefer extraAnnotationsMapping. The processor applies label rules,
+  # then copies the well-known labels over the top with an unconditional write,
+  # then applies annotation rules. So on a pod carrying BOTH a custom label and
+  # an app.kubernetes.io/name, an extraLabelMapping rule targeting service.name
+  # loses — and because that rule works today while the flag is off, turning the
+  # flag on renames such a pod away from the value it already had. Annotation
+  # rules are applied last and win over both.
+  #
+  # One more asymmetry to expect: this fills a service name only where none is
+  # present. A workload that sets its own name via OTEL_SERVICE_NAME keeps it on
+  # its spans and OTLP metrics, but that name is invisible to Kubernetes, so the
+  # same pod's container logs and kubeletstats metrics resolve to the workload
+  # name instead and the workload shows up under two identities. Give such pods
+  # a resource.opentelemetry.io/service.name annotation matching their
+  # OTEL_SERVICE_NAME to keep every signal on one name.
+  #
+  # Agent only. The cluster receiver watches Kubernetes objects rather than
+  # service-emitted telemetry, so a service name there would turn every
+  # Deployment into a service.
+  # -- Derive service.name and service.version from Kubernetes metadata.
+  # @default -- false
+  deriveServiceIdentity: false
   # -- Label mapping configuration for agent
   # Maps Kubernetes pod labels to OpenTelemetry resource attributes
   # These are appended to default label mappings

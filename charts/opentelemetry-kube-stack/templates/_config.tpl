@@ -88,6 +88,38 @@ collectors. Emitted as a bare list, so callers supply their own indentation.
 {{- end }}
 
 {{/*
+Clears the SDK's placeholder service name so k8s_attributes can fill a real one.
+
+The SDK side of the problem: semconv requires an SDK to emit
+service.name=unknown_service:<executable> when nothing configured one. The
+collector side: k8s_attributes writes an extracted attribute only when the key
+is absent or empty (setResourceAttribute, processor.go), and it has no override
+flag. A placeholder is neither absent nor empty, so every service.name
+k8s_attributes derives for an instrumented pod is computed and discarded.
+
+Deleting the placeholder first is what upstream recommends for exactly this —
+contrib #43194, closed with the maintainers declining an override option in
+favour of composing the two processors. That makes the ordering load-bearing:
+this must run before k8s_attributes, never after.
+
+Matched as a prefix, not equality, because the spec appends the executable name
+— but anchored on the delimiter. The spec emits only "unknown_service" or
+"unknown_service:<exe>", so a bare ^unknown_service would also swallow a real
+service that merely starts with those letters, and silently rename it.
+*/}}
+{{- define "opentelemetry-kube-stack.clearUnknownService" -}}
+{{- $stmt := `delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and IsMatch(resource.attributes["service.name"], "^unknown_service(:|$)")` -}}
+transform/clear_unknown_service:
+  error_mode: ignore
+  trace_statements:
+    - '{{ $stmt }}'
+  metric_statements:
+    - '{{ $stmt }}'
+  log_statements:
+    - '{{ $stmt }}'
+{{- end }}
+
+{{/*
 Generate Tsuga exporters configuration
 */}}
 {{- define "opentelemetry-kube-stack.tsugaExporters" -}}

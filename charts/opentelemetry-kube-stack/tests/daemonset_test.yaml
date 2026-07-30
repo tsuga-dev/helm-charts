@@ -688,3 +688,84 @@ tests:
           path: spec.config.receivers.host_metrics.scrapers.processes
       - notExists:
           path: spec.securityContext
+
+  - it: should not derive service identity by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - notExists:
+          path: spec.config.processors["transform/clear_unknown_service"]
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.name
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.version
+      - notContains:
+          path: spec.config.service.pipelines.logs.processors
+          content: transform/clear_unknown_service
+      - notContains:
+          path: spec.config.service.pipelines.metrics.processors
+          content: transform/clear_unknown_service
+      - notContains:
+          path: spec.config.service.pipelines.traces.processors
+          content: transform/clear_unknown_service
+
+  - it: should clear the placeholder before k8s_attributes when deriving service identity
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.deriveServiceIdentity: true
+    release:
+      name: "test-release"
+    asserts:
+      # Ordering is the whole mechanism: k8s_attributes only writes a key that is
+      # absent, so the delete has to land before it. After it, this is a no-op.
+      - equal:
+          path: spec.config.service.pipelines.logs.processors
+          value: [memory_limiter, transform/clear_unknown_service, k8s_attributes, resource, resource/node, batch]
+      - equal:
+          path: spec.config.service.pipelines.metrics.processors
+          value: [memory_limiter, cumulative_to_delta, transform/clear_unknown_service, k8s_attributes, resource, resource/node, batch]
+      - equal:
+          path: spec.config.service.pipelines.traces.processors
+          value: [memory_limiter, transform/clear_unknown_service, k8s_attributes, resource, resource/node, batch]
+      # Both are enabled: false in the processor, so listing them is what turns
+      # the semconv resolution chain on.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.name
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: service.version
+
+  - it: should clear only the placeholder forms the spec defines
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.deriveServiceIdentity: true
+    release:
+      name: "test-release"
+    asserts:
+      # The delimiter anchor is load-bearing. A bare ^unknown_service prefix also
+      # matches a real service whose name merely starts with those letters, and
+      # renames it to its workload. Asserted verbatim so that cannot regress.
+      - equal:
+          path: spec.config.processors["transform/clear_unknown_service"].trace_statements
+          value:
+            - 'delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and IsMatch(resource.attributes["service.name"], "^unknown_service(:|$)")'
+      - equal:
+          path: spec.config.processors["transform/clear_unknown_service"].metric_statements
+          value:
+            - 'delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and IsMatch(resource.attributes["service.name"], "^unknown_service(:|$)")'
+      - equal:
+          path: spec.config.processors["transform/clear_unknown_service"].log_statements
+          value:
+            - 'delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and IsMatch(resource.attributes["service.name"], "^unknown_service(:|$)")'
+      # A malformed statement would otherwise fail the batch instead of the record.
+      - equal:
+          path: spec.config.processors["transform/clear_unknown_service"].error_mode
+          value: ignore

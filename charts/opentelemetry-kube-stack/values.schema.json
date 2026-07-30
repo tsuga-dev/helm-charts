@@ -107,6 +107,9 @@
                 "customConfig": {
                     "type": "object"
                 },
+                "deriveServiceIdentity": {
+                    "type": "boolean"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
