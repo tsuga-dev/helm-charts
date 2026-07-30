@@ -483,7 +483,7 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
 | validation.enabled | bool | true | Fail the render when a generated resource name would not meet Kubernetes requirements. |
 | validation.enforceNamingConventions | bool | true | Require generated names to be lowercase alphanumeric with hyphens. Only applies while validation.enabled is true. |
-| validation.maxNameLength | int | 63 | Maximum length for resource names, against the Kubernetes limit of 63. Only the release fullname is measured, and the chart then appends up to 17 characters for `-cluster-receiver`, so keep the fullname to 46 or fewer. |
+| validation.maxNameLength | int | 63 | Maximum length for the release fullname. The fullname is already truncated to 63 characters before this check runs, so at the default of 63 the check never fires; lower it to enforce a tighter bound. Note the operator truncates the Deployment and Service names it derives to 63 as well, which is where two releases sharing a long prefix would collide. |
 
 ## Contributing
 

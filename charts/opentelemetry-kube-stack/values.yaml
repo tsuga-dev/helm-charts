@@ -1094,9 +1094,11 @@ validation:
   # requirements.
   # @default -- true
   enabled: true
-  # -- Maximum length for resource names, against the Kubernetes limit of 63. Only
-  # the release fullname is measured, and the chart then appends up to 17 characters
-  # for `-cluster-receiver`, so keep the fullname to 46 or fewer.
+  # -- Maximum length for the release fullname. The fullname is already truncated to
+  # 63 characters before this check runs, so at the default of 63 the check never
+  # fires; lower it to enforce a tighter bound. Note the operator truncates the
+  # Deployment and Service names it derives to 63 as well, which is where two
+  # releases sharing a long prefix would collide.
   # @default -- 63
   maxNameLength: 63
   # -- Require generated names to be lowercase alphanumeric with hyphens. Only
