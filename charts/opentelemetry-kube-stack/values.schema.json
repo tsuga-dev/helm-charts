@@ -448,6 +448,17 @@
                 }
             }
         },
+        "redaction": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "config": {
+                    "type": "object"
+                }
+            }
+        },
         "resourceDetection": {
             "type": "object",
             "properties": {
