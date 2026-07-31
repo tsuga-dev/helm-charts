@@ -64,10 +64,6 @@ tests:
           content:
             apiGroups: ["discovery.k8s.io"]
 
-  # The binding subject a bring-your-own-account install produces. Paired with the
-  # collector-side assertion in target-allocator_test.yaml: the two must name the
-  # same account, or the install comes up healthy and then 403s every Kubernetes
-  # read.
   - it: should bind the user-supplied service account when create is false
     set:
       clusterName: "test-cluster"

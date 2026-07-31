@@ -10,8 +10,7 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name | quote }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
 spec:
-  {{- /* A serviceAccount in the passthrough spec is the user's explicit choice and
-         wins; emitting the chart's as well would put two of the same key in one map. */}}
+  {{- /* Skipped when the passthrough spec sets it, so the key is not emitted twice. */}}
   {{- if not (.Values.targetAllocator.spec).serviceAccount }}
   {{- with include "opentelemetry-kube-stack.collectorServiceAccountName" . }}
   serviceAccount: {{ . }}

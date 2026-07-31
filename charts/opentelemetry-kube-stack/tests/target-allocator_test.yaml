@@ -51,9 +51,7 @@ tests:
       - notExists:
           path: spec.serviceAccount
 
-  # create:false with an explicit name is the bring-your-own-account idiom, and
-  # rbac.yaml already binds that name -- so the workloads have to be told to use
-  # it. Covers the shared collectorServiceAccountName helper that daemonset.yaml,
+  # Covers the shared collectorServiceAccountName helper that daemonset.yaml,
   # cluster-receiver.yaml and statefulset.yaml render through the same way.
   - it: should use a named service account when create is false
     set:
@@ -70,10 +68,6 @@ tests:
           path: spec.serviceAccount
           value: "my-sa"
 
-  # The passthrough spec and the chart's own field write to the same map, so the
-  # chart has to stand down rather than emit a second serviceAccount key. helm and
-  # kubectl both let the duplicate through last-one-wins, but kyaml consumers
-  # (Flux, Kustomize) hard-fail on it, so only a test catches this.
   - it: should let a spec serviceAccount win without duplicating the key
     set:
       clusterName: "test-cluster"
@@ -85,8 +79,7 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # Strict YAML parsing rejects the duplicate outright, so loading this
-      # document at all is half the assertion.
+      # A duplicate serviceAccount key makes this document fail to load at all.
       - equal:
           path: spec.serviceAccount
           value: "mine"
