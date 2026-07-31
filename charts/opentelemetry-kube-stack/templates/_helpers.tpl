@@ -54,22 +54,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "opentelemetry-kube-stack.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
 {{- default (include "opentelemetry-kube-stack.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
-
-{{/*
-Create the name of the service account to set on the collector and Target
-Allocator specs. Empty when serviceAccount.create is false and no name is given,
-which leaves the field off and lets the operator provision its own account.
-*/}}
-{{- define "opentelemetry-kube-stack.collectorServiceAccountName" -}}
-{{- if or .Values.serviceAccount.create .Values.serviceAccount.name -}}
-{{- include "opentelemetry-kube-stack.serviceAccountName" . -}}
-{{- end -}}
 {{- end }}
 
 {{/*

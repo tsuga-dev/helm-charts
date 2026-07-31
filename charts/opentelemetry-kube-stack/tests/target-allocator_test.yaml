@@ -36,7 +36,7 @@ tests:
           path: spec.allocationStrategy
           value: "consistent-hashing"
 
-  - it: should not set serviceAccount when serviceAccount.create is false
+  - it: should use the release fullname service account when create is false and no name is given
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
@@ -48,8 +48,9 @@ tests:
     asserts:
       - isKind:
           of: TargetAllocator
-      - notExists:
+      - equal:
           path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"
 
   # Covers the shared collectorServiceAccountName helper that daemonset.yaml,
   # cluster-receiver.yaml and statefulset.yaml render through the same way.

@@ -38,7 +38,7 @@ tests:
           path: metadata.labels["opentelemetry.io/target-allocator"]
           value: "test-release-opentelemetry-kube-stack-ta"
 
-  - it: should not set serviceAccount when serviceAccount.create is false
+  - it: should use the release fullname service account when create is false and no name is given
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
@@ -50,8 +50,9 @@ tests:
     asserts:
       - isKind:
           of: OpenTelemetryCollector
-      - notExists:
+      - equal:
           path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"
 
   - it: should use custom replicas when specified
     set:

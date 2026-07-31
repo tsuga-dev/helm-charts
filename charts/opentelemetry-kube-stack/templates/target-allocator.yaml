@@ -12,9 +12,7 @@ metadata:
 spec:
   {{- /* Skipped when the passthrough spec sets it, so the key is not emitted twice. */}}
   {{- if not (.Values.targetAllocator.spec).serviceAccount }}
-  {{- with include "opentelemetry-kube-stack.collectorServiceAccountName" . }}
-  serviceAccount: {{ . }}
-  {{- end }}
+  serviceAccount: {{ include "opentelemetry-kube-stack.serviceAccountName" . }}
   {{- end }}
   {{- with .Values.targetAllocator.spec }}
   {{- toYaml . | nindent 2 }}

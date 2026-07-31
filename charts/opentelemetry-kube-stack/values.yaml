@@ -1060,15 +1060,14 @@ opentelemetry-operator:
 # =============================================================================
 # Service account shared by all three collectors and the Target Allocator.
 serviceAccount:
-  # -- Create a service account for the OpenTelemetry collectors.
+  # -- Create the service account. Set this to false to run under an account you
+  # create yourself, named by serviceAccount.name.
   # @default -- true
   create: true
-  # -- Name of the service account, defaulting to the release fullname. Set this
-  # with create=false to run the collectors under an account you manage. The
-  # ClusterRoleBinding targets this name either way. Leaving it empty with
-  # create=false is unsupported: the collectors then run under an account the
-  # operator names itself, which the ClusterRoleBinding does not cover, and every
-  # Kubernetes read is denied.
+  # -- Name of the service account, defaulting to the release fullname. The
+  # collectors and Target Allocator run as this account and the ClusterRoleBinding
+  # targets it, whether or not the chart creates it. With create=false, an account
+  # of this name must exist before installing.
   # @default -- ""
   name: ""
   # -- Annotations to add to the service account
