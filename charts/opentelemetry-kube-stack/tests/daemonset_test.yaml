@@ -155,13 +155,12 @@ tests:
             mount_points:
               - '^/dev($|/)'
               - '^/proc($|/)'
-              - '^/run/credentials($|/)'
-              - '^/run/k3s/containerd($|/)'
-              - '^/snap($|/)'
+              - '^/run/credentials/.+'
+              - '^/run/k3s/containerd/.+'
               - '^/sys($|/)'
-              - '^/var/lib/containers/storage($|/)'
-              - '^/var/lib/docker($|/)'
-              - '^/var/lib/kubelet($|/)'
+              - '^/var/lib/containers/storage/.+'
+              - '^/var/lib/docker/.+'
+              - '^/var/lib/kubelet/.+'
 
   - it: should fail to render when clusterName is not set
     set:
@@ -688,6 +687,82 @@ tests:
           path: spec.config.receivers.host_metrics.scrapers.processes
       - notExists:
           path: spec.securityContext
+
+  - it: should merge a scraper override into the default scrapers
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.hostMetrics.scrapers.filesystem.exclude_mount_points.mount_points: ['^/dev($|/)']
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_mount_points.mount_points
+          value: ['^/dev($|/)']
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.filesystem.exclude_fs_types.match_type
+          value: strict
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.cpu.metrics["system.cpu.utilization"].enabled
+          value: true
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.memory.metrics["system.linux.memory.available"].enabled
+          value: true
+
+  - it: should drop a scraper set to null
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.hostMetrics.scrapers.paging: null
+    release:
+      name: "test-release"
+    asserts:
+      - notExists:
+          path: spec.config.receivers.host_metrics.scrapers.paging
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.disk
+          value: {}
+
+  # Emptying the map is the natural way to try to turn host metrics off, and the
+  # receiver refuses to start on it, so it fails at render rather than crash-looping.
+  - it: should fail to render when the scrapers map is emptied
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.hostMetrics.scrapers: null
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorMessage: "agent.hostMetrics.scrapers rendered empty. The receiver requires at least one scraper and refuses to start without one, so the collector would crash-loop rather than skip host metrics. Note that network, process and processes are dropped unless agent.collectNetwork / agent.collectProcesses are true, so a scrapers map holding only those renders empty too."
+
+  - it: should collect conntrack usage when collectNetwork is enabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectNetwork: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.network.metrics["system.network.conntrack.count"].enabled
+          value: true
+      - equal:
+          path: spec.config.receivers.host_metrics.scrapers.network.metrics["system.network.conntrack.max"].enabled
+          value: true
+
+  - it: should not render a network scraper config when collectNetwork is false
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.collectNetwork: false
+      agent.hostMetrics.scrapers.network.include.interfaces: [eth0]
+    release:
+      name: "test-release"
+    asserts:
+      # The flag wins over the scrapers map.
+      - notExists:
+          path: spec.config.receivers.host_metrics.scrapers.network
 
   - it: should omit the redaction processor by default
     set:

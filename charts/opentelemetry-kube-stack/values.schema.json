@@ -141,6 +141,9 @@
                     "properties": {
                         "collectionInterval": {
                             "type": "string"
+                        },
+                        "scrapers": {
+                            "type": "object"
                         }
                     }
                 },
@@ -451,11 +454,37 @@
         "redaction": {
             "type": "object",
             "properties": {
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "allow_all_keys": {
+                            "type": "boolean"
+                        },
+                        "blocked_key_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "blocked_values": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "ignored_key_patterns": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "redact_all_types": {
+                            "type": "boolean"
+                        }
+                    }
+                },
                 "enabled": {
                     "type": "boolean"
-                },
-                "config": {
-                    "type": "object"
                 }
             }
         },

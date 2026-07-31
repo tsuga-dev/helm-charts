@@ -81,95 +81,15 @@ receivers:
   host_metrics:
     root_path: /hostfs
     collection_interval: {{ .Values.agent.hostMetrics.collectionInterval | default "10s" }}
+    # deepCopy because unset would otherwise mutate the shared values map.
+    {{- $scrapers := deepCopy (.Values.agent.hostMetrics.scrapers | default dict) }}
+    {{- if not .Values.agent.collectNetwork }}{{- $_ := unset $scrapers "network" }}{{- end }}
+    {{- if not .Values.agent.collectProcesses }}{{- $_ := unset (unset $scrapers "process") "processes" }}{{- end }}
+    {{- if not $scrapers }}
+    {{- fail "agent.hostMetrics.scrapers rendered empty. The receiver requires at least one scraper and refuses to start without one, so the collector would crash-loop rather than skip host metrics. Note that network, process and processes are dropped unless agent.collectNetwork / agent.collectProcesses are true, so a scrapers map holding only those renders empty too." }}
+    {{- end }}
     scrapers:
-      paging:
-        metrics:
-          system.paging.utilization:
-            enabled: true
-      cpu:
-        metrics:
-          system.cpu.utilization:
-            enabled: true
-      disk:
-      filesystem:
-        metrics:
-          system.filesystem.utilization:
-            enabled: true
-        # Without these every container overlay mount and kernel pseudo filesystem
-        # on the node becomes its own series, which on a busy node is dozens per pod
-        # and tells you nothing. fs_types is Prometheus node_exporter's default
-        # fs-types-exclude set; mount_points is its default set plus the
-        # Kubernetes-specific paths (kubelet, k3s containerd, snap). No official
-        # OpenTelemetry chart ships an equivalent default. tmpfs is deliberately
-        # kept, as node_exporter keeps it too: /run and friends are real usage worth
-        # watching.
-        exclude_mount_points:
-          match_type: regexp
-          mount_points:
-            - '^/dev($|/)'
-            - '^/proc($|/)'
-            - '^/run/credentials($|/)'
-            - '^/run/k3s/containerd($|/)'
-            - '^/snap($|/)'
-            - '^/sys($|/)'
-            - '^/var/lib/containers/storage($|/)'
-            - '^/var/lib/docker($|/)'
-            - '^/var/lib/kubelet($|/)'
-        exclude_fs_types:
-          match_type: strict
-          fs_types:
-            - autofs
-            - binfmt_misc
-            - bpf
-            - cgroup
-            - cgroup2
-            - configfs
-            - debugfs
-            - devpts
-            - devtmpfs
-            - erofs
-            - fusectl
-            - hugetlbfs
-            - iso9660
-            - mqueue
-            - nsfs
-            - overlay
-            - proc
-            - procfs
-            - pstore
-            - rpc_pipefs
-            - securityfs
-            - selinuxfs
-            - squashfs
-            - sysfs
-            - tracefs
-      load:
-      memory:
-        metrics:
-          system.memory.limit:
-            enabled: true
-          system.memory.utilization:
-            enabled: true
-      {{- if .Values.agent.collectNetwork }}
-      network:
-      {{- end }}
-      {{- if .Values.agent.collectProcesses }}
-      processes:
-      process:
-        # Best effort: the agent reports the processes it can read on the node, and
-        # per-process details it has no access to are left off rather than logged
-        # once per process per scrape.
-        mute_process_all_errors: true
-        resource_attributes:
-          # Emitted unconditionally, so it would be an empty string on every
-          # process whose exe symlink the agent cannot read. command_line carries
-          # the same information.
-          process.executable.path:
-            enabled: false
-        metrics:
-          process.uptime:
-            enabled: true
-      {{- end }}
+      {{- toYaml $scrapers | nindent 6 }}
   otlp:
     protocols:
       {{- with .Values.agent.otlp.grpcEndpoint }}

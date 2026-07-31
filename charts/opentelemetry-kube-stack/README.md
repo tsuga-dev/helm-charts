@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.11.2](https://img.shields.io/badge/Version-0.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.11.3](https://img.shields.io/badge/Version-0.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -52,7 +52,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - Uses host networking for optimal performance (configurable)
 
 **Default Receivers:**
-- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, and optionally network and process metrics. Kernel pseudo filesystems, container overlay filesystems and container mount points are excluded to keep series counts down. One consequence worth knowing: that also drops the root filesystem series on nodes whose `/` is itself an overlay mount, which means kind and k3d — cloud nodes are unaffected. `agent.collectProcesses=true` adds the `process`/`processes` scrapers, which report every process on the node; a few details such as the executable path and owner are left off where the agent has no access to them.
+- **Host Metrics** (`host_metrics`): CPU, memory, disk, filesystem, load, paging, and optionally network and process metrics. The whole scraper map is `agent.hostMetrics.scrapers` and is rendered into the receiver as given, so every option the upstream scrapers accept is settable from values; `agent.collectNetwork` and `agent.collectProcesses` gate whether those scrapers render at all, independently of what the map configures for them. Kernel pseudo filesystems, container overlay filesystems and whatever is mounted under the container and kubelet state directories are excluded to keep series counts down. One consequence worth knowing: excluding `overlay` also drops the root filesystem series on nodes whose `/` is itself an overlay mount, which means kind and k3d — cloud nodes are unaffected. `agent.collectProcesses=true` adds the `process`/`processes` scrapers, which report every process on the node; a few details such as the executable path and owner are left off where the agent has no access to them.
 - **Kubelet Stats** (`kubelet_stats`): Node, pod, container and volume metrics, plus the eight limit/request utilization metrics. The groups collected are configurable via `agent.kubeletStats.metricGroups` — `container` and `volume` are the expensive ones, eleven metrics per container and five per volume. The utilization metrics and the `k8s.volume.type` label both require the kubelet `/pods` endpoint, which authorizes against `nodes/proxy`; when that call fails the receiver discards the whole scrape, so `agent.kubeletStats.usePodsEndpoint=false` exists for clusters that cannot grant it (GKE Autopilot).
 - **OTLP**: Receives traces, metrics, and logs over gRPC (`:4317`) and HTTP (`:4318`)
 - **File Logs** (`file_log`): Collects container logs from `/var/log/pods/*/*/*.log` (controlled by `agent.collectLogs`)
@@ -370,8 +370,9 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | agent.fileLog.exclude | list | [] | Log file globs to skip. Narrowing this is the biggest log-cost lever in the chart: excluding a noisy namespace, e.g. `/var/log/pods/kube-system_*/*/*.log`, drops those records before they are ever read. |
 | agent.fileLog.include | list | ["/var/log/pods/*/*/*.log"] | Log file globs to read. |
 | agent.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension, and the liveness probe with it. |
-| agent.hostMetrics | object | `{"collectionInterval":"10s"}` | host_metrics receiver options. |
+| agent.hostMetrics | object | see values.yaml | host_metrics receiver options. |
 | agent.hostMetrics.collectionInterval | string | "10s" | How often to collect host metrics, e.g. `60s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
+| agent.hostMetrics.scrapers | object | see values.yaml | host_metrics scrapers, rendered verbatim into the receiver config. See the [receiver docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/README.md) for the options each scraper accepts. |
 | agent.hostNetwork | bool | true | Run the agent in the host network namespace, so its OTLP ports are reachable at the node's own IP. Those ports then bind on the node, so anything already holding 4317 or 4318, another monitoring agent or a second collector DaemonSet, makes the pod crash-loop until agent.otlp is repointed. Set it false where the node network namespace is not available to pods. |
 | agent.image | string | "" | Overrides the top-level image for the agent only. |
 | agent.kubeletStats | object | `{"authType":"serviceAccount","caFile":"","collectionInterval":"20s","insecureSkipVerify":true,"metricGroups":["node","pod","container","volume"],"usePodsEndpoint":true}` | kubelet_stats receiver options. |
