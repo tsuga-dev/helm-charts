@@ -1,0 +1,33 @@
+charts/opentelemetry-kube-stack/README.md
+  s_604da0286434b7::t_50cf91c288a2a2 447-448
+charts/opentelemetry-kube-stack/templates/cluster-receiver.yaml
+  s_604da0286434b7::t_9a3be0a4d43ce5 64
+charts/opentelemetry-kube-stack/templates/daemonset.yaml
+  s_604da0286434b7::t_36f1ceb943412e 86
+charts/opentelemetry-kube-stack/templates/statefulset.yaml
+  s_604da0286434b7::t_56f3cfedd3d81f 60
+charts/opentelemetry-kube-stack/templates/target-allocator.yaml
+  s_604da0286434b7::t_be129c5432f053 15
+charts/opentelemetry-kube-stack/tests/statefulset_test.yaml
+  s_604da0286434b7::t_f45de5969b8ee1 41,53,55
+charts/opentelemetry-kube-stack/tests/target-allocator_test.yaml
+  s_604da0286434b7::t_12bb419373f169 39,51,53
+charts/opentelemetry-kube-stack/values.yaml
+  s_604da0286434b7::t_d004d204fa0105 1063-1064,1067-1070
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "7f176e70914624f92cbe31a6f4d302f43f96d899",
+  "prompts": {},
+  "sessions": {
+    "s_604da0286434b7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e14167fc-1b8a-47b1-b14b-6b1f4172c7d8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
