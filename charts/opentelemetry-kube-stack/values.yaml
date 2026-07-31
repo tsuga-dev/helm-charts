@@ -289,7 +289,8 @@ agent:
     # utilization ratios carry the same attributes as a counter that is already on,
     # so they add no series; system.memory.limit, system.linux.memory.available and
     # the two conntrack gauges each add one series per node.
-    # -- host_metrics scrapers, rendered verbatim into the receiver config. See the
+    # -- host_metrics scrapers, rendered verbatim into the receiver config. Setting
+    # a scraper to `null` drops it. See the
     # [receiver docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/README.md)
     # for the options each scraper accepts.
     # @default -- see values.yaml
