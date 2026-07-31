@@ -1,0 +1,19 @@
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_ce670a2abe2a53::t_3864aa493054b6 699-700,712-713,729,732,735
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "3a607db8f7b8dddbb4658da82258f5143c5d405d",
+  "prompts": {},
+  "sessions": {
+    "s_ce670a2abe2a53": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f2a11266-69d7-4d65-a449-0078d6a917bf",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
