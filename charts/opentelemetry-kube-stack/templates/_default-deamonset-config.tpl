@@ -242,15 +242,6 @@ processors:
   # resource, so a series that starts unenriched and later gains pod metadata
   # would look like a new series and lose a datapoint to initial_value: auto.
   cumulative_to_delta: {}
-{{- if .Values.redaction.enabled }}
-{{- if not .Values.redaction.config }}
-{{- fail "redaction.enabled is true but redaction.config is empty. The processor's own default is allow_all_keys: false with no allowed_keys, which deletes every attribute it sees — including service.name and k8s.*. Provide rules, or leave redaction disabled." }}
-{{- end }}
-  # Runs after enrichment in the pipelines, so it sees the attributes those
-  # processors added; ignored_key_patterns is what stops it masking them.
-  redaction:
-    {{- toYaml .Values.redaction.config | nindent 4 }}
-{{- end }}
   resource:
     attributes:
       - key: k8s.cluster.name
@@ -306,9 +297,6 @@ service:
         - k8s_attributes
         - resource
         - resource/node
-{{- if .Values.redaction.enabled }}
-        - redaction
-{{- end }}
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -331,9 +319,6 @@ service:
         - k8s_attributes
         - resource
         - resource/node
-{{- if .Values.redaction.enabled }}
-        - redaction
-{{- end }}
         - batch
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
@@ -355,9 +340,6 @@ service:
         - k8s_attributes
         - resource
         - resource/node
-{{- if .Values.redaction.enabled }}
-        - redaction
-{{- end }}
         - batch
       receivers:
         - otlp

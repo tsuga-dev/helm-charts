@@ -1036,60 +1036,6 @@ resourceDetection:
   timeout: 15s
 
 # =============================================================================
-# REDACTION CONFIGURATION
-# =============================================================================
-# Agent only. The other two collectors read the Kubernetes API and Prometheus
-# endpoints rather than application telemetry; add the processor there through
-# their own extraProcessors if those sources carry secrets.
-redaction:
-  # -- Mask credentials in the agent's logs, metrics and traces pipelines, via
-  # the redaction processor. Off by default: the rules have to match your own key
-  # and secret formats, and an over-broad one silently masks data you need.
-  # @default -- false
-  enabled: false
-  # -- Redaction processor configuration, passed to the collector as-is. Covers
-  # credentials, not PII. Applies to attributes at every level and to log bodies,
-  # including nested maps and slices. Maps merge with these defaults but lists
-  # replace them, so overriding `blocked_key_patterns` must repeat the entries you
-  # want to keep. An empty config fails the render, because the processor's own
-  # default deletes every attribute.
-  # @default -- see values.yaml
-  config:
-    # false with no allowed_keys deletes every attribute. Leave it true.
-    allow_all_keys: true
-    # Match non-string values too. A masked value becomes a string.
-    redact_all_types: true
-    # Masking service.name or k8s.* breaks the Tsuga service and Kubernetes views.
-    ignored_key_patterns:
-      - '^service\..*'
-      - '^otel\..*'
-      - '^k8s\..*'
-    # Matched against the key; the whole value is replaced.
-    blocked_key_patterns:
-      - '(?i).*(password|passwd|pwd).*'
-      - '(?i).*(secret|credential).*'
-      - '(?i).*api[._-]?key.*'
-      - '(?i).*(access|refresh|auth)[._-]?token.*'
-      - '(?i).*authorization.*'
-      - '(?i).*session[._-]?id.*'
-      - '(?i).*private[._-]?key.*'
-    # Matched against the value, and only the match is replaced — which is why the
-    # private key pattern spans the whole PEM block rather than its header.
-    blocked_values:
-      # Cloud and SaaS keys: AWS, GCP, GitHub, GitLab, Slack, Stripe.
-      - 'AKIA[0-9A-Z]{16}'
-      - 'ASIA[0-9A-Z]{16}'
-      - 'AIza[0-9A-Za-z\-_]{35}'
-      - 'gh[pousr]_[0-9a-zA-Z]{36,}'
-      - 'glpat-[0-9a-zA-Z\-_]{20}'
-      - 'xox[baprs]-[0-9a-zA-Z-]{10,72}'
-      - 'sk_live_[0-9a-zA-Z]{24,}'
-      # JWT, PEM private key, and credentials in a connection string or URL.
-      - 'eyJ[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+'
-      - '(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----'
-      - '://[^/\s:]*:[^/\s@]+@'
-
-# =============================================================================
 # SCHEDULING & RESOURCE DEFAULTS
 # =============================================================================
 # Defaults for all three collectors. Each collector's own resources,
