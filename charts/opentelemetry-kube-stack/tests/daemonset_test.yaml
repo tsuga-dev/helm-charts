@@ -696,17 +696,10 @@ tests:
     release:
       name: "test-release"
     asserts:
+      # The default pipeline lists are asserted in full above, so absence from
+      # them is already covered; this only pins the processor block itself.
       - notExists:
           path: spec.config.processors.redaction
-      - notContains:
-          path: spec.config.service.pipelines.logs.processors
-          content: redaction
-      - notContains:
-          path: spec.config.service.pipelines.metrics.processors
-          content: redaction
-      - notContains:
-          path: spec.config.service.pipelines.traces.processors
-          content: redaction
 
   - it: should redact the agent pipelines when enabled
     set:
@@ -716,6 +709,8 @@ tests:
     release:
       name: "test-release"
     asserts:
+      # Fail-closed guard: allow_all_keys false with no allowed_keys deletes
+      # every attribute, so this one is worth pinning against a values.yaml edit.
       - equal:
           path: spec.config.processors.redaction.allow_all_keys
           value: true
@@ -731,32 +726,13 @@ tests:
       # the attributes k8s_attributes and resource added.
       - equal:
           path: spec.config.service.pipelines.logs.processors
-          value:
-            - memory_limiter
-            - k8s_attributes
-            - resource
-            - resource/node
-            - redaction
-            - batch
+          value: [memory_limiter, k8s_attributes, resource, resource/node, redaction, batch]
       - equal:
           path: spec.config.service.pipelines.metrics.processors
-          value:
-            - memory_limiter
-            - cumulative_to_delta
-            - k8s_attributes
-            - resource
-            - resource/node
-            - redaction
-            - batch
+          value: [memory_limiter, cumulative_to_delta, k8s_attributes, resource, resource/node, redaction, batch]
       - equal:
           path: spec.config.service.pipelines.traces.processors
-          value:
-            - memory_limiter
-            - k8s_attributes
-            - resource
-            - resource/node
-            - redaction
-            - batch
+          value: [memory_limiter, k8s_attributes, resource, resource/node, redaction, batch]
 
   - it: should fail the render when redaction is enabled with no rules
     set:
