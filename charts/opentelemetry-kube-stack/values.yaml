@@ -989,49 +989,33 @@ resourceDetection:
 # =============================================================================
 # REDACTION CONFIGURATION
 # =============================================================================
-# Agent only. The cluster receiver and the StatefulSet collector read the
-# Kubernetes API and Prometheus endpoints rather than application telemetry; add
-# the processor there through their own extraProcessors if those sources carry
-# secrets in your cluster.
+# Agent only. The other two collectors read the Kubernetes API and Prometheus
+# endpoints rather than application telemetry; add the processor there through
+# their own extraProcessors if those sources carry secrets.
 redaction:
   # -- Mask credentials in the agent's logs, metrics and traces pipelines, via
-  # the redaction processor. Off by default because the rules have to match your
-  # own key and secret formats: an over-broad pattern silently masks data you
-  # need, and a missing one silently ships a secret. Validate against real
-  # telemetry either way.
+  # the redaction processor. Off by default: the rules have to match your own key
+  # and secret formats, and an over-broad one silently masks data you need.
   # @default -- false
   enabled: false
-  # The rules apply to attributes at every level — resource, scope, span, span
-  # event, log record, metric datapoint — and to log bodies, descending into
-  # nested maps and slices. The body part is what reaches container logs, where a
-  # secret is usually in the message rather than in an attribute.
-  #
-  # Credentials only. There is no email, IP address, card number or other PII
-  # rule here: deciding whether personal data belongs in telemetry at all comes
-  # before masking it, and a bare email pattern matches any log line carrying an
-  # address.
-  # -- Redaction processor configuration, passed to the collector as-is, so any
-  # option the processor accepts can be set. Maps merge with these defaults but
-  # lists replace them, so overriding `blocked_key_patterns` must repeat the
-  # entries you want to keep. An empty config fails the render, because the
-  # processor's own default deletes every attribute it sees.
+  # -- Redaction processor configuration, passed to the collector as-is. Covers
+  # credentials, not PII. Applies to attributes at every level and to log bodies,
+  # including nested maps and slices. Maps merge with these defaults but lists
+  # replace them, so overriding `blocked_key_patterns` must repeat the entries you
+  # want to keep. An empty config fails the render, because the processor's own
+  # default deletes every attribute.
   # @default -- see values.yaml
   config:
-    # Keep true. With allow_all_keys false and no allowed_keys list, the
-    # processor fails closed and deletes every attribute.
+    # false with no allowed_keys deletes every attribute. Leave it true.
     allow_all_keys: true
-    # Also match non-string values, through their string representation. A
-    # matched value is rewritten as a string, so a redacted int stops being one.
+    # Match non-string values too. A masked value becomes a string.
     redact_all_types: true
-    # Never touch resource identity: masking service.name breaks the service view
-    # in Tsuga, and masking k8s.* breaks the Kubernetes views.
+    # Masking service.name or k8s.* breaks the Tsuga service and Kubernetes views.
     ignored_key_patterns:
       - '^service\..*'
       - '^otel\..*'
       - '^k8s\..*'
-    # Keys whose value is replaced wholesale. Matched against the key alone, so
-    # the value never has to look like a secret. `[._-]?` covers the dotted,
-    # underscored and hyphenated spellings of the same name.
+    # Matched against the key; the whole value is replaced.
     blocked_key_patterns:
       - '(?i).*(password|passwd|pwd).*'
       - '(?i).*(secret|credential).*'
@@ -1040,13 +1024,10 @@ redaction:
       - '(?i).*authorization.*'
       - '(?i).*session[._-]?id.*'
       - '(?i).*private[._-]?key.*'
-    # Patterns matched against values, wherever they appear. Only the matching
-    # substring is masked, so the rest of the log line survives — which is also
-    # why the private key pattern has to span the whole PEM block and not just
-    # its header.
+    # Matched against the value, and only the match is replaced — which is why the
+    # private key pattern spans the whole PEM block rather than its header.
     blocked_values:
-      # Cloud and SaaS credential formats. Their prefixes make them specific
-      # enough to match on value alone.
+      # Cloud and SaaS keys: AWS, GCP, GitHub, GitLab, Slack, Stripe.
       - 'AKIA[0-9A-Z]{16}'
       - 'ASIA[0-9A-Z]{16}'
       - 'AIza[0-9A-Za-z\-_]{35}'
@@ -1054,11 +1035,9 @@ redaction:
       - 'glpat-[0-9a-zA-Z\-_]{20}'
       - 'xox[baprs]-[0-9a-zA-Z-]{10,72}'
       - 'sk_live_[0-9a-zA-Z]{24,}'
-      # Generic secret material.
+      # JWT, PEM private key, and credentials in a connection string or URL.
       - 'eyJ[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+'
       - '(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----'
-      # Credentials in a connection string or URL. The username may be empty:
-      # redis:// and amqp:// are usually written that way.
       - '://[^/\s:]*:[^/\s@]+@'
 
 # =============================================================================

@@ -246,9 +246,8 @@ processors:
 {{- if not .Values.redaction.config }}
 {{- fail "redaction.enabled is true but redaction.config is empty. The processor's own default is allow_all_keys: false with no allowed_keys, which deletes every attribute it sees — including service.name and k8s.*. Provide rules, or leave redaction disabled." }}
 {{- end }}
-  # Runs after enrichment in the pipelines, so it also sees the attributes the
-  # enrichment processors added. ignored_key_patterns is what keeps it from
-  # masking the identity they set.
+  # Runs after enrichment in the pipelines, so it sees the attributes those
+  # processors added; ignored_key_patterns is what stops it masking them.
   redaction:
     {{- toYaml .Values.redaction.config | nindent 4 }}
 {{- end }}
