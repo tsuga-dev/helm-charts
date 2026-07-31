@@ -467,6 +467,19 @@ agent:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # The agent's k8s_attributes cache is scoped to its own node
+  # (filter.node_from_env_var), so its memory tracks pods per node, not cluster
+  # size. The default holds on clusters of any size. Raise it for nodes packed
+  # well beyond the usual pod count, or for workloads with heavy log volume.
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 500m
+  #       memory: 512Mi
+  #     requests:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #
   # -- Resource limits and requests for the agent. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -677,6 +690,29 @@ cluster:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # Raise this collector as the cluster grows. It runs a single replica by
+  # design, so it cannot be scaled out, and its memory grows with the number of
+  # objects in the cluster: k8s_cluster watches every object, and its
+  # k8s_attributes cache is cluster-wide rather than node-scoped like the
+  # agent's. Left at the default, it will OOMKill on a large cluster.
+  #
+  # Sizing by cluster:
+  #   up to  50 nodes   cpu 500m, memory 512Mi  (the default)
+  #   up to 100 nodes   cpu 1,    memory 2Gi
+  #   up to 250 nodes   cpu 2,    memory 4Gi
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 1
+  #       memory: 2Gi
+  #     requests:
+  #       cpu: 200m
+  #       memory: 512Mi
+  #
+  # Object count drives memory more than node count does, so a cluster dense in
+  # pods, jobs or events needs the next tier up. Watch this pod's
+  # container_memory_working_set_bytes and otelcol_processor_refused_* counters,
+  # and raise the limit until both settle.
   # -- Resource limits and requests for the cluster receiver. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -832,6 +868,19 @@ statefulset:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # Sized by throughput, not cluster size: this is a gateway, so what matters is
+  # how much telemetry the collectors in front of it forward. Scale it out with
+  # replicas rather than up, and keep roughly 1 cpu per 2Gi of memory. Budget one
+  # cpu per 15k spans/s, 20k metric datapoints/s or 10k log records/s.
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 2
+  #       memory: 4Gi
+  #     requests:
+  #       cpu: 500m
+  #       memory: 1Gi
+  #
   # -- Resource limits and requests for the StatefulSet collector. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -992,6 +1041,12 @@ resourceDetection:
 # Defaults for all three collectors. Each collector's own resources,
 # nodeSelector, tolerations or affinity value overrides the value here when it
 # is set.
+#
+# These defaults suit a cluster of up to roughly 50 nodes. The collectors scale
+# on different axes, so override them individually as the cluster grows:
+#   agent        pods per node
+#   cluster      objects in the cluster — raise this one first
+#   statefulset  ingested throughput
 resources:
   # -- Resource limits.
   limits:
