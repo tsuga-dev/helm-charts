@@ -35,15 +35,6 @@ jobs:
           OUTPUT: charts/opentelemetry-kube-stack/release-notes.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Generate release notes (opentelemetry-demo)
-        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
-        with:
-          config: charts/opentelemetry-demo/cliff.toml
-          args: -vv --latest --strip header
-        env:
-          OUTPUT: charts/opentelemetry-demo/release-notes.md
-          GITHUB_REPO: ${{ github.repository }}
-
       - name: Generate release notes (tsuga-spicy-gremlin)
         uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         with:

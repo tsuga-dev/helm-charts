@@ -64,6 +64,7 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - **K8s Attributes** (`k8s_attributes`): Enriches telemetry with Kubernetes metadata and selected pod labels/annotations. The attribute list is configurable via `k8sAttributes.metadata`.
 - **Resource**: Adds `k8s.cluster.name` to everything
 - **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API with action `insert`, so it only writes when the attribute is missing and anything that already carries a node name keeps it. `kubelet_stats` sets it on its node metric group and `k8s_attributes` sets it for every pod it could associate; what is left is `host_metrics`, which reads the node's kernel and touches no pod so `k8s_attributes` can never associate it, plus records whose pod missed the informer cache. Those all belong to this node: the operator gives `daemonset` collectors a Service with `internalTrafficPolicy: Local`, so OTLP sent to the agent Service reaches the agent on the sender's own node.
+- **Redaction** (`redaction`): Masks credentials in attributes and log bodies. **Off by default** — enable with `redaction.enabled=true`. Runs after the enrichment processors and before `batch`, in every pipeline, so it also sees what enrichment added. See [Redaction](#redaction).
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Last in every default pipeline. User `extraProcessors` are appended after the default list, so anything you add runs on already-batched data.
 
 **Default Connectors:**
@@ -73,11 +74,11 @@ The chart deploys two collectors by default, plus a third that is opt-in:
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
 
 **Service Pipelines:**
-- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, `batch` → `otlp_http/tsuga`, [`span_metrics`]
+- **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
+- **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
+- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`, [`span_metrics`]
 
-Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
+Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, `redaction` only when `redaction.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
 
 Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga by the collector's own embedded SDK. Bypassing the pipelines is deliberate: it means these metrics still arrive when a pipeline is wedged, which is when they matter most. Because supplying a reader replaces the collector's default one, nothing is served on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md).
 
@@ -317,6 +318,21 @@ EOF
 helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 ```
 
+## Redaction
+
+The agent can mask credentials before telemetry leaves the cluster, using the collector [`redaction` processor](https://app.tsuga.com/documentation/data-collection/guides/how-to-use-the-opentelemetry-redaction-processor). It is off by default:
+
+```yaml
+redaction:
+  enabled: true
+```
+
+The rules are documented at `redaction.config` in [values.yaml](values.yaml). Validate them against your own telemetry with `summary: debug`, which names the keys it changed, then set it back to `silent`: at `info` and above the processor stamps `redaction.*.count` on every record it touches, which on metrics splits the series.
+
+Three things to know before extending them. `url_sanitizer` and `db_sanitizer` are left off deliberately — their `attributes` lists scope span and metric attributes only, so on a logs pipeline they rewrite the whole log body rather than the URLs and queries in it. `redaction` is a processor name this chart now owns, so an existing `agent.config.extraProcessors.redaction` is silently replaced, and also listing it in a pipeline's `extraProcessors` makes the collector reject the config as a duplicate. And `hash_function: hmac-sha256` with `hmac_key: ${env:REDACTION_HMAC_KEY}` hashes instead of masking, which keeps values correlatable; supply the key (32 bytes minimum) through `agent.extraEnvs`.
+
+> **Note:** Tsuga's [sensitive data scanner](https://app.tsuga.com/documentation/process/sensitive-data-scanner) keeps these rules in the platform instead of in every collector, but runs at ingest — so it covers logs only, cannot reach logs already stored, and does not stop the raw value leaving the cluster. Use it alongside collector redaction rather than instead of it.
+
 ## Configuration
 
 ## Values
@@ -426,6 +442,8 @@ helm install my-otel-stack ./opentelemetry-kube-stack -f my-values.yaml
 | opentelemetry-operator.enabled | bool | `false` | Install the OpenTelemetry Operator and its CRDs as subchart dependencies. Leave this false when the operator is already installed in the cluster; the custom resources this chart creates need it either way. |
 | opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` | Collector image repository the operator falls back to for any OpenTelemetryCollector that does not set an image of its own. This chart always sets one, so it applies only when the top-level image is "". |
 | rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
+| redaction.config | object | see values.yaml | Redaction processor configuration, passed to the collector as-is. Covers credentials, not PII. Applies to attributes at every level and to log bodies, including nested maps and slices. Maps merge with these defaults but lists replace them, so overriding `blocked_key_patterns` must repeat the entries you want to keep. An empty config fails the render, because the processor's own default deletes every attribute. |
+| redaction.enabled | bool | false | Mask credentials in the agent's logs, metrics and traces pipelines, via the redaction processor. Off by default: the rules have to match your own key and secret formats, and an over-broad one silently masks data you need. |
 | resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. Use [env, eks, ec2] on EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty list, stops the collector from starting. |
 | resourceDetection.enabled | bool | false | Add cloud and host attributes such as cloud.provider, cloud.region, cloud.account.id and host.id, via the resource_detection processor. Off by default because a detector that fails stops the collector from starting, so match the detectors below to where you actually run. |
 | resourceDetection.timeout | string | "15s" | Deadline for the whole detection pass, and the HTTP client timeout the detectors use. Not per detector. |

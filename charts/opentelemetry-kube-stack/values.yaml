@@ -467,6 +467,19 @@ agent:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # The agent's k8s_attributes cache is scoped to its own node
+  # (filter.node_from_env_var), so its memory tracks pods per node, not cluster
+  # size. The default holds on clusters of any size. Raise it for nodes packed
+  # well beyond the usual pod count, or for workloads with heavy log volume.
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 500m
+  #       memory: 512Mi
+  #     requests:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #
   # -- Resource limits and requests for the agent. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -677,6 +690,29 @@ cluster:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # Raise this collector as the cluster grows. It runs a single replica by
+  # design, so it cannot be scaled out, and its memory grows with the number of
+  # objects in the cluster: k8s_cluster watches every object, and its
+  # k8s_attributes cache is cluster-wide rather than node-scoped like the
+  # agent's. Left at the default, it will OOMKill on a large cluster.
+  #
+  # Sizing by cluster:
+  #   up to  50 nodes   cpu 500m, memory 512Mi  (the default)
+  #   up to 100 nodes   cpu 1,    memory 2Gi
+  #   up to 250 nodes   cpu 2,    memory 4Gi
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 1
+  #       memory: 2Gi
+  #     requests:
+  #       cpu: 200m
+  #       memory: 512Mi
+  #
+  # Object count drives memory more than node count does, so a cluster dense in
+  # pods, jobs or events needs the next tier up. Watch this pod's
+  # container_memory_working_set_bytes and otelcol_processor_refused_* counters,
+  # and raise the limit until both settle.
   # -- Resource limits and requests for the cluster receiver. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -829,6 +865,19 @@ statefulset:
   # Same shape as agent.extraLabelMapping.
   # @default -- []
   extraAnnotationsMapping: []
+  # Sized by throughput, not cluster size: this is a gateway, so what matters is
+  # how much telemetry the collectors in front of it forward. Scale it out with
+  # replicas rather than up, and keep roughly 1 cpu per 2Gi of memory. Budget one
+  # cpu per 15k spans/s, 20k metric datapoints/s or 10k log records/s.
+  #
+  #   resources:
+  #     limits:
+  #       cpu: 2
+  #       memory: 4Gi
+  #     requests:
+  #       cpu: 500m
+  #       memory: 1Gi
+  #
   # -- Resource limits and requests for the StatefulSet collector. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
@@ -984,11 +1033,71 @@ resourceDetection:
   timeout: 15s
 
 # =============================================================================
+# REDACTION CONFIGURATION
+# =============================================================================
+# Agent only. The other two collectors read the Kubernetes API and Prometheus
+# endpoints rather than application telemetry; add the processor there through
+# their own extraProcessors if those sources carry secrets.
+redaction:
+  # -- Mask credentials in the agent's logs, metrics and traces pipelines, via
+  # the redaction processor. Off by default: the rules have to match your own key
+  # and secret formats, and an over-broad one silently masks data you need.
+  # @default -- false
+  enabled: false
+  # -- Redaction processor configuration, passed to the collector as-is. Covers
+  # credentials, not PII. Applies to attributes at every level and to log bodies,
+  # including nested maps and slices. Maps merge with these defaults but lists
+  # replace them, so overriding `blocked_key_patterns` must repeat the entries you
+  # want to keep. An empty config fails the render, because the processor's own
+  # default deletes every attribute.
+  # @default -- see values.yaml
+  config:
+    # false with no allowed_keys deletes every attribute. Leave it true.
+    allow_all_keys: true
+    # Match non-string values too. A masked value becomes a string.
+    redact_all_types: true
+    # Masking service.name or k8s.* breaks the Tsuga service and Kubernetes views.
+    ignored_key_patterns:
+      - '^service\..*'
+      - '^otel\..*'
+      - '^k8s\..*'
+    # Matched against the key; the whole value is replaced.
+    blocked_key_patterns:
+      - '(?i).*(password|passwd|pwd).*'
+      - '(?i).*(secret|credential).*'
+      - '(?i).*api[._-]?key.*'
+      - '(?i).*(access|refresh|auth)[._-]?token.*'
+      - '(?i).*authorization.*'
+      - '(?i).*session[._-]?id.*'
+      - '(?i).*private[._-]?key.*'
+    # Matched against the value, and only the match is replaced — which is why the
+    # private key pattern spans the whole PEM block rather than its header.
+    blocked_values:
+      # Cloud and SaaS keys: AWS, GCP, GitHub, GitLab, Slack, Stripe.
+      - 'AKIA[0-9A-Z]{16}'
+      - 'ASIA[0-9A-Z]{16}'
+      - 'AIza[0-9A-Za-z\-_]{35}'
+      - 'gh[pousr]_[0-9a-zA-Z]{36,}'
+      - 'glpat-[0-9a-zA-Z\-_]{20}'
+      - 'xox[baprs]-[0-9a-zA-Z-]{10,72}'
+      - 'sk_live_[0-9a-zA-Z]{24,}'
+      # JWT, PEM private key, and credentials in a connection string or URL.
+      - 'eyJ[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+'
+      - '(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----'
+      - '://[^/\s:]*:[^/\s@]+@'
+
+# =============================================================================
 # SCHEDULING & RESOURCE DEFAULTS
 # =============================================================================
 # Defaults for all three collectors. Each collector's own resources,
 # nodeSelector, tolerations or affinity value overrides the value here when it
 # is set.
+#
+# These defaults suit a cluster of up to roughly 50 nodes. The collectors scale
+# on different axes, so override them individually as the cluster grows:
+#   agent        pods per node
+#   cluster      objects in the cluster — raise this one first
+#   statefulset  ingested throughput
 resources:
   # -- Resource limits.
   limits:
