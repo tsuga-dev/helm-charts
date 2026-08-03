@@ -272,6 +272,7 @@ agent:
     exclude: []
 
   # -- host_metrics receiver options.
+  # @default -- see values.yaml
   hostMetrics:
     # Datapoint volume scales inversely with this, across every node in the
     # cluster, so 10s costs six times what 60s does.
@@ -279,6 +280,125 @@ agent:
     # inversely, so 60s costs a sixth of 10s.
     # @default -- "10s"
     collectionInterval: 10s
+
+    # `network`, `process` and `processes` are rendered only when
+    # agent.collectNetwork / agent.collectProcesses are true. Emptying the map
+    # fails the render: the receiver requires at least one scraper.
+    #
+    # Every metric enabled below is off in the receiver's own defaults. The four
+    # utilization ratios carry the same attributes as a counter that is already on,
+    # so they add no series; system.memory.limit, system.linux.memory.available and
+    # the two conntrack gauges each add one series per node.
+    # -- host_metrics scrapers, rendered verbatim into the receiver config. Setting
+    # a scraper to `null` drops it. See the
+    # [receiver docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/README.md)
+    # for the options each scraper accepts.
+    # @default -- see values.yaml
+    scrapers: # @schema skipProperties: true
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: {}
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+        # Without these every container overlay mount and kernel pseudo filesystem
+        # on the node becomes its own series, which on a busy node is dozens per pod
+        # and tells you nothing. fs_types is Prometheus node_exporter's
+        # defFSTypesExcluded set, verbatim; mount_points is its
+        # defMountPointsExcluded set plus /var/lib/kubelet and /run/k3s/containerd.
+        #
+        # Matched unanchored against the host's own mount point, not the path seen
+        # through root_path, so the patterns carry no /hostfs prefix. The `/.+` ones
+        # therefore exclude what is mounted *under* those paths and keep the path
+        # itself, so a dedicated image or ephemeral-storage volume still reports.
+        # tmpfs is deliberately kept, as
+        # node_exporter keeps it too: /run and friends are real usage worth watching.
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+            - '^/dev($|/)'
+            - '^/proc($|/)'
+            - '^/run/credentials/.+'
+            - '^/run/k3s/containerd/.+'
+            - '^/sys($|/)'
+            - '^/var/lib/containers/storage/.+'
+            - '^/var/lib/docker/.+'
+            - '^/var/lib/kubelet/.+'
+        exclude_fs_types:
+          match_type: strict
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - erofs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
+      load: {}
+      memory:
+        metrics:
+          # MemAvailable from /proc/meminfo, which is what the kernel's own OOM
+          # accounting tracks. system.memory.usage{state=free} is not a substitute:
+          # it excludes reclaimable page cache, so it reads low on a warm node.
+          system.linux.memory.available:
+            enabled: true
+          system.memory.limit:
+            enabled: true
+          system.memory.utilization:
+            enabled: true
+      network:
+        metrics:
+          # A full conntrack table drops connections node-wide and shows up in
+          # applications only as unexplained timeouts. Two series per node.
+          #
+          # There is no mute flag for this scraper: on a node without
+          # /proc/sys/net/netfilter/nf_conntrack_* — Cilium with kube-proxy
+          # replacement, GKE Dataplane V2 — the scraper logs a read error every
+          # collection interval instead. Set these to false there.
+          system.network.conntrack.count:
+            enabled: true
+          system.network.conntrack.max:
+            enabled: true
+      paging:
+        metrics:
+          system.paging.utilization:
+            enabled: true
+      process:
+        # Best effort: the agent reports the processes it can read on the node, and
+        # per-process details it has no access to are left off rather than logged
+        # once per process per scrape.
+        mute_process_all_errors: true
+        resource_attributes:
+          # Emitted unconditionally, so it would be an empty string on every
+          # process whose exe symlink the agent cannot read. command_line carries
+          # the same information.
+          process.executable.path:
+            enabled: false
+        metrics:
+          process.uptime:
+            enabled: true
+      processes: {}
 
   # -- kubelet_stats receiver options.
   kubeletStats:
@@ -743,11 +863,8 @@ targetAllocator:
   # @default -- false
   enabled: false
   # -- TargetAllocator CR spec (full passthrough)
-  # All fields are passed directly to the TargetAllocator CR spec. Avoid setting
-  # spec.serviceAccount here; the chart writes that field itself, so setting it
-  # emits the key twice. Nothing in the helm or kubectl path rejects that and the
-  # last value wins, so yours takes effect, but the manifest is invalid YAML and
-  # strict consumers such as Flux and kubeconform refuse it.
+  # All fields are passed directly to the TargetAllocator CR spec. Setting
+  # spec.serviceAccount here overrides the account the chart would otherwise set.
   # Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator
   # @default -- {}
   spec:
@@ -1172,13 +1289,14 @@ opentelemetry-operator:
 # =============================================================================
 # Service account shared by all three collectors and the Target Allocator.
 serviceAccount:
-  # -- Create a service account for the OpenTelemetry collectors.
+  # -- Create the service account. Set this to false to run under an account you
+  # create yourself, named by serviceAccount.name.
   # @default -- true
   create: true
-  # -- Name of the service account, defaulting to the release fullname. Only
-  # applied to the collectors while serviceAccount.create is true; with create
-  # false they fall back to a service account the operator names itself, which the
-  # chart's ClusterRoleBinding does not cover, so every Kubernetes read is denied.
+  # -- Name of the service account, defaulting to the release fullname. The
+  # collectors and Target Allocator run as this account and the ClusterRoleBinding
+  # targets it, whether or not the chart creates it. With create=false, an account
+  # of this name must exist before installing.
   # @default -- ""
   name: ""
   # -- Annotations to add to the service account

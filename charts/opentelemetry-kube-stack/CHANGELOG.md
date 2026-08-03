@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.11.3] - 2026-08-03
+
+### Added
+- agent.hostMetrics.scrapers, which holds the whole host_metrics scraper map and is rendered into the receiver as given, so mount point and filesystem type exclusions, network interface filters and individual metric toggles are all configurable from values instead of requiring customConfig. Overriding one field leaves the rest of the defaults in place, and setting a scraper to null drops it
+- system.linux.memory.available, which is MemAvailable from /proc/meminfo and therefore the figure the kernel's own OOM accounting tracks. system.memory.usage{state=free} excludes reclaimable page cache, so it reads low on a warm node and is not a substitute
+- system.network.conntrack.count and system.network.conntrack.max, collected when agent.collectNetwork is true. A full conntrack table drops connections node-wide and reaches applications only as unexplained timeouts
+
+### Fixed
+- Resolve one service account name for every path, so the collectors, the Target Allocator and the ClusterRoleBinding always name the same account. With `serviceAccount.create=false` the collectors now run under `serviceAccount.name`, or the release fullname when no name is given, instead of an account the operator names itself. Create that account before upgrading. Installs on the default `serviceAccount.create=true` are unchanged.
+- Stop `targetAllocator.spec.serviceAccount` emitting the `serviceAccount` key twice
+- Keep Helm's release metadata when a user annotation on the service account collides with it
+- Point the documented auto-instrumentation exporter at `$(OTEL_NODE_IP)` instead of a Service this chart never creates
+- The filesystem scraper no longer drops /var/lib/docker, /var/lib/kubelet and /var/lib/containers/storage when they are mounts of their own. The exclusions now match node_exporter's, which exclude what is mounted under those paths rather than the paths themselves, so a node with a dedicated image or ephemeral-storage volume reports the filesystem that fills up first instead of nothing
+- Removed the /snap mount point exclusion, which was redundant: snap revisions mount as squashfs or erofs, both already excluded by filesystem type
+
 ## [opentelemetry-kube-stack-0.11.2] - 2026-07-31
 
 ### Added

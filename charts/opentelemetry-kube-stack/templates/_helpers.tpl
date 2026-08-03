@@ -54,11 +54,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "opentelemetry-kube-stack.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
 {{- default (include "opentelemetry-kube-stack.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
 {{- end }}
 
 {{/*

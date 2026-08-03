@@ -108,7 +108,7 @@ spec:
             metrics:
               system.cpu.utilization:
                 enabled: true
-          disk: null
+          disk: {}
           filesystem:
             exclude_fs_types:
               fs_types:
@@ -143,19 +143,20 @@ spec:
               mount_points:
               - ^/dev($|/)
               - ^/proc($|/)
-              - ^/run/credentials($|/)
-              - ^/run/k3s/containerd($|/)
-              - ^/snap($|/)
+              - ^/run/credentials/.+
+              - ^/run/k3s/containerd/.+
               - ^/sys($|/)
-              - ^/var/lib/containers/storage($|/)
-              - ^/var/lib/docker($|/)
-              - ^/var/lib/kubelet($|/)
+              - ^/var/lib/containers/storage/.+
+              - ^/var/lib/docker/.+
+              - ^/var/lib/kubelet/.+
             metrics:
               system.filesystem.utilization:
                 enabled: true
-          load: null
+          load: {}
           memory:
             metrics:
+              system.linux.memory.available:
+                enabled: true
               system.memory.limit:
                 enabled: true
               system.memory.utilization:
