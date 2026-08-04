@@ -1,0 +1,262 @@
+charts/opentelemetry-database-monitoring/values.yaml
+  s_0ab16da0460966::t_2d1c93a73d9024 106,110,115,117,120,124,130,134,138,143,147,152-153,157,161,166,169,172,176,182,186,191,196,200,205-206
+  s_0ab16da0460966::t_ce93195768e2ee 14,54,58,63,66,69,73,79,83,87,92,96
+  s_0ab16da0460966::t_1bfbbb0f7dd1e3 2-4,6-8,10-13,15-16,18-20,22-26,28-30,32-34,36-39,41-43,45-48,51-53,55-57,59-62,64-65,67-68,70-72,74-78,80-82,84-86,88-91,93-95,97-105,107-109,111-114,116,118-119,121-123,125-129,131-133,135-137,139-142,144-146,148-151,154-156,158-160,162-165,167-168,170-171,173-175,177-181,183-185,187-190,192-195,197-199,201-204,207-212,214-215,218-220,223-225,227-229,231-236,238-239,241,244-246,248,250,253-254,256-258,261-262,264-266,270-271,273-275,278
+charts/opentelemetry-database-monitoring/assets/mongodb-monitoring-setup.js
+  s_0ab16da0460966::t_be7fbf9fa592b0 5-7,9-10
+  s_0ab16da0460966::t_92ae95ff11f89c 1-4,8,11-18,21-27,31-33
+  s_0ab16da0460966::t_74c2e8e811fd18 19-20
+  s_0ab16da0460966::t_3dd41be72b63ec 28-30
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8,42
+charts/opentelemetry-database-monitoring/templates/NOTES.txt
+  s_0ab16da0460966::t_73a66f658a46ca 1,11-21
+  s_0ab16da0460966::t_99329038af178d 61
+  s_0ab16da0460966::t_29352f7236018d 23-24,26-42,62-63,68
+  s_0ab16da0460966::t_fb90da9d283dd7 22
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/values.yaml
+  s_0ab16da0460966::t_29352f7236018d 1-10
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8,20,33,49,66,86
+charts/opentelemetry-database-monitoring/templates/configmap-pg-monitoring.yaml
+  s_0ab16da0460966::t_22a72bac7ed687 1,9
+charts/opentelemetry-database-monitoring/values.schema.json
+  s_0ab16da0460966::t_30ce36573a20b6 141-183,264-265
+  s_0ab16da0460966::t_e0112ffc00accf 98-140,223-263
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events/argo-events-controller/config.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-86
+charts/opentelemetry-database-monitoring/README.md.gotmpl
+  s_0ab16da0460966::t_93bbe9e0951bd7 595-599
+  s_0ab16da0460966::t_ca90b06c4fb0fb 21-26,28-36
+  s_0ab16da0460966::t_e41631804e4380 222-257
+  s_0ab16da0460966::t_0fe4d2200e991d 450-588
+  s_0ab16da0460966::t_173603761bc9f2 19-20,27,37
+  s_0ab16da0460966::t_8f7ecccc967728 603-605
+  s_0ab16da0460966::t_519b7d2e320b5e 400-449,589
+  s_0ab16da0460966::t_5b7aa23683ce86 204-221,258-285
+  s_0ab16da0460966::t_94faf521f5f42b 600-602
+  s_0ab16da0460966::t_c305e76708a419 617-640
+charts/opentelemetry-database-monitoring/templates/argo-eventbus.yaml
+  s_0ab16da0460966::t_76a04e20cde4c7 1
+charts/opentelemetry-database-monitoring/templates/mysql-dbm-sidecar.yaml
+  s_0ab16da0460966::t_ab9929e86d95f8 1-31
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/postgres-dbm-sidecar.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 19
+  s_0ab16da0460966::t_f678b95e84446e 436-438,447
+  s_0ab16da0460966::t_6cfad928c6e074 11
+  s_0ab16da0460966::t_418c1141f14d23 32-36
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/secret-pg-monitoring.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 9
+charts/opentelemetry-database-monitoring/assets/mongodb-monitoring-config.yaml
+  s_0ab16da0460966::t_8baed5b0dcd277 2-5,7,12,14-23
+  s_0ab16da0460966::t_2ab36088ae10a7 59-62,65-71
+  s_0ab16da0460966::t_a9e26d48855c16 1,6,8-11,13,24-58,63-64,72-76,80-87,89-92
+  s_0ab16da0460966::t_27fa39cbffe166 77-79,88
+charts/opentelemetry-database-monitoring/tests/argo-events_test.yaml
+  s_0ab16da0460966::t_86547357999664 2-11,14-25,71-141
+  s_0ab16da0460966::t_eafec7bb784393 1
+  s_0ab16da0460966::t_b3ae512ea3f2b7 12-13,26-70
+charts/opentelemetry-database-monitoring/templates/argo-eventsource.yaml
+  s_0ab16da0460966::t_6b51101cdc19fb 1,4
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events/argo-events-controller/serviceaccount.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-15
+charts/opentelemetry-database-monitoring/assets/mysql-monitoring-config.yaml
+  s_0ab16da0460966::t_128db656545a0b 2-5,7-9
+  s_0ab16da0460966::t_d59aeebc5fa585 1,6,10-61,66-208,212-219,221-227
+  s_0ab16da0460966::t_6cd03c5b3415d8 62-65
+  s_0ab16da0460966::t_27fa39cbffe166 209-211,220
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8,20,33,49,66,86
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events/argo-events-controller/rbac.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-115
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/configmap-mongodb-monitoring.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-41
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events/argo-events-webhook/serviceaccount.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-15
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/values.yaml
+  s_0ab16da0460966::t_29352f7236018d 1-10
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/configmap-mysql-monitoring.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-45,49-52,63-112
+  s_0ab16da0460966::t_418c1141f14d23 46-48,53-62
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/mysql-dbm-sidecar.yaml
+  s_0ab16da0460966::t_f678b95e84446e 239-241,250
+  s_0ab16da0460966::t_418c1141f14d23 32-35,37-39,92-95
+  s_0ab16da0460966::t_1890a384cd35bf 1-10,12-31,36,40-91,96-238,242-249,251-257
+  s_0ab16da0460966::t_6cfad928c6e074 11
+charts/opentelemetry-database-monitoring/README.md
+  s_0ab16da0460966::t_34c039bd077ecc 682-740
+  s_0ab16da0460966::t_c7a9706af92ac2 15-16,33,200-217,254-281,396-444,463,505,519,531,533,539,599-601
+  s_0ab16da0460966::t_6cfad928c6e074 3
+  s_0ab16da0460966::t_056b92ea975c46 613-636
+  s_0ab16da0460966::t_418c1141f14d23 17-32,218-253,445-462,464-504,506-518,520-530,532,534-538,540-585,591-598
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/config.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-86
+charts/opentelemetry-database-monitoring/assets/pg-monitoring-config.yaml
+  s_0ab16da0460966::t_20b0cc61777ada 2-6
+  s_0ab16da0460966::t_27fa39cbffe166 406-408,417
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/postgres-dbm-sidecar.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 11,470
+  s_0ab16da0460966::t_1890a384cd35bf 19,478
+  s_0ab16da0460966::t_418c1141f14d23 32-36,491-495
+  s_0ab16da0460966::t_f678b95e84446e 436-438,447,895-897,906
+charts/opentelemetry-database-monitoring/templates/secret-mongodb-monitoring.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-34
+charts/opentelemetry-database-monitoring/tests/mongodb_test.yaml
+  s_0ab16da0460966::t_17953f1b216b2d 1-175
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-17
+charts/opentelemetry-database-monitoring/templates/configmap-mongodb-monitoring.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-9
+charts/opentelemetry-database-monitoring/assets/mysql-monitoring-setup.sql
+  s_0ab16da0460966::t_9b03ef2f93f5b7 38-40
+  s_0ab16da0460966::t_8f86d17f12a3f6 45-54
+  s_0ab16da0460966::t_0ea0218e307797 78-81,83-88,92
+  s_0ab16da0460966::t_8ba3e8651d4982 1-37,41-44,55-77,82,89-91,93-104
+charts/opentelemetry-database-monitoring/templates/configmap-mysql-monitoring.yaml
+  s_0ab16da0460966::t_244d61ebce31a6 1-9
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/secret-mysql-monitoring.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-8,10-17
+  s_0ab16da0460966::t_6cfad928c6e074 9
+charts/opentelemetry-database-monitoring/templates/postgres-dbm-sidecar.yaml
+  s_0ab16da0460966::t_cbe2fd350ce937 17
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/values.yaml
+  s_0ab16da0460966::t_7ba1475d41a158 1-10
+charts/opentelemetry-database-monitoring/tests/mysql_test.yaml
+  s_0ab16da0460966::t_1d33625b36a6a2 104-111
+  s_0ab16da0460966::t_5ef7d63b02b43f 1-103,112-164
+charts/opentelemetry-database-monitoring/templates/secret-mysql-monitoring.yaml
+  s_0ab16da0460966::t_93727a58a83b46 1-34
+charts/opentelemetry-database-monitoring/Chart.yaml
+  s_0ab16da0460966::t_a7114d4c2dd365 19
+charts/opentelemetry-database-monitoring/templates/job-mongodb-monitoring-setup.yaml
+  s_0ab16da0460966::t_8391675b0c0036 1-7
+charts/opentelemetry-database-monitoring/templates/job-mysql-monitoring-setup.yaml
+  s_0ab16da0460966::t_48dab213cf2a1f 1-4,6-7
+  s_0ab16da0460966::t_b3f16c357ad6b7 5
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-17
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-7,9-26
+  s_0ab16da0460966::t_6cfad928c6e074 8
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events/argo-events-controller/deployment.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-84
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/deployment.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-84
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-webhook/serviceaccount.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-15
+charts/opentelemetry-database-monitoring/templates/configmap-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-9
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-26
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-97
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events/argo-events-webhook/serviceaccount.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-15
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/rbac.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-115
+charts/opentelemetry-database-monitoring/templates/_job.tpl
+  s_0ab16da0460966::t_4a839900d7be6d 65-73,77-88,95-145
+  s_0ab16da0460966::t_e2eee2a5ab7dbe 74-76,89-94
+  s_0ab16da0460966::t_4520d2833d6790 146-324
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8
+  s_0ab16da0460966::t_1890a384cd35bf 1-7,9-17
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events/argo-events-controller/serviceaccount.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-15
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8
+charts/opentelemetry-database-monitoring/templates/job-sqlserver-monitoring-setup.yaml
+  s_0ab16da0460966::t_8391675b0c0036 1-7
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events/argo-events-controller/rbac.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-115
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/serviceaccount.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-15
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/secret-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-17
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-97
+charts/opentelemetry-database-monitoring/templates/_helpers.tpl
+  s_0ab16da0460966::t_592f92cb0295b8 74-87
+  s_0ab16da0460966::t_0542b1e843b7c3 64-73,88-106,113-128,130-133,136-140,145,167-172
+  s_0ab16da0460966::t_6186d598e124aa 129
+  s_0ab16da0460966::t_69968b55ed3768 107-112
+charts/opentelemetry-database-monitoring/templates/argo-sensor.yaml
+  s_0ab16da0460966::t_f678a5d452c28d 47-55,58-79,81-87,170
+  s_0ab16da0460966::t_36a90c5bb5acd0 56-57,80
+  s_0ab16da0460966::t_8391675b0c0036 88-169
+  s_0ab16da0460966::t_8aee28557fbbbc 7
+  s_0ab16da0460966::t_3a2b9ebb108c44 1
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/secret-pg-monitoring.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 9,26
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8,20,33,49,66,86
+  s_0ab16da0460966::t_1890a384cd35bf 1-7,9-19,21-32,34-48,50-65,67-85,87-97
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events/argo-events-controller/deployment.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-84
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/mongodb-dbm-sidecar.yaml
+  s_0ab16da0460966::t_f678b95e84446e 107-109,118
+  s_0ab16da0460966::t_418c1141f14d23 1-106,110-117,119-122
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-26
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8,42,94,128
+charts/opentelemetry-database-monitoring/templates/secret-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-34
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_f74e69d07264ee 6-7,32
+  s_0ab16da0460966::t_1890a384cd35bf 1-5,8,10-31,33-42,44-94
+  s_0ab16da0460966::t_6cfad928c6e074 9,43
+charts/opentelemetry-database-monitoring/examples/mysql-single-db/rendered/argo-events/argo-events-controller/config.yaml
+  s_0ab16da0460966::t_1890a384cd35bf 1-86
+charts/opentelemetry-database-monitoring/templates/sqlserver-dbm-sidecar.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-31
+charts/opentelemetry-database-monitoring/assets/sqlserver-monitoring-config.yaml
+  s_0ab16da0460966::t_96c125c6318d7f 1,12-17,22,32-174,179-276,280-287,289-294
+  s_0ab16da0460966::t_27fa39cbffe166 277-279,288
+  s_0ab16da0460966::t_d91ec5845a113b 2-11
+  s_0ab16da0460966::t_e39cc34632874b 175-178
+  s_0ab16da0460966::t_482f0f1a03ed8a 18-21,23-31
+charts/opentelemetry-database-monitoring/tests/sqlserver_test.yaml
+  s_0ab16da0460966::t_e3e52937e70905 1-191
+charts/opentelemetry-database-monitoring/assets/sqlserver-monitoring-setup.sql
+  s_0ab16da0460966::t_60dc6998e0da56 20-22
+  s_0ab16da0460966::t_6d0a9c1c78191d 1-19,23-60,71-114
+  s_0ab16da0460966::t_adbc90b3ad5999 61-70
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-103
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-102
+charts/opentelemetry-database-monitoring/templates/mongodb-dbm-sidecar.yaml
+  s_0ab16da0460966::t_d5125e4cc07dc0 1-31
+charts/opentelemetry-database-monitoring/examples/mongodb-single-db/rendered/secret-mongodb-monitoring.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-17
+charts/opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
+  s_0ab16da0460966::t_cd4dadcbf31a07 1,5
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/configmap-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-122
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/sqlserver-dbm-sidecar.yaml
+  s_0ab16da0460966::t_418c1141f14d23 1-306,310-317,319-324
+  s_0ab16da0460966::t_f678b95e84446e 307-309,318
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_6cfad928c6e074 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2b0a61e23fc99737aeee95a845fce815bbe264c1",
+  "prompts": {},
+  "sessions": {
+    "s_0ab16da0460966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac4d227d-ab9d-4144-bc44-176bbe136a5e",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
