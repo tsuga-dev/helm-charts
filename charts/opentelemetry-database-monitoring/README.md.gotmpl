@@ -16,6 +16,25 @@ When `argoEvents.enabled=true`, the chart also installs [Argo Events](https://ar
 
 {{ template "chart.requirementsSection" . }}
 
+## Supported engines
+
+| Engine | Values key | Notes |
+|--------|-----------|-------|
+| PostgreSQL | `postgres` | |
+| MySQL | `mysql` | [MySQL notes](#mysql-notes) |
+| MongoDB | `mongodb` | [MongoDB notes](#mongodb-notes) |
+| Microsoft SQL Server | `sqlserver` | [SQL Server notes](#microsoft-sql-server-notes) |
+
+Every engine is disabled by default. Enable the ones you need with
+`postgres.enabled=true`, `mysql.enabled=true`, `mongodb.enabled=true`, or
+`sqlserver.enabled=true`. They can run side by side in one release: each gets its
+own sidecar CR, monitor Secret, setup ConfigMap, and setup Job, and the Argo
+Events plumbing is shared and watches the union of their target namespaces.
+
+Every engine exports **metrics only**. Where a receiver also offers query
+collection as log records, this chart collects the equivalent data as metrics
+instead — see [Query collection](#query-collection).
+
 ## How it works
 
 ### Sidecar collector
@@ -182,6 +201,88 @@ argoEvents:
 
 Annotate the Postgres Pod with `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+### Single MySQL database
+
+See `examples/mysql-single-db/`.
+
+```yaml
+mysql:
+  enabled: true
+  databases:
+    - name: mysql
+      sidecar-name: mysql-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 3306
+      host: mysql
+```
+
+Annotate the MySQL Pod with `sidecar.opentelemetry.io/inject: mysql-dbm-sidecar`.
+
+### Single MongoDB database
+
+See `examples/mongodb-single-db/`.
+
+```yaml
+mongodb:
+  enabled: true
+  databases:
+    - name: mongodb
+      sidecar-name: mongodb-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 27017
+      host: mongodb
+```
+
+Annotate the MongoDB Pod with `sidecar.opentelemetry.io/inject: mongodb-dbm-sidecar`.
+
+### Single Microsoft SQL Server database
+
+See `examples/sqlserver-single-db/`.
+
+```yaml
+sqlserver:
+  enabled: true
+  databases:
+    - name: sqlserver
+      sidecar-name: sqlserver-dbm-sidecar
+      user: sa
+      pwd: otel
+      port: 1433
+      host: sqlserver
+```
+
+Annotate the SQL Server Pod with `sidecar.opentelemetry.io/inject: sqlserver-dbm-sidecar`.
+
+### PostgreSQL and MySQL in one release
+
+```yaml
+postgres:
+  enabled: true
+  databases:
+    - name: postgresql
+      sidecar-name: postgres-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 5432
+      host: postgresql
+
+mysql:
+  enabled: true
+  databases:
+    - name: mysql
+      sidecar-name: mysql-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 3306
+      host: mysql
+```
+
+Each engine gets its own sidecar CR, monitor Secret, setup ConfigMap, and setup
+Job. The Argo Events plumbing (EventBus, EventSource, RBAC) is shared and watches
+the union of both engines' target namespaces.
+
 ### Cross-namespace database
 
 ```yaml
@@ -296,13 +397,212 @@ Polls the PostgreSQL stats system views directly. Default collection interval.
 
 All metrics are batched (max 5000 per batch) and exported via OTLP/gRPC to `$K8S_NODE_IP:4317`.
 
+## MySQL notes
+
+Enable with `mysql.enabled=true`. The shape mirrors PostgreSQL: one `mysql:` block
+with a `databases[]` list, a monitor Secret per entry, a shared setup ConfigMap, a
+setup Job, and an injected sidecar `OpenTelemetryCollector`.
+
+### Setup
+
+The setup Job runs `assets/mysql-monitoring-setup.sql` idempotently. It:
+
+1. Creates `otel_monitor'@'%'` and grants it `PROCESS`, `REPLICATION CLIENT` on
+   `*.*` plus `SELECT` on `performance_schema.*`.
+2. Creates the `otel` database.
+3. Installs the views below, then grants `SELECT` on `otel.*`.
+4. Rotates the `otel_monitor` password to match the Secret.
+
+Unlike PostgreSQL these are **views, not set-returning functions** — MySQL has no
+`RETURNS TABLE`. They are declared `SQL SECURITY DEFINER`, so `otel_monitor` reads
+them with the definer's rights; that is what keeps the monitor role from needing
+wider grants.
+
+| View | Description |
+|------|-------------|
+| `otel.mysql_top_queries` | Top 50 statement digests by total execution time, from `performance_schema.events_statements_summary_by_digest`. Normalized digest text truncated to 1024 characters. |
+| `otel.mysql_locks` | Current InnoDB locks by table, type, mode, and granted status, from `performance_schema.data_locks`. |
+| `otel.mysql_connections` | Connection count and max age per schema per command state, from `information_schema.PROCESSLIST`. |
+
+`mysql_top_queries` filters on `LAST_SEEN` (300 s window) and excludes system
+schemas plus `otel` itself. Both filters matter: the digest table is cumulative
+since server start, so without the window the same historical digests stay pinned
+at the top forever, and without the schema exclusion the collector's own queries
+dominate the top-N.
+
+### Metrics
+
+The `mysql` receiver runs at a 30 s interval with 22 default-disabled metrics
+additionally enabled (commands, connection counts and errors, joins, query
+counts, replica lag, statement events, table size/rows, table lock waits,
+`table_open_cache`, client network I/O, page size).
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `mysql` | 30 s | 45 metrics — buffer pool, handlers, index/table I/O waits, locks, row locks, row operations, sorts, threads, tmp resources, uptime, plus the enabled extras above |
+| `sqlquery/mysql_top_queries` | 60 s | `mysql.query.calls`, `.exec_time`, `.lock_time`, `.rows.sent`, `.rows.examined`, `.rows.affected`, `.errors`, `.no_index_used`, `.full_scans`, `.tmp_disk_tables` — attributed by `db.namespace`, `db.query.hash`, `db.query.text` |
+| `sqlquery/mysql_locks` | 30 s | `mysql.lock.count` — attributed by `db.namespace`, `db.collection.name`, `db.mysql.lock.type`, `.mode`, `.status` |
+| `sqlquery/mysql_connections` | 30 s | `mysql.connection.state.count`, `mysql.connection.state.age` |
+
+`mysql.replica.sql_delay` and `mysql.replica.time_behind_source` are enabled but
+only produce data on a replica.
+
+## MongoDB notes
+
+Enable with `mongodb.enabled=true`. Requires MongoDB 4.4 or later.
+
+### Setup
+
+The setup Job runs `assets/mongodb-monitoring-setup.js` with `mongosh`,
+idempotently. It creates the `otel_monitor` user in the `admin` database with the
+built-in `clusterMonitor` role, which is the role MongoDB documents for a
+least-privilege monitoring user and the role the receiver requires. On re-run it
+updates the password in place so a rotated monitor secret converges.
+
+There are no helper collections or views to install: the receiver reads the
+`serverStatus`, `dbStats`, and index stats commands directly. The generated
+password is passed to the script through `OTEL_MONITOR_PASSWORD` in the
+environment rather than on the command line, and the script exits non-zero if
+that variable is unset.
+
+### Metrics
+
+The `mongodb` receiver runs at a 30 s interval and reports 36 metrics: cache
+operations, collection/database/index/object counts, cursor counts, connection
+counts, data/index/storage sizes, memory usage, document and operation counts,
+operation time and latency, global lock time, network I/O, session count, plus 15
+default-disabled metrics enabled by this chart (active reads and writes, the
+per-second command/delete/getmore/insert/query/update rates, health, lock acquire
+count, operation latency, replicated operation count, page faults, uptime, and
+WiredTiger cache reads).
+
+Two settings are worth knowing about:
+
+- **`hosts`** takes a list of endpoint objects, and this chart sets the single
+  endpoint of the Pod the sidecar runs in.
+- **`direct_connection: true`** makes each sidecar scrape only the `mongod` beside
+  it. With discovery enabled the receiver runs `replSetGetStatus` and connects out
+  to secondaries; because this chart injects one sidecar per Pod, every member is
+  already scraped by its own collector, so discovery would report secondaries more
+  than once. `replSetGetStatus` is also not valid on a standalone server or
+  through `mongos`, where it logs a warning on each scrape. Set it to `false` by
+  overriding the asset if you want one collector to scrape a whole replica set.
+
+The following metrics are deliberately left disabled, each verified to report no
+data on MongoDB 7 with WiredTiger: `mongodb.extent.count` (enabled upstream by
+default, but only reported by pre-4.4 servers using mmapv1),
+`mongodb.flushes.rate` (fails the scrape with `could not find key for metric`),
+the three `mongodb.lock.acquire.*`/`deadlock` metrics (reported only while locks
+are contended), and `mongodb.repl_*_per_sec` (replica set members only).
+
+### Topologies
+
+For a sharded cluster, annotate the `mongos` Pods. For a replica set, annotate
+each member Pod; every member then reports its own metrics, distinguished by the
+`server.address` resource attribute.
+
+## Microsoft SQL Server notes
+
+Enable with `sqlserver.enabled=true`.
+
+### Setup
+
+The setup Job runs `assets/sqlserver-monitoring-setup.sql` with `sqlcmd`,
+idempotently. It:
+
+1. Creates the `otel_monitor` login.
+2. Grants permission to read the server-state DMVs. **SQL Server 2022 (major
+   version 16) introduced `VIEW SERVER PERFORMANCE STATE`** as the granular
+   replacement for `VIEW SERVER STATE`; the new name does not exist on earlier
+   versions, so the script selects the grant from the server's major version.
+3. Grants `VIEW ANY DATABASE`, and `CONNECT ANY DATABASE` + `VIEW ANY DEFINITION`
+   which the per-index physical stats metrics (`sqlserver.index.*`) require.
+4. Creates the `otel` database and the views below, and grants the monitor login
+   `SELECT` on them.
+5. Rotates the `otel_monitor` password to match the Secret.
+
+| View | Description |
+|------|-------------|
+| `dbo.sqlserver_top_queries` | Top 50 cached plans by total elapsed time, from `sys.dm_exec_query_stats`, with calls, CPU and elapsed time, logical/physical reads, logical writes, and rows. |
+| `dbo.sqlserver_blocking` | Sessions currently blocked on another session, counted per database and wait type, with the longest wait. |
+
+`sqlserver_top_queries` resolves the database from
+`sys.dm_exec_plan_attributes` rather than `sys.dm_exec_sql_text`, which reports a
+NULL `dbid` for ad-hoc batches and would leave `db.namespace` empty for them. It
+excludes system databases, because the collector's own DMV queries execute in the
+`master` context, and bounds the window on `last_execution_time`, because
+`sys.dm_exec_query_stats` accumulates for as long as a plan stays cached.
+
+### Metrics
+
+`server`, `port`, `username`, and `password` must all be set together to enable
+the receiver's **direct-connection mode**, which reads the dynamic management
+views. This chart always sets all four. Without them the receiver collects Windows
+performance counters instead, which are only available when the collector itself
+runs on Windows.
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `sqlserver` | 30 s | 78 metrics — the 71 DMV-backed optional metrics enabled by this chart (database I/O, latency and operations, tempdb space and version store, index fragmentation/size/page counts, locks, latches, memory areas and grants, OS waits, page lookups and allocation, plan and recompilation rates, resource pool disk throttling, tasks and workers, blocked processes, deadlock and error rates, cursors, logins and logouts) plus the 7 default-enabled ones that report data in this mode |
+| `sqlquery/sqlserver_top_queries` | 60 s | `sqlserver.query.calls`, `.cpu_time`, `.elapsed_time`, `.logical_reads`, `.physical_reads`, `.logical_writes`, `.rows` — attributed by `db.namespace`, `db.query.hash`, `db.query.text` |
+| `sqlquery/sqlserver_blocking` | 30 s | `sqlserver.blocking.session.count`, `sqlserver.blocking.wait_time.max` — attributed by `db.namespace`, `db.mssql.wait.type` |
+
+**13 of the receiver's 20 default-enabled metrics report no data in
+direct-connection mode**, because they are Windows performance counters:
+`lock.wait_time.avg`, `page.checkpoint.flush.rate`, `page.lazy_write.rate`,
+`page.operation.rate`, `page.split.rate`, `transaction.rate`,
+`transaction.write.rate`, and the six `transaction_log.*` metrics. They are left
+at their upstream defaults rather than force-disabled, so a Windows deployment
+still collects them. `sqlserver.page.compression.rate` is the one optional metric
+this chart leaves disabled, having reported no data on SQL Server 2022 on Linux.
+
+### TLS
+
+This receiver exposes **no TLS settings**. Encryption is whatever the underlying
+`go-mssqldb` driver negotiates by default, and the only way to control it is the
+`datasource` connection string, which cannot be combined with
+`server`/`port`/`username`/`password`. To reach a SQL Server outside the Pod,
+override the asset and replace those four settings with a single `datasource` that
+sets the encryption parameters explicitly.
+
+## Query collection
+
+Several of these receivers can report per-query data through a native
+`top_query_collection` or `query_sample_collection` block. Those blocks emit **log
+records** — the `db.server.top_query` and `db.server.query_sample` events — and
+that logs signal is at **Development** stability. This chart exports metrics only,
+so where per-query data is available it is collected with the `sqlquery` receiver
+against a view installed by the setup script:
+
+| Engine | Per-query metrics | Mechanism |
+|--------|------------------|-----------|
+| PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
+| MySQL | yes | `sqlquery` over `otel.mysql_top_queries` |
+| Microsoft SQL Server | yes | `sqlquery` over `otel.dbo.sqlserver_top_queries` |
+| MongoDB | no | the receiver offers query samples as log records only, and has no top-query support |
+
+The native blocks are functional — `top_query_collection` was verified against
+MySQL 8.4 and SQL Server 2022 on collector 0.157.0 — so the choice here is about
+signal type, not about the feature being broken. To use the native events instead,
+enable them on the receiver and add a `logs` pipeline by overriding the asset
+config. Do not run both: they report the same data twice.
+
 ## Security notes
 
 - The superuser credentials (`user`/`pwd`) are used only by the setup Job and are not stored in any long-lived secret.
 - The sidecar uses the auto-generated `otel_monitor` password from the Secret. With Helm hook Jobs, the password is rotated on every `helm upgrade`. With Argo Events, rotation happens each time a new setup Job completes.
 - The Secret is created with `lookup` to preserve the existing password across upgrades — a new random 24-character password is only generated on first install.
-- The `otel_monitor` user holds `pg_monitor` (read-only system views) and `EXECUTE` on the `otel.*` functions. It has no write access to application data.
-- All SQL connections from the sidecar use `sslmode=disable`. Enable TLS by overriding `assets/pg-monitoring-config.yaml` if your PostgreSQL requires it.
+- The `otel_monitor` user is read-only on every engine and has no write access to application data:
+  - **PostgreSQL** — `pg_monitor` (read-only system views) and `EXECUTE` on the `otel.*` functions.
+  - **MySQL** — `PROCESS`, `REPLICATION CLIENT`, `SELECT` on `performance_schema.*`, and `SELECT` on `otel.*`.
+  - **MongoDB** — the built-in `clusterMonitor` role on `admin`.
+  - **SQL Server** — `VIEW SERVER PERFORMANCE STATE` (or `VIEW SERVER STATE` before 2022), `VIEW ANY DATABASE`, `CONNECT ANY DATABASE`, `VIEW ANY DEFINITION`, and `SELECT` on the `otel` views.
+- **Why TLS is off between the sidecar and the database.** The collector runs as a sidecar *inside the database Pod*, so it reaches the server over the Pod's own network namespace and that traffic never leaves the Pod. That is the assumption behind `tls: insecure: true` on the PostgreSQL, MySQL, and MongoDB receivers, `sslmode=disable` on the PostgreSQL `sqlquery` datasources, and `tls=false` on the MySQL ones. **If you repoint these configs at a database outside the Pod, the assumption no longer holds** — configure TLS first by overriding the engine's asset config.
+- On MySQL, keep `tls: insecure: true` written out explicitly. The receiver defaults `insecure` to `true` only when the `tls` key is absent; once `tls` is present, `insecure` takes its zero value of `false` and the receiver requires TLS.
+- The SQL Server receiver has no TLS settings at all; see [TLS](#tls) under the SQL Server notes.
+- The export hop to `$K8S_NODE_IP:4317` also uses `tls: insecure: true`. Unlike the database hop this one does leave the Pod, so it relies on the node-local collector being trusted.
+- The admin `pwd` for each database entry is interpolated into the setup Job spec, so it is readable by anyone who can `kubectl get job -o yaml` in the release namespace. It is not written to a Secret.
+- The collector image is pinned to a concrete tag. An untagged image resolves to `:latest`, which forces `imagePullPolicy: Always` and lets the collector version drift out from under the config in these assets.
 
 ## Upgrading
 
@@ -313,6 +613,30 @@ All metrics are batched (max 5000 per batch) and exported via OTLP/gRPC to `$K8S
 All SQL statements are idempotent and the password rotation uses the existing Secret value.
 
 ## Troubleshooting
+
+**Authentication errors in the sidecar right after a Pod starts**
+
+Expected, and self-correcting. With Argo Events driving setup, the sequence is:
+the Pod starts, the operator injects the sidecar, the Sensor sees the Pod and
+creates the setup Job, and the Job creates the `otel_monitor` user. The sidecar
+therefore begins scraping a few seconds before that user exists, and logs one
+scrape failure per interval until it does. For example, on MongoDB:
+
+```
+error   Error scraping metrics   ... auth error: ... (AuthenticationFailed) Authentication failed.
+```
+
+Compare the error timestamp against the Job's completion time before treating it
+as a real failure:
+
+```
+kubectl -n <release-namespace> get job -l app.kubernetes.io/component=db-monitoring-setup \
+  -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.completionTime}{"\n"}{end}'
+```
+
+Errors older than the completion time are the startup race. Errors newer than it
+are a real problem: check that the Job succeeded, and that the monitor Secret in
+the database's namespace matches the one in the release namespace.
 
 **Setup Job never created (Argo Events enabled)**
 

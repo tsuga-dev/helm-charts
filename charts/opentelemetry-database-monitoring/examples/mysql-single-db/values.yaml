@@ -1,0 +1,10 @@
+---
+mysql:
+  enabled: true
+  databases:
+    - name: mysql
+      sidecar-name: mysql-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 3306
+      host: mysql

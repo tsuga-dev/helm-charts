@@ -1,0 +1,104 @@
+-- MySQL monitoring setup for OpenTelemetry
+-- Run this as a user with CREATE USER and GRANT OPTION (e.g. root).
+-- Safe to re-run (all statements are idempotent).
+
+-- ---------------------------------------------------------------------------
+-- 1. Monitoring user
+--
+-- The password is a placeholder: the setup Job rewrites it with the generated
+-- value from the monitor secret immediately after running this script, so the
+-- literal below never survives setup.
+-- ---------------------------------------------------------------------------
+
+CREATE USER IF NOT EXISTS 'otel_monitor'@'%' IDENTIFIED BY 'your-password';
+
+-- Server-level metrics come from SHOW GLOBAL STATUS / SHOW REPLICA STATUS.
+GRANT PROCESS, REPLICATION CLIENT ON *.* TO 'otel_monitor'@'%';
+
+-- Table, index and statement-event metrics read performance_schema directly.
+GRANT SELECT ON performance_schema.* TO 'otel_monitor'@'%';
+
+-- mysql.table.rows / .size / .average_row_length read information_schema.tables,
+-- which every user can already read, so no extra grant is needed for those.
+
+-- ---------------------------------------------------------------------------
+-- 2. Monitoring schema
+-- ---------------------------------------------------------------------------
+
+CREATE DATABASE IF NOT EXISTS otel;
+
+-- ---------------------------------------------------------------------------
+-- 3. Monitoring views
+--
+-- Attribute columns use OTel semconv names where defined:
+--   db.namespace     → schema name        (stable semconv)
+--   db.query.text    → normalized digest  (stable semconv)
+--   db.query.hash    → statement digest   (experimental)
+--
+-- The views are declared SQL SECURITY DEFINER, so the monitor user reads them
+-- with the definer's rights. This keeps the monitor role limited to the two
+-- grants above instead of requiring direct access to every underlying table.
+-- ---------------------------------------------------------------------------
+
+-- Top queries by total execution time, from the statement digest summary.
+--
+-- The WHERE clause carries three filters that the metric depends on:
+--   * System schemas are excluded so that server-internal statements do not
+--     occupy the top-N.
+--   * The `otel` schema is excluded because these views are themselves queried
+--     once per collection interval and would otherwise be reported as top
+--     queries.
+--   * LAST_SEEN bounds the window to recent activity.
+--     events_statements_summary_by_digest accumulates from server start, so an
+--     unbounded query reports the highest all-time totals on every scrape and
+--     stops reflecting current load. 300s covers the 60s collection interval.
+CREATE OR REPLACE SQL SECURITY DEFINER VIEW otel.mysql_top_queries AS
+SELECT
+    COALESCE(d.SCHEMA_NAME, '')             AS `db.namespace`,
+    d.DIGEST                                AS `db.query.hash`,
+    LEFT(COALESCE(d.DIGEST_TEXT, ''), 1024) AS `db.query.text`,
+    d.COUNT_STAR                            AS calls,
+    d.SUM_ROWS_SENT                         AS rows_sent,
+    d.SUM_ROWS_EXAMINED                     AS rows_examined,
+    d.SUM_ROWS_AFFECTED                     AS rows_affected,
+    d.SUM_ERRORS                            AS query_errors,
+    d.SUM_NO_INDEX_USED                     AS no_index_used,
+    d.SUM_SELECT_SCAN                       AS full_scans,
+    d.SUM_CREATED_TMP_DISK_TABLES           AS tmp_disk_tables,
+    d.SUM_TIMER_WAIT / 1000000000.0         AS total_exec_time_ms,
+    d.SUM_LOCK_TIME  / 1000000000.0         AS total_lock_time_ms
+FROM performance_schema.events_statements_summary_by_digest d
+WHERE d.DIGEST IS NOT NULL
+  AND d.SCHEMA_NAME IS NOT NULL
+  AND d.SCHEMA_NAME NOT IN ('performance_schema', 'information_schema', 'mysql', 'sys', 'otel')
+  AND d.LAST_SEEN > DATE_SUB(NOW(), INTERVAL 300 SECOND)
+ORDER BY d.SUM_TIMER_WAIT DESC
+LIMIT 50;
+
+-- Current InnoDB locks, split by type and whether they are granted.
+-- data_locks is a live view of locks held right now, not a cumulative counter,
+-- so a row disappearing simply means the lock was released.
+CREATE OR REPLACE SQL SECURITY DEFINER VIEW otel.mysql_locks AS
+SELECT
+    COALESCE(w.OBJECT_SCHEMA, '')   AS `db.namespace`,
+    COALESCE(w.OBJECT_NAME, '')     AS `db.collection.name`,
+    COALESCE(w.LOCK_TYPE, '')       AS `db.mysql.lock.type`,
+    COALESCE(w.LOCK_MODE, '')       AS `db.mysql.lock.mode`,
+    COALESCE(w.LOCK_STATUS, '')     AS `db.mysql.lock.status`,
+    COUNT(*)                        AS lock_count
+FROM performance_schema.data_locks w
+WHERE w.OBJECT_SCHEMA IS NOT NULL
+  AND w.OBJECT_SCHEMA NOT IN ('performance_schema', 'information_schema', 'mysql', 'sys', 'otel')
+GROUP BY w.OBJECT_SCHEMA, w.OBJECT_NAME, w.LOCK_TYPE, w.LOCK_MODE, w.LOCK_STATUS;
+
+-- Connection counts and the age of the longest-running connection per state.
+CREATE OR REPLACE SQL SECURITY DEFINER VIEW otel.mysql_connections AS
+SELECT
+    COALESCE(p.DB, '')                AS `db.namespace`,
+    COALESCE(p.COMMAND, 'unknown')    AS `db.client.connection.state`,
+    COUNT(*)                          AS connection_count,
+    COALESCE(MAX(p.TIME), 0)          AS max_state_age_seconds
+FROM information_schema.PROCESSLIST p
+GROUP BY p.DB, p.COMMAND;
+
+GRANT SELECT ON otel.* TO 'otel_monitor'@'%';

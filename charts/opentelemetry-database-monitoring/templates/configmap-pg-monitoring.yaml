@@ -1,3 +1,4 @@
+{{- if .Values.postgres.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,3 +6,4 @@ metadata:
 data:
   monitoring-setup.sql: |
 {{ .Files.Get "assets/pg-monitoring-setup.sql" | indent 4 }}
+{{- end }}

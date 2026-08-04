@@ -1,0 +1,10 @@
+---
+sqlserver:
+  enabled: true
+  databases:
+    - name: sqlserver
+      sidecar-name: sqlserver-dbm-sidecar
+      user: sa
+      pwd: otel
+      port: 1433
+      host: sqlserver

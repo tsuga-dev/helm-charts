@@ -1,0 +1,141 @@
+---
+suite: shared argo events plumbing across engines
+templates:
+  - argo-sensor.yaml
+  - argo-eventsource.yaml
+  - argo-eventbus.yaml
+tests:
+  - it: should render no argo resources when every engine is disabled
+    set:
+      postgres.enabled: false
+      mysql.enabled: false
+      mongodb.enabled: false
+      sqlserver.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render argo plumbing when only mysql is enabled
+    template: argo-eventbus.yaml
+    set:
+      postgres.enabled: false
+      mysql.enabled: true
+    asserts:
+      - isKind:
+          of: EventBus
+
+  - it: should render argo plumbing when only mongodb is enabled
+    template: argo-eventbus.yaml
+    set:
+      postgres.enabled: false
+      mongodb.enabled: true
+    asserts:
+      - isKind:
+          of: EventBus
+
+  - it: should render argo plumbing when only sqlserver is enabled
+    template: argo-eventbus.yaml
+    set:
+      postgres.enabled: false
+      sqlserver.enabled: true
+    asserts:
+      - isKind:
+          of: EventBus
+
+  - it: should give all four engines a distinctly named sensor
+    template: argo-sensor.yaml
+    set:
+      postgres.enabled: true
+      mysql.enabled: true
+      mongodb.enabled: true
+      sqlserver.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 4
+      - matchRegex:
+          path: metadata.name
+          pattern: "-postgresql-setup$"
+        documentIndex: 0
+      - matchRegex:
+          path: metadata.name
+          pattern: "-mysql-mysql-setup$"
+        documentIndex: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: "-mongodb-mongodb-setup$"
+        documentIndex: 2
+      - matchRegex:
+          path: metadata.name
+          pattern: "-sqlserver-sqlserver-setup$"
+        documentIndex: 3
+
+  - it: should not emit postgres sensors when only mysql is enabled
+    template: argo-sensor.yaml
+    set:
+      postgres.enabled: false
+      mysql.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: "-mysql-setup$"
+
+  - it: should give each engine its own sensor with a distinct name
+    template: argo-sensor.yaml
+    set:
+      postgres.enabled: true
+      mysql.enabled: true
+      # Same entry name on both engines: the sensor names must still not collide.
+      postgres.databases:
+        - name: db
+          sidecar-name: postgres-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 5432
+          host: db
+      mysql.databases:
+        - name: db
+          sidecar-name: mysql-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 3306
+          host: db
+    asserts:
+      - hasDocuments:
+          count: 2
+      - matchRegex:
+          path: metadata.name
+          pattern: "-db-setup$"
+        documentIndex: 0
+      - matchRegex:
+          path: metadata.name
+          pattern: "-db-mysql-setup$"
+        documentIndex: 1
+
+  - it: should watch the union of both engines target namespaces
+    template: argo-eventsource.yaml
+    set:
+      postgres.enabled: true
+      mysql.enabled: true
+      postgres.databases:
+        - name: pg
+          namespace: pg-ns
+          sidecar-name: postgres-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 5432
+          host: pg
+      mysql.databases:
+        - name: my
+          namespace: my-ns
+          sidecar-name: mysql-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 3306
+          host: my
+    asserts:
+      - exists:
+          path: spec.resource.target-pod-created-pg-ns
+      - exists:
+          path: spec.resource.target-pod-created-my-ns

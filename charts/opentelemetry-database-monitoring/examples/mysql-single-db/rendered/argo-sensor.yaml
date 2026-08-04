@@ -1,0 +1,94 @@
+---
+# Source: opentelemetry-database-monitoring/templates/argo-sensor.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  
+  name: example-opentelemetry-database-monitoring-mysql-mysql-setup
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: argo-sensor
+    opentelemetry-database-monitoring/database: mysql
+spec:
+  eventBusName: default
+  template:
+    serviceAccountName: example-opentelemetry-database-monitoring-argo-sensor
+  dependencies:
+    - name: target-pod-created-default
+      eventSourceName: example-opentelemetry-database-monitoring-pod-created
+      eventName: target-pod-created-default
+      filters:
+        data:
+          - path: body.metadata.annotations.sidecar\.opentelemetry\.io\/inject
+            type: string
+            value:
+              - "mysql-dbm-sidecar"
+  triggers:
+    - template:
+        name: create-mysql-mysql-monitoring-setup-job
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: batch/v1
+              kind: Job
+              metadata:
+                generateName: mysql-mysql-monitoring-setup-
+                namespace: default
+                labels:
+                  helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+                  app.kubernetes.io/name: opentelemetry-database-monitoring
+                  app.kubernetes.io/instance: example
+                  app.kubernetes.io/version: "1.16.0"
+                  app.kubernetes.io/managed-by: Helm
+                  app.kubernetes.io/component: db-monitoring-setup
+                  opentelemetry-database-monitoring/database: mysql
+              spec:
+                backoffLimit: 3
+                template:
+                  metadata:
+                    labels:
+                      app.kubernetes.io/name: opentelemetry-database-monitoring
+                      app.kubernetes.io/instance: example
+                      app.kubernetes.io/component: db-monitoring-setup
+                      opentelemetry-database-monitoring/database: mysql
+                  spec:
+                    restartPolicy: OnFailure
+                    containers:
+                      - name: setup
+                        image: mysql:8.4
+                        command:
+                          - /bin/sh
+                          - -c
+                          - |
+                            set -e
+                            until mysqladmin ping -h mysql -P 3306 -u root --silent; do sleep 2; done
+                            mysql -h mysql -P 3306 -u root < /scripts/monitoring-setup.sql
+                            mysql -h mysql -P 3306 -u root \
+                              -e "ALTER USER 'otel_monitor'@'%' IDENTIFIED BY '$OTEL_MONITOR_PASSWORD'"
+                            # Confirm the monitoring role is actually usable on the endpoint we reached,
+                            # and that it can read the views the collector scrapes. Fail (and let
+                            # backoffLimit retry) if the setup did not land where the collector connects.
+                            MYSQL_PWD="$OTEL_MONITOR_PASSWORD" mysql -h mysql -P 3306 -u otel_monitor \
+                              -e "SELECT 1 FROM otel.mysql_top_queries LIMIT 0" > /dev/null
+                        env:
+                          # MYSQL_PWD keeps the admin password out of the container's process list.
+                          # It is still visible in the Job spec, because it comes from values.
+                          - name: MYSQL_PWD
+                            value: "otel"
+                          - name: OTEL_MONITOR_PASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: mysql-mysql-monitor-credentials
+                                key: password
+                        volumeMounts:
+                          - name: monitoring-setup
+                            mountPath: /scripts
+                    volumes:
+                      - name: monitoring-setup
+                        configMap:
+                          name: mysql-monitoring-setup

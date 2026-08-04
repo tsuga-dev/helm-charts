@@ -1,0 +1,102 @@
+---
+# Source: opentelemetry-database-monitoring/templates/argo-sensor.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  
+  name: example-opentelemetry-database-monitoring-sqlserver-sqlserver-setup
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: argo-sensor
+    opentelemetry-database-monitoring/database: sqlserver
+spec:
+  eventBusName: default
+  template:
+    serviceAccountName: example-opentelemetry-database-monitoring-argo-sensor
+  dependencies:
+    - name: target-pod-created-default
+      eventSourceName: example-opentelemetry-database-monitoring-pod-created
+      eventName: target-pod-created-default
+      filters:
+        data:
+          - path: body.metadata.annotations.sidecar\.opentelemetry\.io\/inject
+            type: string
+            value:
+              - "sqlserver-dbm-sidecar"
+  triggers:
+    - template:
+        name: create-sqlserver-sqlserver-monitoring-setup-job
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: batch/v1
+              kind: Job
+              metadata:
+                generateName: sqlserver-sqlserver-monitoring-setup-
+                namespace: default
+                labels:
+                  helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+                  app.kubernetes.io/name: opentelemetry-database-monitoring
+                  app.kubernetes.io/instance: example
+                  app.kubernetes.io/version: "1.16.0"
+                  app.kubernetes.io/managed-by: Helm
+                  app.kubernetes.io/component: db-monitoring-setup
+                  opentelemetry-database-monitoring/database: sqlserver
+              spec:
+                backoffLimit: 3
+                template:
+                  metadata:
+                    labels:
+                      app.kubernetes.io/name: opentelemetry-database-monitoring
+                      app.kubernetes.io/instance: example
+                      app.kubernetes.io/component: db-monitoring-setup
+                      opentelemetry-database-monitoring/database: sqlserver
+                  spec:
+                    restartPolicy: OnFailure
+                    containers:
+                      - name: setup
+                        image: mcr.microsoft.com/mssql-tools:latest
+                        command:
+                          - /bin/sh
+                          - -c
+                          - |
+                            set -e
+                            SQLCMD=/opt/mssql-tools/bin/sqlcmd
+                            # -b makes sqlcmd exit non-zero on a SQL error, so `set -e` can act on it.
+                            until $SQLCMD -b -S sqlserver,1433 -U "$ADMIN_USER" -P "$ADMIN_PASSWORD" \
+                              -Q "SELECT 1" > /dev/null 2>&1; do sleep 2; done
+                            $SQLCMD -b -S sqlserver,1433 -U "$ADMIN_USER" -P "$ADMIN_PASSWORD" \
+                              -i /scripts/monitoring-setup.sql
+                            $SQLCMD -b -S sqlserver,1433 -U "$ADMIN_USER" -P "$ADMIN_PASSWORD" \
+                              -Q "ALTER LOGIN otel_monitor WITH PASSWORD = N'$OTEL_MONITOR_PASSWORD'"
+                            # Confirm the monitor login is usable on the endpoint the collector
+                            # connects to, and that it can read the views the sidecar scrapes.
+                            # Failing here lets backoffLimit retry rather than leaving a sidecar
+                            # that cannot authenticate.
+                            $SQLCMD -b -S sqlserver,1433 -U otel_monitor -P "$OTEL_MONITOR_PASSWORD" \
+                              -d otel -Q "SELECT TOP 0 1 FROM dbo.sqlserver_top_queries" > /dev/null
+                        env:
+                          - name: ADMIN_USER
+                            value: "sa"
+                          # Passed as an env var so the admin password stays off the container's
+                          # process list. It is still visible in the Job spec, because it comes
+                          # from values.
+                          - name: ADMIN_PASSWORD
+                            value: "otel"
+                          - name: OTEL_MONITOR_PASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: sqlserver-sqlserver-monitor-credentials
+                                key: password
+                        volumeMounts:
+                          - name: monitoring-setup
+                            mountPath: /scripts
+                    volumes:
+                      - name: monitoring-setup
+                        configMap:
+                          name: sqlserver-monitoring-setup

@@ -62,12 +62,87 @@ Monitor credentials secret name for a database entry.
 {{- end }}
 
 {{/*
+Monitor credentials secret name for a MySQL database entry.
+Kept separate from the PostgreSQL helper so the two engines can never collide on
+a secret name when both are enabled with the same database entry name.
+*/}}
+{{- define "opentelemetry-database-monitoring.mysqlMonitorSecretName" -}}
+{{- printf "%s-mysql-monitor-credentials" .name -}}
+{{- end }}
+
+{{/*
+Monitor credentials secret name for a MongoDB database entry.
+*/}}
+{{- define "opentelemetry-database-monitoring.mongodbMonitorSecretName" -}}
+{{- printf "%s-mongodb-monitor-credentials" .name -}}
+{{- end }}
+
+{{/*
+Monitor credentials secret name for a Microsoft SQL Server database entry.
+*/}}
+{{- define "opentelemetry-database-monitoring.sqlserverMonitorSecretName" -}}
+{{- printf "%s-sqlserver-monitor-credentials" .name -}}
+{{- end }}
+
+{{/*
+Comma-separated union of the namespaces the Argo EventSource must watch, across
+every enabled engine. Returned as a string because a template cannot return a
+list; callers do `splitList ","` on it.
+
+An explicit argoEvents.eventSource.watchNamespace overrides the union entirely.
+*/}}
+{{- define "opentelemetry-database-monitoring.watchNamespaces" -}}
+{{- $root := . -}}
+{{- $namespaces := list -}}
+{{- if $root.Values.argoEvents.eventSource.watchNamespace -}}
+{{- $namespaces = append $namespaces $root.Values.argoEvents.eventSource.watchNamespace -}}
+{{- else -}}
+{{- $entries := list -}}
+{{- if $root.Values.postgres.enabled -}}
+{{- $entries = concat $entries $root.Values.postgres.databases -}}
+{{- end -}}
+{{- if $root.Values.mysql.enabled -}}
+{{- $entries = concat $entries $root.Values.mysql.databases -}}
+{{- end -}}
+{{- if $root.Values.mongodb.enabled -}}
+{{- $entries = concat $entries $root.Values.mongodb.databases -}}
+{{- end -}}
+{{- if $root.Values.sqlserver.enabled -}}
+{{- $entries = concat $entries $root.Values.sqlserver.databases -}}
+{{- end -}}
+{{- range $db := $entries -}}
+{{- $ns := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
+{{- if not (has $ns $namespaces) -}}
+{{- $namespaces = append $namespaces $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- join "," $namespaces -}}
+{{- end }}
+
+{{/*
+True when at least one database engine is enabled.
+The Argo Events plumbing (EventBus, EventSource, RBAC) is shared across engines,
+so it must be gated on the union rather than on postgres alone.
+*/}}
+{{- define "opentelemetry-database-monitoring.anyEngineEnabled" -}}
+{{- if or .Values.postgres.enabled .Values.mysql.enabled .Values.mongodb.enabled .Values.sqlserver.enabled -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Resolve a stable monitor password, preferring an existing secret in the release or target namespace.
+
+Context:
+  .root       - root Helm context
+  .db         - database entry
+  .secretName - optional; defaults to the PostgreSQL monitor secret name
 */}}
 {{- define "opentelemetry-database-monitoring.monitorPassword" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}
-{{- $secretName := include "opentelemetry-database-monitoring.monitorSecretName" $db -}}
+{{- $secretName := default (include "opentelemetry-database-monitoring.monitorSecretName" $db) .secretName -}}
 {{- $targetNamespace := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
 {{- $password := randAlphaNum 24 -}}
 {{- $releaseSecret := lookup "v1" "Secret" $root.Release.Namespace $secretName -}}
@@ -89,7 +164,12 @@ Uses cluster DNS when the database runs in another namespace.
 {{- define "opentelemetry-database-monitoring.databaseHost" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}
-{{- $host := $db.host -}}
+{{/*
+default "" coerces an absent host to a string. A values override that replaces a
+databases[] entry without repeating `host` otherwise yields nil here, and the
+`contains` below fails the render with "invalid value; expected string".
+*/}}
+{{- $host := default "" $db.host -}}
 {{- if contains "." $host -}}
 {{- $host -}}
 {{- else -}}

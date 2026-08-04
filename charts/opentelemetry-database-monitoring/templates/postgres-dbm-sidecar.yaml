@@ -14,7 +14,7 @@ metadata:
     opentelemetry-database-monitoring/database: {{ $db.name }}
 spec:
   mode: sidecar
-  image: {{ $root.Values.postgres.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}
+  image: {{ $root.Values.postgres.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0" }}
   env:
     - name: K8S_NODE_IP
       valueFrom:
