@@ -1,0 +1,7 @@
+{{- if and .Values.mongodb.enabled (not (and .Values.argoEvents.enabled .Values.argoEvents.triggerSetupJob)) }}
+{{- $root := . }}
+{{- range $db := .Values.mongodb.databases }}
+---
+{{ include "opentelemetry-database-monitoring.mongodbSetupJob" (dict "root" $root "db" $db "useName" true "useGenerateName" false "helmHook" true) }}
+{{- end }}
+{{- end }}

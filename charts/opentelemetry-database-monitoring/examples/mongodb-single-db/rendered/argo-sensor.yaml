@@ -1,0 +1,103 @@
+---
+# Source: opentelemetry-database-monitoring/templates/argo-sensor.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  
+  name: example-opentelemetry-database-monitoring-mongodb-mongodb-setup
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: argo-sensor
+    opentelemetry-database-monitoring/database: mongodb
+spec:
+  eventBusName: default
+  template:
+    serviceAccountName: example-opentelemetry-database-monitoring-argo-sensor
+  dependencies:
+    - name: target-pod-created-default
+      eventSourceName: example-opentelemetry-database-monitoring-pod-created
+      eventName: target-pod-created-default
+      filters:
+        data:
+          - path: body.metadata.annotations.sidecar\.opentelemetry\.io\/inject
+            type: string
+            value:
+              - "mongodb-dbm-sidecar"
+  triggers:
+    - template:
+        name: create-mongodb-mongodb-monitoring-setup-job
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: batch/v1
+              kind: Job
+              metadata:
+                generateName: mongodb-mongodb-monitoring-setup-
+                namespace: default
+                labels:
+                  helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+                  app.kubernetes.io/name: opentelemetry-database-monitoring
+                  app.kubernetes.io/instance: example
+                  app.kubernetes.io/version: "1.16.0"
+                  app.kubernetes.io/managed-by: Helm
+                  app.kubernetes.io/component: db-monitoring-setup
+                  opentelemetry-database-monitoring/database: mongodb
+              spec:
+                backoffLimit: 3
+                template:
+                  metadata:
+                    labels:
+                      app.kubernetes.io/name: opentelemetry-database-monitoring
+                      app.kubernetes.io/instance: example
+                      app.kubernetes.io/component: db-monitoring-setup
+                      opentelemetry-database-monitoring/database: mongodb
+                  spec:
+                    restartPolicy: OnFailure
+                    containers:
+                      - name: setup
+                        image: mongo:7
+                        command:
+                          - /bin/sh
+                          - -c
+                          - |
+                            set -e
+                            until mongosh "mongodb://mongodb:27017/admin" \
+                              --username "$ADMIN_USER" --password "$ADMIN_PASSWORD" \
+                              --quiet --eval 'db.runCommand({ping:1})' > /dev/null 2>&1; do sleep 2; done
+                            # The script reads OTEL_MONITOR_PASSWORD from the environment, so the
+                            # generated password is never placed on the command line.
+                            mongosh "mongodb://mongodb:27017/admin" \
+                              --username "$ADMIN_USER" --password "$ADMIN_PASSWORD" \
+                              --quiet /scripts/monitoring-setup.js
+                            # Confirm the monitor user can authenticate and read serverStatus on the
+                            # endpoint the collector connects to. Failing here lets backoffLimit
+                            # retry rather than leaving a sidecar that cannot authenticate.
+                            mongosh "mongodb://mongodb:27017/admin" \
+                              --username otel_monitor --password "$OTEL_MONITOR_PASSWORD" \
+                              --authenticationDatabase admin --quiet \
+                              --eval 'if (db.getSiblingDB("admin").serverStatus().ok !== 1) { throw new Error("serverStatus not readable") }' > /dev/null
+                        env:
+                          - name: ADMIN_USER
+                            value: "root"
+                          # Passed as an env var so the admin password stays off the container's
+                          # process list. It is still visible in the Job spec, because it comes
+                          # from values.
+                          - name: ADMIN_PASSWORD
+                            value: "otel"
+                          - name: OTEL_MONITOR_PASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: mongodb-mongodb-monitor-credentials
+                                key: password
+                        volumeMounts:
+                          - name: monitoring-setup
+                            mountPath: /scripts
+                    volumes:
+                      - name: monitoring-setup
+                        configMap:
+                          name: mongodb-monitoring-setup

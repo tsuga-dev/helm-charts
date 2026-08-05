@@ -1,0 +1,122 @@
+---
+# Source: opentelemetry-database-monitoring/templates/mongodb-dbm-sidecar.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: mongodb-dbm-sidecar
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    opentelemetry-database-monitoring/database: mongodb
+spec:
+  mode: sidecar
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+  env:
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_MONITOR_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mongodb-mongodb-monitor-credentials
+          key: password
+  config:
+    receivers:
+      # The collector runs as a sidecar inside the MongoDB Pod and reaches mongod
+      # over the Pod's own network namespace, so this traffic does not leave the Pod
+      # and TLS is disabled. Configure TLS before pointing this config at a MongoDB
+      # server outside the Pod.
+      mongodb:
+        # hosts takes a list of endpoint objects.
+        hosts:
+          - endpoint: ${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME}:27017
+        username: otel_monitor
+        password: ${env:OTEL_MONITOR_PASSWORD}
+        # The monitor user is created in admin, which is not the default auth database.
+        auth_source: admin
+        # Connect only to the mongod in this Pod and skip secondary discovery.
+        #
+        # With direct_connection disabled, the receiver runs replSetGetStatus to
+        # enumerate secondaries and opens additional connections to them. Because
+        # this chart injects one sidecar per Pod, each member is already scraped by
+        # its own collector, so discovery would report every secondary more than
+        # once. replSetGetStatus is also not a valid command on a standalone server
+        # or through mongos, where it logs a warning on each scrape.
+        #
+        # Set to false to have a single collector scrape a whole replica set.
+        direct_connection: true
+        collection_interval: 30s
+        tls:
+          insecure: true
+        metrics:
+          mongodb.active.reads:
+            enabled: true
+          mongodb.active.writes:
+            enabled: true
+          mongodb.commands.rate:
+            enabled: true
+          mongodb.deletes.rate:
+            enabled: true
+          mongodb.getmores.rate:
+            enabled: true
+          mongodb.health:
+            enabled: true
+          mongodb.inserts.rate:
+            enabled: true
+          mongodb.lock.acquire.count:
+            enabled: true
+          mongodb.operation.latency.time:
+            enabled: true
+          mongodb.operation.repl.count:
+            enabled: true
+          mongodb.page_faults:
+            enabled: true
+          mongodb.queries.rate:
+            enabled: true
+          mongodb.updates.rate:
+            enabled: true
+          mongodb.uptime:
+            enabled: true
+          mongodb.wtcache.bytes.read:
+            enabled: true
+          # Disabled: mongodb.extent.count is enabled upstream by default, but the
+          # value is only reported by servers older than 4.4 using the mmapv1 storage
+          # engine. The receiver supports 4.4 and later, so this metric produces no
+          # data on any supported version.
+          mongodb.extent.count:
+            enabled: false
+          # The following metrics are left disabled. Each was verified to produce no
+          # data on MongoDB 7 with the WiredTiger storage engine:
+          #   mongodb.flushes.rate            fails the scrape with "could not find key for metric"
+          #   mongodb.lock.acquire.time       reported only while locks are contended
+          #   mongodb.lock.acquire.wait_count reported only while locks are contended
+          #   mongodb.lock.deadlock.count     reported only while locks are contended
+          #   mongodb.repl_*_per_sec          reported only by replica set members
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
+    exporters:
+      # otlp_grpc is the canonical exporter type. The shorter `otlp` spelling is a
+      # deprecated alias that logs a warning on every collector startup.
+      otlp_grpc:
+        compression: gzip
+        endpoint: ${env:K8S_NODE_IP}:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp_grpc
+          processors:
+            - batch
+          receivers:
+            - mongodb
