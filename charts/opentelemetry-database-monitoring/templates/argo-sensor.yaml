@@ -44,4 +44,45 @@ spec:
 {{ include "opentelemetry-database-monitoring.setupJob" (dict "root" $root "db" $db "useName" false "useGenerateName" true) | indent 14 }}
 {{- end }}
 {{- end }}
+{{- if .Values.mysql.enabled }}
+{{- range $db := .Values.mysql.databases }}
+{{- $sidecarInjectValue := include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $root "db" $db) }}
+{{- $targetNamespace := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) }}
+{{- $eventName := printf "target-pod-created-%s" (include "opentelemetry-database-monitoring.argoResourceSuffix" $targetNamespace) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  {{/* -mysql- keeps this from colliding with a postgres entry of the same name. */}}
+  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-{{ $db.name }}-mysql-setup
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: argo-sensor
+    opentelemetry-database-monitoring/database: {{ $db.name }}
+spec:
+  {{- with $root.Values.argoEvents.eventBusName }}
+  eventBusName: {{ . }}
+  {{- end }}
+  template:
+    serviceAccountName: {{ $sensorSa }}
+  dependencies:
+    - name: {{ $eventName }}
+      eventSourceName: {{ $eventSourceName }}
+      eventName: {{ $eventName }}
+      filters:
+        data:
+          - path: body.metadata.annotations.{{ $annotationPath }}
+            type: string
+            value:
+              - {{ $sidecarInjectValue | quote }}
+  triggers:
+    - template:
+        name: create-{{ $db.name }}-mysql-monitoring-setup-job
+        k8s:
+          operation: create
+          source:
+            resource:
+{{ include "opentelemetry-database-monitoring.mysqlSetupJob" (dict "root" $root "db" $db "useName" false "useGenerateName" true) | indent 14 }}
+{{- end }}
+{{- end }}
 {{- end }}

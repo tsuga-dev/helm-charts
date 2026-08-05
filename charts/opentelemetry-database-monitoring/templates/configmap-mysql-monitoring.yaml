@@ -1,0 +1,9 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-monitoring-setup
+data:
+  monitoring-setup.sql: |
+{{ .Files.Get "assets/mysql-monitoring-setup.sql" | indent 4 }}
+{{- end }}

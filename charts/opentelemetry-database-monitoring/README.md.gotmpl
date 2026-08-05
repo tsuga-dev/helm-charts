@@ -27,6 +27,7 @@ gets, and the metrics collected.
 |----------|-----------|-------|
 | PostgreSQL | `postgres` | [PostgreSQL](#postgresql) |
 
+| MySQL | `mysql` | [MySQL](#mysql) |
 All databases export **metrics only**. See [Query collection](#query-collection)
 for how per-query data is collected and why.
 
@@ -310,6 +311,91 @@ postgres:
 Annotate the PostgreSQL Pod with
 `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+## MySQL
+
+Enable with `mysql.enabled=true`.
+
+### Requirements
+
+- MySQL 8.0 or later. Query plans on top queries require 8.0+; MariaDB does not
+  expose the statement text the top-query view reads.
+- `performance_schema` must be enabled, which is the default on MySQL 8. The
+  `statements_digest` consumer must also be enabled, which is likewise the default.
+- The admin credentials in `mysql.databases[*].user` / `pwd` must have `CREATE USER`
+  and `GRANT OPTION`.
+
+### Setup
+
+The setup Job runs `assets/mysql-monitoring-setup.sql` idempotently. It:
+
+1. Creates `otel_monitor'@'%'` and grants it `PROCESS` and `REPLICATION CLIENT` on
+   `*.*`, plus `SELECT` on `performance_schema.*`.
+2. Creates the `otel` database.
+3. Installs the views below, then grants `SELECT` on `otel.*`.
+4. Rotates the `otel_monitor` password to match the Secret.
+
+The views are declared `SQL SECURITY DEFINER`, so the monitor user reads them with
+the definer's rights. This keeps the monitor role limited to the two grants above
+rather than requiring direct access to every underlying table.
+
+| View | Description |
+|------|-------------|
+| `otel.mysql_top_queries` | Top 50 statement digests by total execution time, from `performance_schema.events_statements_summary_by_digest`. Normalized digest text truncated to 1024 characters. |
+| `otel.mysql_locks` | Current InnoDB locks by table, type, mode, and granted status, from `performance_schema.data_locks`. |
+| `otel.mysql_connections` | Connection count and max age per schema per command state, from `information_schema.PROCESSLIST`. |
+
+`mysql_top_queries` excludes system schemas and `otel` itself, so that
+server-internal statements and the Collector's own queries do not occupy the
+top-N. It also bounds the window on `LAST_SEEN`, because
+`events_statements_summary_by_digest` accumulates from server start; without that
+bound the highest all-time totals would be reported on every scrape instead of
+current load.
+
+`mysql_locks` reads a live view of locks held right now, not a cumulative counter,
+so a row disappearing means the lock was released.
+
+### Metrics
+
+The `mysql` receiver runs at a 30 s interval and reports 45 metrics: buffer pool
+pages and operations, handlers, index and table I/O waits, locks, row locks, row
+operations, sorts, threads, temporary resources, and uptime, plus 22
+default-disabled metrics enabled by this chart (commands, connection counts and
+errors, joins, max used connections, page size, query counts, slow query count,
+replica lag, statement events, table size/rows/average row length, table lock
+waits, `table_open_cache`, and client network I/O).
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `sqlquery/mysql_top_queries` | 60 s | `mysql.query.calls`, `.exec_time`, `.lock_time`, `.rows.sent`, `.rows.examined`, `.rows.affected`, `.errors`, `.no_index_used`, `.full_scans`, `.tmp_disk_tables` — attributed by `db.namespace`, `db.query.hash`, `db.query.text` |
+| `sqlquery/mysql_locks` | 30 s | `mysql.lock.count` — attributed by `db.namespace`, `db.collection.name`, `db.mysql.lock.type`, `.mode`, `.status` |
+| `sqlquery/mysql_connections` | 30 s | `mysql.connection.state.count`, `mysql.connection.state.age` |
+
+`mysql.replica.sql_delay` and `mysql.replica.time_behind_source` are enabled but
+only report data on a replica.
+
+Keep `tls: insecure: true` written out in full if you override the asset config.
+The receiver defaults `insecure` to `true` only when the `tls` key is absent; once
+`tls` is present, `insecure` takes its zero value of `false` and the receiver
+requires TLS.
+
+### Example
+
+See `examples/mysql-single-db/`.
+
+```yaml
+mysql:
+  enabled: true
+  databases:
+    - name: mysql
+      sidecar-name: mysql-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 3306
+      host: mysql
+```
+
+Annotate the MySQL Pod with `sidecar.opentelemetry.io/inject: mysql-dbm-sidecar`.
+
 ## Query collection
 
 Several database receivers can report per-query data through a native
@@ -323,6 +409,7 @@ against a view or function installed by the setup script.
 |----------|------------------|-----------|
 | PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
 
+| MySQL | yes | `sqlquery` over `otel.mysql_top_queries` |
 The native blocks are functional, so this is a choice about signal type rather than
 a workaround. To use the native events instead, enable them on the receiver and add
 a `logs` pipeline by overriding the engine's asset config. Do not run both: they
