@@ -1,0 +1,9 @@
+{{- if .Values.sqlserver.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sqlserver-monitoring-setup
+data:
+  monitoring-setup.sql: |
+{{ .Files.Get "assets/sqlserver-monitoring-setup.sql" | indent 4 }}
+{{- end }}

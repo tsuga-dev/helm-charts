@@ -27,6 +27,7 @@ gets, and the metrics collected.
 |----------|-----------|-------|
 | PostgreSQL | `postgres` | [PostgreSQL](#postgresql) |
 
+| Microsoft SQL Server | `sqlserver` | [Microsoft SQL Server](#microsoft-sql-server) |
 All databases export **metrics only**. See [Query collection](#query-collection)
 for how per-query data is collected and why.
 
@@ -310,6 +311,97 @@ postgres:
 Annotate the PostgreSQL Pod with
 `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+## Microsoft SQL Server
+
+Enable with `sqlserver.enabled=true`.
+
+### Requirements
+
+- SQL Server 2016 or later. The top-query view reads `total_grant_kb`, which was
+  added in 2016.
+- The admin credentials in `sqlserver.databases[*].user` / `pwd` must be `sysadmin`,
+  or hold `CREATE LOGIN` plus `GRANT OPTION` on the server-state permissions the
+  setup SQL grants.
+
+### Setup
+
+The setup Job runs `assets/sqlserver-monitoring-setup.sql` with `sqlcmd`,
+idempotently. It:
+
+1. Creates the `otel_monitor` login.
+2. Grants permission to read the server-state DMVs. **SQL Server 2022 (major version
+   16) introduced `VIEW SERVER PERFORMANCE STATE`** as the granular replacement for
+   `VIEW SERVER STATE`. The new name does not exist on earlier versions, so the
+   script selects the grant from the server's major version.
+3. Grants `VIEW ANY DATABASE`, plus `CONNECT ANY DATABASE` and `VIEW ANY DEFINITION`
+   which the per-index physical stats metrics (`sqlserver.index.*`) require.
+4. Creates the `otel` database and the views below, and grants the monitor login
+   `SELECT` on them.
+5. Rotates the `otel_monitor` password to match the Secret.
+
+| View | Description |
+|------|-------------|
+| `dbo.sqlserver_top_queries` | Top 50 cached plans by total elapsed time, from `sys.dm_exec_query_stats`, with calls, CPU and elapsed time, logical and physical reads, logical writes, and rows returned. |
+| `dbo.sqlserver_blocking` | Sessions currently blocked on another session, counted per database and wait type, with the longest wait. |
+
+`sqlserver_top_queries` resolves the database from `sys.dm_exec_plan_attributes`
+rather than from `sys.dm_exec_sql_text`, which reports a NULL `dbid` for ad-hoc
+batches and would leave `db.namespace` empty for them. It excludes system databases,
+because the Collector's own DMV queries execute in the `master` context, and bounds
+the window on `last_execution_time`, because `sys.dm_exec_query_stats` accumulates
+for as long as a plan stays cached.
+
+### Metrics
+
+`server`, `port`, `username`, and `password` must all be set together to enable the
+receiver's **direct-connection mode**, which reads the dynamic management views.
+This chart always sets all four. Without them the receiver collects Windows
+performance counters instead, which are only available when the Collector itself
+runs on Windows.
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `sqlserver` | 30 s | 78 metrics — the 71 DMV-backed optional metrics enabled by this chart (database I/O, latency and operations, tempdb space and version store, index fragmentation, size and page counts, locks, latches, memory areas and grants, OS waits, page lookups and allocation, plan and recompilation rates, resource pool disk throttling, tasks and workers, blocked processes, deadlock and error rates, cursors, logins and logouts) plus the 7 default-enabled ones that report data in this mode |
+| `sqlquery/sqlserver_top_queries` | 60 s | `sqlserver.query.calls`, `.cpu_time`, `.elapsed_time`, `.logical_reads`, `.physical_reads`, `.logical_writes`, `.rows` — attributed by `db.namespace`, `db.query.hash`, `db.query.text` |
+| `sqlquery/sqlserver_blocking` | 30 s | `sqlserver.blocking.session.count`, `sqlserver.blocking.wait_time.max` — attributed by `db.namespace`, `db.mssql.wait.type` |
+
+**13 of the receiver's 20 default-enabled metrics report no data in
+direct-connection mode**, because they are Windows performance counters:
+`lock.wait_time.avg`, `page.checkpoint.flush.rate`, `page.lazy_write.rate`,
+`page.operation.rate`, `page.split.rate`, `transaction.rate`,
+`transaction.write.rate`, and the six `transaction_log.*` metrics. They are left at
+their upstream defaults rather than force-disabled, so a Windows deployment still
+collects them. `sqlserver.page.compression.rate` is the one optional metric this
+chart leaves disabled, having reported no data on SQL Server 2022 on Linux.
+
+### TLS
+
+This receiver exposes **no TLS settings**. Encryption is whatever the underlying
+`go-mssqldb` driver negotiates by default, and the only way to control it is the
+`datasource` connection string, which cannot be combined with
+`server`/`port`/`username`/`password`. To reach a SQL Server outside the Pod,
+override the asset config and replace those four settings with a single `datasource`
+that sets the encryption parameters explicitly.
+
+### Example
+
+See `examples/sqlserver-single-db/`.
+
+```yaml
+sqlserver:
+  enabled: true
+  databases:
+    - name: sqlserver
+      sidecar-name: sqlserver-dbm-sidecar
+      user: sa
+      pwd: otel
+      port: 1433
+      host: sqlserver
+```
+
+Annotate the SQL Server Pod with
+`sidecar.opentelemetry.io/inject: sqlserver-dbm-sidecar`.
+
 ## Query collection
 
 Several database receivers can report per-query data through a native
@@ -323,6 +415,7 @@ against a view or function installed by the setup script.
 |----------|------------------|-----------|
 | PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
 
+| Microsoft SQL Server | yes | `sqlquery` over `otel.dbo.sqlserver_top_queries` |
 The native blocks are functional, so this is a choice about signal type rather than
 a workaround. To use the native events instead, enable them on the receiver and add
 a `logs` pipeline by overriding the engine's asset config. Do not run both: they

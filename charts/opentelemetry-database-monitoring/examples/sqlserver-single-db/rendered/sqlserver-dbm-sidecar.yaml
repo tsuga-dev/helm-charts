@@ -1,0 +1,324 @@
+---
+# Source: opentelemetry-database-monitoring/templates/sqlserver-dbm-sidecar.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: sqlserver-dbm-sidecar
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+  labels:
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
+    app.kubernetes.io/name: opentelemetry-database-monitoring
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    opentelemetry-database-monitoring/database: sqlserver
+spec:
+  mode: sidecar
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+  env:
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_MONITOR_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: sqlserver-sqlserver-monitor-credentials
+          key: password
+  config:
+    receivers:
+      # The collector runs as a sidecar inside the SQL Server Pod and reaches the
+      # server over the Pod's own network namespace, so this traffic does not leave
+      # the Pod.
+      #
+      # This receiver exposes no TLS settings. Encryption is whatever the underlying
+      # go-mssqldb driver negotiates by default, and the only way to control it is
+      # the `datasource` connection string, which cannot be combined with the
+      # server/port/username/password settings used below. To reach a SQL Server
+      # outside the Pod, replace those four settings with a single `datasource` that
+      # sets the encryption parameters explicitly.
+      sqlserver:
+        server: ${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME}
+        port: 1433
+        username: otel_monitor
+        password: ${env:OTEL_MONITOR_PASSWORD}
+        collection_interval: 30s
+        # server, port, username and password must all be set together to enable the
+        # direct-connection mode, which reads the server's dynamic management views.
+        # Without all four the receiver collects Windows performance counters
+        # instead, which are only available when the collector runs on Windows.
+        #
+        # 13 of the receiver's 20 default-enabled metrics are Windows performance
+        # counters and report no data in this mode: lock.wait_time.avg,
+        # page.checkpoint.flush.rate, page.lazy_write.rate, page.operation.rate,
+        # page.split.rate, transaction.rate, transaction.write.rate, and the six
+        # transaction_log.* metrics. They are left at their upstream defaults so a
+        # Windows deployment still collects them.
+        #
+        # The metrics enabled below are the DMV-backed ones, each verified to report
+        # data on SQL Server 2022 running on Linux.
+        metrics:
+          sqlserver.access.scan.rate:
+            enabled: true
+          sqlserver.attention.rate:
+            enabled: true
+          sqlserver.clr.execution.time:
+            enabled: true
+          sqlserver.computer.uptime:
+            enabled: true
+          sqlserver.connection.reset.rate:
+            enabled: true
+          sqlserver.cpu.count:
+            enabled: true
+          sqlserver.cursor.count:
+            enabled: true
+          sqlserver.cursor.memory.usage:
+            enabled: true
+          sqlserver.cursor.plan.count:
+            enabled: true
+          sqlserver.cursor.request.rate:
+            enabled: true
+          sqlserver.database.backup_or_restore.rate:
+            enabled: true
+          sqlserver.database.count:
+            enabled: true
+          sqlserver.database.execution.errors:
+            enabled: true
+          sqlserver.database.full_scan.rate:
+            enabled: true
+          sqlserver.database.io:
+            enabled: true
+          sqlserver.database.latency:
+            enabled: true
+          sqlserver.database.operations:
+            enabled: true
+          sqlserver.database.tempdb.space:
+            enabled: true
+          sqlserver.database.tempdb.version_store.size:
+            enabled: true
+          sqlserver.deadlock.rate:
+            enabled: true
+          sqlserver.error.rate:
+            enabled: true
+          sqlserver.extent.operation.rate:
+            enabled: true
+          sqlserver.ghost_record.skipped.rate:
+            enabled: true
+          sqlserver.index.fragmentation:
+            enabled: true
+          sqlserver.index.page.count:
+            enabled: true
+          sqlserver.index.page.utilization:
+            enabled: true
+          sqlserver.index.record.count:
+            enabled: true
+          sqlserver.index.search.rate:
+            enabled: true
+          sqlserver.index.size:
+            enabled: true
+          sqlserver.latch.superlatch.count:
+            enabled: true
+          sqlserver.latch.superlatch.transition.rate:
+            enabled: true
+          sqlserver.latch.wait.rate:
+            enabled: true
+          sqlserver.latch.wait_time.avg:
+            enabled: true
+          sqlserver.latch.wait_time.total:
+            enabled: true
+          sqlserver.lock.block.count:
+            enabled: true
+          sqlserver.lock.escalation.rate:
+            enabled: true
+          sqlserver.lock.memory:
+            enabled: true
+          sqlserver.lock.request.rate:
+            enabled: true
+          sqlserver.lock.timeout.rate:
+            enabled: true
+          sqlserver.lock.wait.count:
+            enabled: true
+          sqlserver.lock.wait_time.total:
+            enabled: true
+          sqlserver.login.rate:
+            enabled: true
+          sqlserver.logout.rate:
+            enabled: true
+          sqlserver.memory.area:
+            enabled: true
+          sqlserver.memory.cache.object.count:
+            enabled: true
+          sqlserver.memory.grants.pending.count:
+            enabled: true
+          sqlserver.memory.page.count:
+            enabled: true
+          sqlserver.memory.usage:
+            enabled: true
+          sqlserver.os.wait.duration:
+            enabled: true
+          sqlserver.page.allocation.rate:
+            enabled: true
+          sqlserver.page.buffer_cache.free_list.stalls.rate:
+            enabled: true
+          sqlserver.page.lookup.rate:
+            enabled: true
+          sqlserver.page.read_ahead.rate:
+            enabled: true
+          sqlserver.parameterization.rate:
+            enabled: true
+          sqlserver.plan.execution.rate:
+            enabled: true
+          sqlserver.processes.blocked:
+            enabled: true
+          sqlserver.recompilation.ratio:
+            enabled: true
+          sqlserver.replica.data.rate:
+            enabled: true
+          sqlserver.resource_pool.disk.operations:
+            enabled: true
+          sqlserver.resource_pool.disk.throttled.read.rate:
+            enabled: true
+          sqlserver.resource_pool.disk.throttled.write.rate:
+            enabled: true
+          sqlserver.scan_point.revalidation.rate:
+            enabled: true
+          sqlserver.stored_procedure.invocation.rate:
+            enabled: true
+          sqlserver.table.count:
+            enabled: true
+          sqlserver.task.count:
+            enabled: true
+          sqlserver.task.rate:
+            enabled: true
+          sqlserver.transaction.delay:
+            enabled: true
+          sqlserver.transaction.mirror_write.rate:
+            enabled: true
+          sqlserver.worker.request.count:
+            enabled: true
+          sqlserver.worker.thread.count:
+            enabled: true
+          sqlserver.worktable.cache.hit_ratio:
+            enabled: true
+      # Top queries are collected as metrics through sqlquery. The receiver's native
+      # top_query_collection block reports the same data as log records through the
+      # db.server.top_query event, at Development stability; this chart exports
+      # metrics only. See the chart README.
+      sqlquery/sqlserver_top_queries:
+        collection_interval: 60s
+        driver: sqlserver
+        datasource: server=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME};user id=otel_monitor;password=${env:OTEL_MONITOR_PASSWORD};port=1433;database=otel
+        queries:
+          - sql: SELECT * FROM dbo.sqlserver_top_queries
+            metrics:
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.calls
+                unit: "{query}"
+                value_column: calls
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.cpu_time
+                unit: ms
+                value_column: total_cpu_time_ms
+                value_type: double
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.elapsed_time
+                unit: ms
+                value_column: total_elapsed_time_ms
+                value_type: double
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.logical_reads
+                unit: "{page}"
+                value_column: logical_reads
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.physical_reads
+                unit: "{page}"
+                value_column: physical_reads
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.logical_writes
+                unit: "{page}"
+                value_column: logical_writes
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.query.hash
+                  - db.query.text
+                data_type: gauge
+                metric_name: sqlserver.query.rows
+                unit: "{row}"
+                value_column: rows_returned
+                value_type: int
+      sqlquery/sqlserver_blocking:
+        collection_interval: 30s
+        driver: sqlserver
+        datasource: server=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME};user id=otel_monitor;password=${env:OTEL_MONITOR_PASSWORD};port=1433;database=otel
+        queries:
+          - sql: SELECT * FROM dbo.sqlserver_blocking
+            metrics:
+              - attribute_columns:
+                  - db.namespace
+                  - db.mssql.wait.type
+                data_type: gauge
+                metric_name: sqlserver.blocking.session.count
+                unit: "{session}"
+                value_column: blocked_session_count
+                value_type: int
+              - attribute_columns:
+                  - db.namespace
+                  - db.mssql.wait.type
+                data_type: gauge
+                metric_name: sqlserver.blocking.wait_time.max
+                unit: ms
+                value_column: max_wait_time_ms
+                value_type: double
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        send_batch_size: 5000
+    exporters:
+      # otlp_grpc is the canonical exporter type. The shorter `otlp` spelling is a
+      # deprecated alias that logs a warning on every collector startup.
+      otlp_grpc:
+        compression: gzip
+        endpoint: ${env:K8S_NODE_IP}:4317
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp_grpc
+          processors:
+            - batch
+          receivers:
+            - sqlserver
+            - sqlquery/sqlserver_top_queries
+            - sqlquery/sqlserver_blocking

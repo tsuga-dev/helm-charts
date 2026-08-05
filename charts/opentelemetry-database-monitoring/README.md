@@ -23,6 +23,7 @@ gets, and the metrics collected.
 |----------|-----------|-------|
 | PostgreSQL | `postgres` | [PostgreSQL](#postgresql) |
 
+| Microsoft SQL Server | `sqlserver` | [Microsoft SQL Server](#microsoft-sql-server) |
 All databases export **metrics only**. See [Query collection](#query-collection)
 for how per-query data is collected and why.
 
@@ -306,6 +307,97 @@ postgres:
 Annotate the PostgreSQL Pod with
 `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+## Microsoft SQL Server
+
+Enable with `sqlserver.enabled=true`.
+
+### Requirements
+
+- SQL Server 2016 or later. The top-query view reads `total_grant_kb`, which was
+  added in 2016.
+- The admin credentials in `sqlserver.databases[*].user` / `pwd` must be `sysadmin`,
+  or hold `CREATE LOGIN` plus `GRANT OPTION` on the server-state permissions the
+  setup SQL grants.
+
+### Setup
+
+The setup Job runs `assets/sqlserver-monitoring-setup.sql` with `sqlcmd`,
+idempotently. It:
+
+1. Creates the `otel_monitor` login.
+2. Grants permission to read the server-state DMVs. **SQL Server 2022 (major version
+   16) introduced `VIEW SERVER PERFORMANCE STATE`** as the granular replacement for
+   `VIEW SERVER STATE`. The new name does not exist on earlier versions, so the
+   script selects the grant from the server's major version.
+3. Grants `VIEW ANY DATABASE`, plus `CONNECT ANY DATABASE` and `VIEW ANY DEFINITION`
+   which the per-index physical stats metrics (`sqlserver.index.*`) require.
+4. Creates the `otel` database and the views below, and grants the monitor login
+   `SELECT` on them.
+5. Rotates the `otel_monitor` password to match the Secret.
+
+| View | Description |
+|------|-------------|
+| `dbo.sqlserver_top_queries` | Top 50 cached plans by total elapsed time, from `sys.dm_exec_query_stats`, with calls, CPU and elapsed time, logical and physical reads, logical writes, and rows returned. |
+| `dbo.sqlserver_blocking` | Sessions currently blocked on another session, counted per database and wait type, with the longest wait. |
+
+`sqlserver_top_queries` resolves the database from `sys.dm_exec_plan_attributes`
+rather than from `sys.dm_exec_sql_text`, which reports a NULL `dbid` for ad-hoc
+batches and would leave `db.namespace` empty for them. It excludes system databases,
+because the Collector's own DMV queries execute in the `master` context, and bounds
+the window on `last_execution_time`, because `sys.dm_exec_query_stats` accumulates
+for as long as a plan stays cached.
+
+### Metrics
+
+`server`, `port`, `username`, and `password` must all be set together to enable the
+receiver's **direct-connection mode**, which reads the dynamic management views.
+This chart always sets all four. Without them the receiver collects Windows
+performance counters instead, which are only available when the Collector itself
+runs on Windows.
+
+| Receiver | Interval | Metrics |
+|----------|----------|---------|
+| `sqlserver` | 30 s | 78 metrics — the 71 DMV-backed optional metrics enabled by this chart (database I/O, latency and operations, tempdb space and version store, index fragmentation, size and page counts, locks, latches, memory areas and grants, OS waits, page lookups and allocation, plan and recompilation rates, resource pool disk throttling, tasks and workers, blocked processes, deadlock and error rates, cursors, logins and logouts) plus the 7 default-enabled ones that report data in this mode |
+| `sqlquery/sqlserver_top_queries` | 60 s | `sqlserver.query.calls`, `.cpu_time`, `.elapsed_time`, `.logical_reads`, `.physical_reads`, `.logical_writes`, `.rows` — attributed by `db.namespace`, `db.query.hash`, `db.query.text` |
+| `sqlquery/sqlserver_blocking` | 30 s | `sqlserver.blocking.session.count`, `sqlserver.blocking.wait_time.max` — attributed by `db.namespace`, `db.mssql.wait.type` |
+
+**13 of the receiver's 20 default-enabled metrics report no data in
+direct-connection mode**, because they are Windows performance counters:
+`lock.wait_time.avg`, `page.checkpoint.flush.rate`, `page.lazy_write.rate`,
+`page.operation.rate`, `page.split.rate`, `transaction.rate`,
+`transaction.write.rate`, and the six `transaction_log.*` metrics. They are left at
+their upstream defaults rather than force-disabled, so a Windows deployment still
+collects them. `sqlserver.page.compression.rate` is the one optional metric this
+chart leaves disabled, having reported no data on SQL Server 2022 on Linux.
+
+### TLS
+
+This receiver exposes **no TLS settings**. Encryption is whatever the underlying
+`go-mssqldb` driver negotiates by default, and the only way to control it is the
+`datasource` connection string, which cannot be combined with
+`server`/`port`/`username`/`password`. To reach a SQL Server outside the Pod,
+override the asset config and replace those four settings with a single `datasource`
+that sets the encryption parameters explicitly.
+
+### Example
+
+See `examples/sqlserver-single-db/`.
+
+```yaml
+sqlserver:
+  enabled: true
+  databases:
+    - name: sqlserver
+      sidecar-name: sqlserver-dbm-sidecar
+      user: sa
+      pwd: otel
+      port: 1433
+      host: sqlserver
+```
+
+Annotate the SQL Server Pod with
+`sidecar.opentelemetry.io/inject: sqlserver-dbm-sidecar`.
+
 ## Query collection
 
 Several database receivers can report per-query data through a native
@@ -319,6 +411,7 @@ against a view or function installed by the setup script.
 |----------|------------------|-----------|
 | PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
 
+| Microsoft SQL Server | yes | `sqlquery` over `otel.dbo.sqlserver_top_queries` |
 The native blocks are functional, so this is a choice about signal type rather than
 a workaround. To use the native events instead, enable them on the receiver and add
 a `logs` pipeline by overriding the engine's asset config. Do not run both: they
@@ -452,3 +545,14 @@ stuck in that loop means the `host` and `port` in values do not reach the databa
 | postgres.databases[0].user | string | "" | Administrative user the setup Job connects as. Needs to be a superuser, or a role with CREATEROLE and CREATEDB. |
 | postgres.enabled | bool | false | Deploy PostgreSQL monitoring: the injected sidecar collector, the monitor credentials secret, the setup ConfigMap, and the setup Job. |
 | postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image for the injected sidecar. |
+| sqlserver.databases | list | `[{"host":"","name":"sqlserver","namespace":"","port":1433,"pwd":"","sidecar-name":"sqlserver-dbm-sidecar","user":""}]` | SQL Server instances to monitor. Each entry produces its own sidecar collector, monitor secret, and setup Job. |
+| sqlserver.databases[0] | object | `{"host":"","name":"sqlserver","namespace":"","port":1433,"pwd":"","sidecar-name":"sqlserver-dbm-sidecar","user":""}` | Name for this instance. Used as the prefix of the monitor secret and setup Job names, and set as the `opentelemetry-database-monitoring/database` label on every resource. |
+| sqlserver.databases[0].host | string | "" | Host the setup Job connects to, normally the SQL Server Service name. A value containing a dot is used as-is; otherwise, when the instance runs in another namespace, it is expanded to `<host>.<namespace>.svc.cluster.local`. |
+| sqlserver.databases[0].namespace | string | "" | Namespace where the annotated SQL Server Pod runs. Replicates the monitor secret into that namespace and sets the expected inject annotation to `<releaseNamespace>/<sidecar-name>` when it differs from the release namespace. Empty means the release namespace. |
+| sqlserver.databases[0].port | int | `1433` | Port the setup Job connects to. The sidecar's receiver port is fixed at 1433 in assets/sqlserver-monitoring-config.yaml; override that asset to change the port the collector uses. |
+| sqlserver.databases[0].pwd | string | "" | Password for the administrative login. Interpolated into the setup Job spec, so it is readable by anyone who can read Jobs in the release namespace. It is not written to a secret. |
+| sqlserver.databases[0].sidecar-name | string | `"sqlserver-dbm-sidecar"` | Name of the OpenTelemetryCollector resource for this instance. This is the value the target Pod's `sidecar.opentelemetry.io/inject` annotation must carry for the operator to inject the sidecar. |
+| sqlserver.databases[0].user | string | "" | Administrative login the setup Job connects as. Needs sysadmin, or CREATE LOGIN plus GRANT OPTION on the server-state permissions the setup SQL grants. |
+| sqlserver.enabled | bool | false | Deploy Microsoft SQL Server monitoring: the injected sidecar collector, the monitor credentials secret, the setup ConfigMap, and the setup Job. |
+| sqlserver.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image for the injected sidecar. |
+| sqlserver.setupImage | string | `"mcr.microsoft.com/mssql-tools:latest"` | Image for the setup Job. Must provide `sqlcmd` at /opt/mssql-tools/bin/sqlcmd. |
