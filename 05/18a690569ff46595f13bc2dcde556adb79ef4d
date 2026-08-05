@@ -1,0 +1,75 @@
+charts/opentelemetry-database-monitoring/README.md.gotmpl
+  s_0ab16da0460966::t_3b5c2651210bc5 30,314-404,418
+charts/opentelemetry-database-monitoring/templates/_helpers.tpl
+  s_0ab16da0460966::t_3b5c2651210bc5 65,122-128
+  s_0ab16da0460966::t_80761a4fa290f5 129-130
+charts/opentelemetry-database-monitoring/templates/job-sqlserver-monitoring-setup.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-7
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-eventsource.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-26
+charts/opentelemetry-database-monitoring/values.yaml
+  s_0ab16da0460966::t_473102265947da 50
+  s_0ab16da0460966::t_3b5c2651210bc5 51-102
+charts/opentelemetry-database-monitoring/templates/secret-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-34
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/configmap-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-122
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/secret-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-17
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/sqlserver-dbm-sidecar.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-324
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-webhook/serviceaccount.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-15
+charts/opentelemetry-database-monitoring/templates/_job.tpl
+  s_0ab16da0460966::t_3b5c2651210bc5 65-153
+charts/opentelemetry-database-monitoring/templates/NOTES.txt
+  s_0ab16da0460966::t_3b5c2651210bc5 13-22
+charts/opentelemetry-database-monitoring/tests/sqlserver_test.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-191
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/serviceaccount.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-15
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events-rbac.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-97
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/deployment.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-84
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-sensor.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-102
+charts/opentelemetry-database-monitoring/templates/argo-sensor.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 47-87
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-eventbus.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-17
+charts/opentelemetry-database-monitoring/values.schema.json
+  s_0ab16da0460966::t_3b5c2651210bc5 137-179
+charts/opentelemetry-database-monitoring/templates/sqlserver-dbm-sidecar.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-31
+charts/opentelemetry-database-monitoring/README.md
+  s_0ab16da0460966::t_3b5c2651210bc5 26,310-400,414,548-558
+charts/opentelemetry-database-monitoring/assets/sqlserver-monitoring-setup.sql
+  s_0ab16da0460966::t_3b5c2651210bc5 1-114
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/values.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-10
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/config.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-86
+charts/opentelemetry-database-monitoring/assets/sqlserver-monitoring-config.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-294
+charts/opentelemetry-database-monitoring/templates/configmap-sqlserver-monitoring.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-9
+charts/opentelemetry-database-monitoring/examples/sqlserver-single-db/rendered/argo-events/argo-events-controller/rbac.yaml
+  s_0ab16da0460966::t_3b5c2651210bc5 1-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "0518a690569ff46595f13bc2dcde556adb79ef4d",
+  "prompts": {},
+  "sessions": {
+    "s_0ab16da0460966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac4d227d-ab9d-4144-bc44-176bbe136a5e",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
