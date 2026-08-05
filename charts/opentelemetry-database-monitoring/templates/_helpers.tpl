@@ -62,7 +62,7 @@ The shared Argo Events plumbing is derived from this list, so adding an engine h
 is what brings it into the EventBus, EventSource and RBAC gating.
 */}}
 {{- define "opentelemetry-database-monitoring.engines" -}}
-postgres
+postgres sqlserver
 {{- end }}
 
 {{/*
@@ -117,6 +117,15 @@ Monitor credentials secret name for a PostgreSQL database entry.
 */}}
 {{- define "opentelemetry-database-monitoring.monitorSecretName" -}}
 {{- printf "%s-pg-monitor-credentials" .name -}}
+{{- end }}
+
+{{/*
+Monitor credentials secret name for a Microsoft SQL Server database entry.
+Kept separate per engine so two engines can never collide on a secret name
+when both are enabled with the same database entry name.
+*/}}
+{{- define "opentelemetry-database-monitoring.sqlserverMonitorSecretName" -}}
+{{- printf "%s-sqlserver-monitor-credentials" .name -}}
 {{- end }}
 
 {{/*

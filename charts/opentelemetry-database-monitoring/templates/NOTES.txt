@@ -10,6 +10,16 @@ PostgreSQL monitoring deployed for {{ len .Values.postgres.databases }} database
 {{ end }}
 {{- end }}
 
+{{- if .Values.sqlserver.enabled }}
+Microsoft SQL Server monitoring deployed for {{ len .Values.sqlserver.databases }} database(s).
+
+{{- range .Values.sqlserver.databases }}
+  Database : {{ .name }} ({{ .host }}:{{ .port }})
+  Secret   : {{ .name }}-sqlserver-monitor-credentials
+  Sidecar  : {{ index . "sidecar-name" }}
+  Inject   : {{ include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $ "db" .) }}
+{{ end }}
+{{- end }}
 {{- if and .Values.argoEvents.enabled .Values.argoEvents.triggerSetupJob }}
 Argo Events will create setup Jobs when a new Pod is added with the inject annotation above.
 Existing Pods are ignored (afterStart filter). Restart the target database Pod after install:

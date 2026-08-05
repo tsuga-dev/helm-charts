@@ -1,0 +1,191 @@
+---
+suite: sqlserver monitoring tests
+templates:
+  - sqlserver-dbm-sidecar.yaml
+  - secret-sqlserver-monitoring.yaml
+  - configmap-sqlserver-monitoring.yaml
+  - job-sqlserver-monitoring-setup.yaml
+tests:
+  - it: should render nothing when sqlserver is disabled
+    set:
+      sqlserver.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create the sidecar collector with a pinned image
+    template: sqlserver-dbm-sidecar.yaml
+    set:
+      sqlserver.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: metadata.name
+          value: "sqlserver-dbm-sidecar"
+      - equal:
+          path: spec.mode
+          value: sidecar
+      # An untagged image resolves to :latest and lets the collector version
+      # change under the receiver configuration.
+      - matchRegex:
+          path: spec.image
+          pattern: ":[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  - it: should wire the monitor password from the sqlserver secret
+    template: sqlserver-dbm-sidecar.yaml
+    set:
+      sqlserver.enabled: true
+    asserts:
+      - equal:
+          path: spec.env[1].name
+          value: OTEL_MONITOR_PASSWORD
+      - equal:
+          path: spec.env[1].valueFrom.secretKeyRef.name
+          value: "sqlserver-sqlserver-monitor-credentials"
+
+  - it: should set all four connection settings that enable direct-connection mode
+    template: sqlserver-dbm-sidecar.yaml
+    set:
+      sqlserver.enabled: true
+    asserts:
+      # Without all four, the receiver collects Windows performance counters
+      # instead, which are unavailable when the collector runs on Linux.
+      - exists:
+          path: spec.config.receivers.sqlserver.server
+      - equal:
+          path: spec.config.receivers.sqlserver.port
+          value: 1433
+      - equal:
+          path: spec.config.receivers.sqlserver.username
+          value: otel_monitor
+      - exists:
+          path: spec.config.receivers.sqlserver.password
+      # This receiver exposes no TLS settings; encryption is driver-negotiated.
+      - notExists:
+          path: spec.config.receivers.sqlserver.tls
+
+  - it: should enable the DMV-backed metrics that report data on linux
+    template: sqlserver-dbm-sidecar.yaml
+    set:
+      sqlserver.enabled: true
+    asserts:
+      - equal:
+          path: spec.config.receivers.sqlserver.metrics["sqlserver.database.io"].enabled
+          value: true
+      - equal:
+          path: spec.config.receivers.sqlserver.metrics["sqlserver.index.fragmentation"].enabled
+          value: true
+      - equal:
+          path: spec.config.receivers.sqlserver.metrics["sqlserver.processes.blocked"].enabled
+          value: true
+
+  - it: should collect top queries and blocking as metrics through sqlquery
+    template: sqlserver-dbm-sidecar.yaml
+    set:
+      sqlserver.enabled: true
+    asserts:
+      - equal:
+          path: spec.config.receivers["sqlquery/sqlserver_top_queries"].driver
+          value: sqlserver
+      - contains:
+          path: spec.config.service.pipelines.metrics.receivers
+          content: "sqlquery/sqlserver_top_queries"
+      - contains:
+          path: spec.config.service.pipelines.metrics.receivers
+          content: "sqlquery/sqlserver_blocking"
+      # The native top_query_collection block reports log records; this chart
+      # exports metrics only.
+      - notExists:
+          path: spec.config.service.pipelines.logs
+
+  - it: should create the monitor secret in the release namespace
+    template: secret-sqlserver-monitoring.yaml
+    set:
+      sqlserver.enabled: true
+    release:
+      namespace: "otel"
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: "sqlserver-sqlserver-monitor-credentials"
+      - equal:
+          path: metadata.namespace
+          value: "otel"
+      - exists:
+          path: data.password
+
+  - it: should replicate the secret into a cross-namespace target
+    template: secret-sqlserver-monitoring.yaml
+    set:
+      sqlserver.enabled: true
+      sqlserver.databases:
+        - name: sqlserver
+          namespace: databases
+          sidecar-name: sqlserver-dbm-sidecar
+          user: sa
+          pwd: otel
+          port: 1433
+          host: sqlserver
+    release:
+      namespace: "otel"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.namespace
+          value: "otel"
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: "databases"
+        documentIndex: 1
+
+  - it: should mount setup sql that selects the grant by server version
+    template: configmap-sqlserver-monitoring.yaml
+    set:
+      sqlserver.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: "sqlserver-monitoring-setup"
+      # VIEW SERVER PERFORMANCE STATE does not exist before SQL Server 2022, so
+      # both grants must be present and chosen by major version.
+      - matchRegex:
+          path: data["monitoring-setup.sql"]
+          pattern: "VIEW SERVER PERFORMANCE STATE"
+      - matchRegex:
+          path: data["monitoring-setup.sql"]
+          pattern: "VIEW SERVER STATE"
+
+  - it: should create a Helm-hooked setup job when argo events is disabled
+    template: job-sqlserver-monitoring-setup.yaml
+    set:
+      sqlserver.enabled: true
+      argoEvents.enabled: false
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: "sqlserver-sqlserver-monitoring-setup"
+      # Without the hook annotations, an upgrade fails on the Job's immutable fields.
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: "post-install,post-upgrade"
+
+  - it: should not create a Helm setup job when argo events drives it
+    template: job-sqlserver-monitoring-setup.yaml
+    set:
+      sqlserver.enabled: true
+      argoEvents.enabled: true
+      argoEvents.triggerSetupJob: true
+    asserts:
+      - hasDocuments:
+          count: 0

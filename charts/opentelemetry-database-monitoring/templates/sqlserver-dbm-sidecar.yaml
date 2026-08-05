@@ -1,0 +1,31 @@
+{{- if .Values.sqlserver.enabled}}
+{{- $root := . }}
+{{- range $db := .Values.sqlserver.databases }}
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ index $db "sidecar-name" }}
+  annotations:
+    meta.helm.sh/release-name: {{ $root.Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ $root.Release.Namespace | quote }}
+  labels:
+    {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
+    opentelemetry-database-monitoring/database: {{ $db.name }}
+spec:
+  mode: sidecar
+  image: {{ $root.Values.sqlserver.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0" }}
+  env:
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_MONITOR_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "opentelemetry-database-monitoring.sqlserverMonitorSecretName" $db }}
+          key: password
+  config:
+{{ $root.Files.Get "assets/sqlserver-monitoring-config.yaml" | trimPrefix "---" | trim | indent 4 }}
+{{- end }}
+{{- end }}

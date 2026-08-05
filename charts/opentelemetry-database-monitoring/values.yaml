@@ -49,6 +49,59 @@ postgres:
       host: ""
 
 # =============================================================================
+# MICROSOFT SQL SERVER
+# =============================================================================
+sqlserver:
+  # -- Deploy Microsoft SQL Server monitoring: the injected sidecar collector, the
+  # monitor credentials secret, the setup ConfigMap, and the setup Job.
+  # @default -- false
+  enabled: false
+  # Keep the tag. An untagged image resolves to :latest, which forces
+  # imagePullPolicy: Always and lets the collector version change under the
+  # receiver configuration in assets/sqlserver-monitoring-config.yaml.
+  # -- Collector image for the injected sidecar.
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"
+  # -- Image for the setup Job. Must provide `sqlcmd` at
+  # /opt/mssql-tools/bin/sqlcmd.
+  setupImage: "mcr.microsoft.com/mssql-tools:latest"
+  # -- SQL Server instances to monitor. Each entry produces its own sidecar
+  # collector, monitor secret, and setup Job.
+  databases:
+      # -- Name for this instance. Used as the prefix of the monitor secret and
+      # setup Job names, and set as the
+      # `opentelemetry-database-monitoring/database` label on every resource.
+    - name: sqlserver
+      # -- Namespace where the annotated SQL Server Pod runs. Replicates the
+      # monitor secret into that namespace and sets the expected inject annotation
+      # to `<releaseNamespace>/<sidecar-name>` when it differs from the release
+      # namespace. Empty means the release namespace.
+      # @default -- ""
+      namespace: ""
+      # -- Name of the OpenTelemetryCollector resource for this instance. This is
+      # the value the target Pod's `sidecar.opentelemetry.io/inject` annotation
+      # must carry for the operator to inject the sidecar.
+      sidecar-name: sqlserver-dbm-sidecar
+      # -- Administrative login the setup Job connects as. Needs sysadmin, or
+      # CREATE LOGIN plus GRANT OPTION on the server-state permissions the setup
+      # SQL grants.
+      # @default -- ""
+      user: ""
+      # -- Password for the administrative login. Interpolated into the setup Job
+      # spec, so it is readable by anyone who can read Jobs in the release
+      # namespace. It is not written to a secret.
+      # @default -- ""
+      pwd: ""
+      # -- Port the setup Job connects to. The sidecar's receiver port is fixed at
+      # 1433 in assets/sqlserver-monitoring-config.yaml; override that asset to
+      # change the port the collector uses.
+      port: 1433
+      # -- Host the setup Job connects to, normally the SQL Server Service name. A
+      # value containing a dot is used as-is; otherwise, when the instance runs in
+      # another namespace, it is expanded to `<host>.<namespace>.svc.cluster.local`.
+      # @default -- ""
+      host: ""
+
+# =============================================================================
 # ARGO EVENTS SUBCHART
 # =============================================================================
 # Installs the Argo Events controller. The CRDs are shipped in this chart's crds/
