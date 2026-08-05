@@ -13,7 +13,11 @@ on:
       - ".pre-commit-config.yaml"
       - ".yamllint.yaml"
   pull_request:
-    branches: [main]
+    # dbm/base is a temporary integration branch for the stacked
+    # opentelemetry-database-monitoring engine PRs, which target it rather than
+    # main. Without it those PRs get no lint or unittest signal. Remove this
+    # entry once that stack has landed.
+    branches: [main, dbm/base]
     paths:
       - "charts/**"
       - ".ansible-lint"

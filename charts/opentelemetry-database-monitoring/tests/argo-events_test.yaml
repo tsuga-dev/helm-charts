@@ -1,0 +1,77 @@
+---
+suite: shared argo events plumbing
+templates:
+  - argo-sensor.yaml
+  - argo-eventsource.yaml
+  - argo-eventbus.yaml
+tests:
+  - it: should render no argo resources when every engine is disabled
+    set:
+      postgres.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render argo plumbing when an engine is enabled
+    template: argo-eventbus.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      - isKind:
+          of: EventBus
+
+  - it: should create one sensor per database entry
+    template: argo-sensor.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: "-postgresql-setup$"
+
+  - it: should watch the target namespaces of enabled engines
+    template: argo-eventsource.yaml
+    set:
+      postgres.enabled: true
+      postgres.databases:
+        - name: pg
+          namespace: pg-ns
+          sidecar-name: postgres-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 5432
+          host: pg
+    asserts:
+      - exists:
+          path: spec.resource.target-pod-created-pg-ns
+
+  - it: should let an explicit watchNamespace override the engine union
+    template: argo-eventsource.yaml
+    set:
+      postgres.enabled: true
+      argoEvents.eventSource.watchNamespace: only-here
+      postgres.databases:
+        - name: pg
+          namespace: pg-ns
+          sidecar-name: postgres-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 5432
+          host: pg
+    asserts:
+      - exists:
+          path: spec.resource.target-pod-created-only-here
+      - notExists:
+          path: spec.resource.target-pod-created-pg-ns
+
+  - it: should not create a Helm setup job when argo events drives it
+    templates:
+      - argo-sensor.yaml
+    set:
+      postgres.enabled: true
+      argoEvents.triggerSetupJob: false
+    asserts:
+      - hasDocuments:
+          count: 0

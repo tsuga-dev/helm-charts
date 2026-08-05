@@ -1,0 +1,118 @@
+---
+suite: postgresql monitoring tests
+templates:
+  - postgres-dbm-sidecar.yaml
+  - secret-pg-monitoring.yaml
+  - configmap-pg-monitoring.yaml
+tests:
+  - it: should render nothing when postgres is disabled
+    set:
+      postgres.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create the sidecar collector with a pinned image
+    template: postgres-dbm-sidecar.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: metadata.name
+          value: "postgres-dbm-sidecar"
+      - equal:
+          path: spec.mode
+          value: sidecar
+      # An untagged image resolves to :latest, which forces
+      # imagePullPolicy: Always and lets the collector version change under the
+      # receiver configuration in assets/.
+      - matchRegex:
+          path: spec.image
+          pattern: ":[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  - it: should export through the canonical otlp_grpc exporter type
+    template: postgres-dbm-sidecar.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      # `otlp` is a deprecated alias for the exporter and logs a warning on every
+      # collector startup.
+      - exists:
+          path: spec.config.exporters.otlp_grpc
+      - notExists:
+          path: spec.config.exporters.otlp
+      - contains:
+          path: spec.config.service.pipelines.metrics.exporters
+          content: otlp_grpc
+
+  - it: should wire the monitor password from the secret
+    template: postgres-dbm-sidecar.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      - equal:
+          path: spec.env[1].name
+          value: OTEL_MONITOR_PASSWORD
+      - equal:
+          path: spec.env[1].valueFrom.secretKeyRef.name
+          value: "postgresql-pg-monitor-credentials"
+
+  - it: should not render the setup configmap when postgres is disabled
+    template: configmap-pg-monitoring.yaml
+    set:
+      postgres.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the setup configmap when postgres is enabled
+    template: configmap-pg-monitoring.yaml
+    set:
+      postgres.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: "postgresql-monitoring-setup"
+
+  - it: should replicate the secret into a cross-namespace target
+    template: secret-pg-monitoring.yaml
+    set:
+      postgres.enabled: true
+      postgres.databases:
+        - name: postgresql
+          namespace: databases
+          sidecar-name: postgres-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 5432
+          host: postgresql
+    release:
+      namespace: "otel"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.namespace
+          value: "otel"
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: "databases"
+        documentIndex: 1
+
+  - it: should render with a databases entry that omits host
+    template: secret-pg-monitoring.yaml
+    set:
+      postgres.enabled: true
+      # An entry without `host` used to fail the render with
+      # "invalid value; expected string".
+      postgres.databases:
+        - name: postgresql
+          sidecar-name: postgres-dbm-sidecar
+    asserts:
+      - isKind:
+          of: Secret
