@@ -27,6 +27,7 @@ gets, and the metrics collected.
 |----------|-----------|-------|
 | PostgreSQL | `postgres` | [PostgreSQL](#postgresql) |
 
+| MongoDB | `mongodb` | [MongoDB](#mongodb) |
 All databases export **metrics only**. See [Query collection](#query-collection)
 for how per-query data is collected and why.
 
@@ -310,6 +311,90 @@ postgres:
 Annotate the PostgreSQL Pod with
 `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+## MongoDB
+
+Enable with `mongodb.enabled=true`.
+
+### Requirements
+
+- MongoDB 4.4 or later.
+- The admin credentials in `mongodb.databases[*].user` / `pwd` must hold the
+  `userAdmin` role on the `admin` database, or `root`.
+
+### Setup
+
+The setup Job runs `assets/mongodb-monitoring-setup.js` with `mongosh`,
+idempotently. It creates the `otel_monitor` user in the `admin` database with the
+built-in `clusterMonitor` role, which is the role MongoDB documents for a
+least-privilege monitoring user and the role the receiver requires to collect
+metrics. On re-run it updates the password in place, so a rotated monitor Secret
+converges instead of failing because the user already exists.
+
+There are no helper collections or views to install: the receiver reads the
+`serverStatus`, `dbStats`, and index stats commands directly. The generated password
+is passed to the script through `OTEL_MONITOR_PASSWORD` in the environment rather
+than on the command line, and the script exits non-zero if that variable is unset.
+
+### Metrics
+
+The `mongodb` receiver runs at a 30 s interval and reports 36 metrics: cache
+operations, collection, database, index and object counts, cursor counts and
+timeouts, connection count, data, index and storage sizes, memory usage, document
+and operation counts, operation time, global lock time, network I/O and request
+count, and session count, plus 15 default-disabled metrics enabled by this chart
+(active reads and writes, the per-second command, delete, getmore, insert, query and
+update rates, health, lock acquire count, operation latency, replicated operation
+count, page faults, uptime, and WiredTiger cache reads).
+
+Two settings are worth knowing about:
+
+- **`hosts`** takes a list of endpoint objects. This chart sets the single endpoint
+  of the Pod the sidecar runs in.
+- **`direct_connection: true`** makes each sidecar scrape only the `mongod` beside
+  it. With discovery enabled the receiver runs `replSetGetStatus` and connects out
+  to secondaries; because this chart injects one sidecar per Pod, every member is
+  already scraped by its own Collector, so discovery would report secondaries more
+  than once. `replSetGetStatus` is also not valid on a standalone server or through
+  `mongos`, where it logs a warning on each scrape. Set it to `false` by overriding
+  the asset config if you want one Collector to scrape a whole replica set.
+
+The following metrics are deliberately left disabled, each verified to report no
+data on MongoDB 7 with the WiredTiger storage engine:
+
+| Metric | Reason |
+|--------|--------|
+| `mongodb.extent.count` | Enabled upstream by default, but only reported by servers older than 4.4 using the mmapv1 storage engine. |
+| `mongodb.flushes.rate` | Fails the scrape with `could not find key for metric`. |
+| `mongodb.lock.acquire.time`, `.wait_count`, `mongodb.lock.deadlock.count` | Reported only while locks are contended. |
+| `mongodb.repl_*_per_sec` | Reported only by replica set members. |
+
+This receiver offers query samples as log records only, and has no top-query
+support, so there are no per-query metrics for MongoDB.
+
+### Topologies
+
+For a sharded cluster, annotate the `mongos` Pods. For a replica set, annotate each
+member Pod; every member then reports its own metrics, distinguished by the
+`server.address` resource attribute.
+
+### Example
+
+See `examples/mongodb-single-db/`.
+
+```yaml
+mongodb:
+  enabled: true
+  databases:
+    - name: mongodb
+      sidecar-name: mongodb-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 27017
+      host: mongodb
+```
+
+Annotate the MongoDB Pod with `sidecar.opentelemetry.io/inject: mongodb-dbm-sidecar`.
+
 ## Query collection
 
 Several database receivers can report per-query data through a native
@@ -323,6 +408,7 @@ against a view or function installed by the setup script.
 |----------|------------------|-----------|
 | PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
 
+| MongoDB | no | the receiver offers query samples as log records only, and has no top-query support |
 The native blocks are functional, so this is a choice about signal type rather than
 a workaround. To use the native events instead, enable them on the receiver and add
 a `logs` pipeline by overriding the engine's asset config. Do not run both: they

@@ -1,0 +1,10 @@
+---
+mongodb:
+  enabled: true
+  databases:
+    - name: mongodb
+      sidecar-name: mongodb-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 27017
+      host: mongodb

@@ -1,0 +1,9 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-monitoring-setup
+data:
+  monitoring-setup.js: |
+{{ .Files.Get "assets/mongodb-monitoring-setup.js" | indent 4 }}
+{{- end }}

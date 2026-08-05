@@ -23,6 +23,7 @@ gets, and the metrics collected.
 |----------|-----------|-------|
 | PostgreSQL | `postgres` | [PostgreSQL](#postgresql) |
 
+| MongoDB | `mongodb` | [MongoDB](#mongodb) |
 All databases export **metrics only**. See [Query collection](#query-collection)
 for how per-query data is collected and why.
 
@@ -306,6 +307,90 @@ postgres:
 Annotate the PostgreSQL Pod with
 `sidecar.opentelemetry.io/inject: postgres-dbm-sidecar`.
 
+## MongoDB
+
+Enable with `mongodb.enabled=true`.
+
+### Requirements
+
+- MongoDB 4.4 or later.
+- The admin credentials in `mongodb.databases[*].user` / `pwd` must hold the
+  `userAdmin` role on the `admin` database, or `root`.
+
+### Setup
+
+The setup Job runs `assets/mongodb-monitoring-setup.js` with `mongosh`,
+idempotently. It creates the `otel_monitor` user in the `admin` database with the
+built-in `clusterMonitor` role, which is the role MongoDB documents for a
+least-privilege monitoring user and the role the receiver requires to collect
+metrics. On re-run it updates the password in place, so a rotated monitor Secret
+converges instead of failing because the user already exists.
+
+There are no helper collections or views to install: the receiver reads the
+`serverStatus`, `dbStats`, and index stats commands directly. The generated password
+is passed to the script through `OTEL_MONITOR_PASSWORD` in the environment rather
+than on the command line, and the script exits non-zero if that variable is unset.
+
+### Metrics
+
+The `mongodb` receiver runs at a 30 s interval and reports 36 metrics: cache
+operations, collection, database, index and object counts, cursor counts and
+timeouts, connection count, data, index and storage sizes, memory usage, document
+and operation counts, operation time, global lock time, network I/O and request
+count, and session count, plus 15 default-disabled metrics enabled by this chart
+(active reads and writes, the per-second command, delete, getmore, insert, query and
+update rates, health, lock acquire count, operation latency, replicated operation
+count, page faults, uptime, and WiredTiger cache reads).
+
+Two settings are worth knowing about:
+
+- **`hosts`** takes a list of endpoint objects. This chart sets the single endpoint
+  of the Pod the sidecar runs in.
+- **`direct_connection: true`** makes each sidecar scrape only the `mongod` beside
+  it. With discovery enabled the receiver runs `replSetGetStatus` and connects out
+  to secondaries; because this chart injects one sidecar per Pod, every member is
+  already scraped by its own Collector, so discovery would report secondaries more
+  than once. `replSetGetStatus` is also not valid on a standalone server or through
+  `mongos`, where it logs a warning on each scrape. Set it to `false` by overriding
+  the asset config if you want one Collector to scrape a whole replica set.
+
+The following metrics are deliberately left disabled, each verified to report no
+data on MongoDB 7 with the WiredTiger storage engine:
+
+| Metric | Reason |
+|--------|--------|
+| `mongodb.extent.count` | Enabled upstream by default, but only reported by servers older than 4.4 using the mmapv1 storage engine. |
+| `mongodb.flushes.rate` | Fails the scrape with `could not find key for metric`. |
+| `mongodb.lock.acquire.time`, `.wait_count`, `mongodb.lock.deadlock.count` | Reported only while locks are contended. |
+| `mongodb.repl_*_per_sec` | Reported only by replica set members. |
+
+This receiver offers query samples as log records only, and has no top-query
+support, so there are no per-query metrics for MongoDB.
+
+### Topologies
+
+For a sharded cluster, annotate the `mongos` Pods. For a replica set, annotate each
+member Pod; every member then reports its own metrics, distinguished by the
+`server.address` resource attribute.
+
+### Example
+
+See `examples/mongodb-single-db/`.
+
+```yaml
+mongodb:
+  enabled: true
+  databases:
+    - name: mongodb
+      sidecar-name: mongodb-dbm-sidecar
+      user: root
+      pwd: otel
+      port: 27017
+      host: mongodb
+```
+
+Annotate the MongoDB Pod with `sidecar.opentelemetry.io/inject: mongodb-dbm-sidecar`.
+
 ## Query collection
 
 Several database receivers can report per-query data through a native
@@ -319,6 +404,7 @@ against a view or function installed by the setup script.
 |----------|------------------|-----------|
 | PostgreSQL | yes | `sqlquery` over `otel.pg_top_queries()` |
 
+| MongoDB | no | the receiver offers query samples as log records only, and has no top-query support |
 The native blocks are functional, so this is a choice about signal type rather than
 a workaround. To use the native events instead, enable them on the receiver and add
 a `logs` pipeline by overriding the engine's asset config. Do not run both: they
@@ -442,6 +528,17 @@ stuck in that loop means the `host` and `port` in values do not reach the databa
 | argoEvents.sensor.serviceAccount.name | string | "" | Name of the Sensor ServiceAccount. Defaults to `<fullname>-argo-sensor` when empty. |
 | argoEvents.sidecarInjectAnnotation | string | `"sidecar.opentelemetry.io/inject"` | Pod annotation key the OpenTelemetry Operator reads to inject a sidecar. The Sensors filter incoming Pod events on this key. |
 | argoEvents.triggerSetupJob | bool | true | Create each setup Job from an Argo Events Sensor when a target Pod appears, instead of from a Helm post-install/post-upgrade hook. Running setup after the operator has injected the sidecar avoids racing database setup against sidecar startup, and allows the release to live in a different namespace from the database. |
+| mongodb.databases | list | `[{"host":"","name":"mongodb","namespace":"","port":27017,"pwd":"","sidecar-name":"mongodb-dbm-sidecar","user":""}]` | MongoDB instances to monitor. Each entry produces its own sidecar collector, monitor secret, and setup Job. |
+| mongodb.databases[0] | object | `{"host":"","name":"mongodb","namespace":"","port":27017,"pwd":"","sidecar-name":"mongodb-dbm-sidecar","user":""}` | Name for this instance. Used as the prefix of the monitor secret and setup Job names, and set as the `opentelemetry-database-monitoring/database` label on every resource. |
+| mongodb.databases[0].host | string | "" | Host the setup Job connects to, normally the MongoDB Service name. A value containing a dot is used as-is; otherwise, when the instance runs in another namespace, it is expanded to `<host>.<namespace>.svc.cluster.local`. |
+| mongodb.databases[0].namespace | string | "" | Namespace where the annotated MongoDB Pod runs. Replicates the monitor secret into that namespace and sets the expected inject annotation to `<releaseNamespace>/<sidecar-name>` when it differs from the release namespace. Empty means the release namespace. |
+| mongodb.databases[0].port | int | `27017` | Port the setup Job connects to. The sidecar's receiver port is fixed at 27017 in assets/mongodb-monitoring-config.yaml; override that asset to change the port the collector uses. |
+| mongodb.databases[0].pwd | string | "" | Password for the administrative user. Interpolated into the setup Job spec, so it is readable by anyone who can read Jobs in the release namespace. It is not written to a secret. |
+| mongodb.databases[0].sidecar-name | string | `"mongodb-dbm-sidecar"` | Name of the OpenTelemetryCollector resource for this instance. This is the value the target Pod's `sidecar.opentelemetry.io/inject` annotation must carry for the operator to inject the sidecar. |
+| mongodb.databases[0].user | string | "" | Administrative user the setup Job authenticates as against the admin database. Needs the userAdmin role on admin, or root. |
+| mongodb.enabled | bool | false | Deploy MongoDB monitoring: the injected sidecar collector, the monitor credentials secret, the setup ConfigMap, and the setup Job. |
+| mongodb.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image for the injected sidecar. |
+| mongodb.setupImage | string | `"mongo:7"` | Image for the setup Job. Must provide the `mongosh` client on PATH. |
 | postgres.databases | list | `[{"host":"","name":"postgresql","namespace":"","port":5432,"pwd":"","sidecar-name":"postgres-dbm-sidecar","user":""}]` | PostgreSQL instances to monitor. Each entry produces its own sidecar collector, monitor secret, and setup Job. |
 | postgres.databases[0] | object | `{"host":"","name":"postgresql","namespace":"","port":5432,"pwd":"","sidecar-name":"postgres-dbm-sidecar","user":""}` | Name for this instance. Used as the prefix of the monitor secret and setup Job names, and set as the `opentelemetry-database-monitoring/database` label on every resource. |
 | postgres.databases[0].host | string | "" | Host the setup Job connects to, normally the PostgreSQL Service name. A value containing a dot is used as-is; otherwise, when the instance runs in another namespace, it is expanded to `<host>.<namespace>.svc.cluster.local`. |

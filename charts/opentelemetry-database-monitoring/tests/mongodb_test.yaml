@@ -1,0 +1,175 @@
+---
+suite: mongodb monitoring tests
+templates:
+  - mongodb-dbm-sidecar.yaml
+  - secret-mongodb-monitoring.yaml
+  - configmap-mongodb-monitoring.yaml
+  - job-mongodb-monitoring-setup.yaml
+tests:
+  - it: should render nothing when mongodb is disabled
+    set:
+      mongodb.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create the sidecar collector with a pinned image
+    template: mongodb-dbm-sidecar.yaml
+    set:
+      mongodb.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: metadata.name
+          value: "mongodb-dbm-sidecar"
+      - equal:
+          path: spec.mode
+          value: sidecar
+      # An untagged image resolves to :latest and lets the collector version
+      # change under the receiver configuration.
+      - matchRegex:
+          path: spec.image
+          pattern: ":[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  - it: should wire the monitor password from the mongodb secret
+    template: mongodb-dbm-sidecar.yaml
+    set:
+      mongodb.enabled: true
+    asserts:
+      - equal:
+          path: spec.env[1].name
+          value: OTEL_MONITOR_PASSWORD
+      - equal:
+          path: spec.env[1].valueFrom.secretKeyRef.name
+          value: "mongodb-mongodb-monitor-credentials"
+
+  - it: should configure the receiver with a hosts list and admin auth source
+    template: mongodb-dbm-sidecar.yaml
+    set:
+      mongodb.enabled: true
+    asserts:
+      # hosts is a list of endpoint objects for this receiver.
+      - matchRegex:
+          path: spec.config.receivers.mongodb.hosts[0].endpoint
+          pattern: ":27017$"
+      # The monitor user is created in admin, which is not the default auth database.
+      - equal:
+          path: spec.config.receivers.mongodb.auth_source
+          value: admin
+      # Each Pod's sidecar scrapes only its own mongod; secondary discovery would
+      # report every member more than once.
+      - equal:
+          path: spec.config.receivers.mongodb.direct_connection
+          value: true
+      - equal:
+          path: spec.config.receivers.mongodb.tls.insecure
+          value: true
+
+  - it: should export metrics only and disable metrics with no data on supported versions
+    template: mongodb-dbm-sidecar.yaml
+    set:
+      mongodb.enabled: true
+    asserts:
+      - contains:
+          path: spec.config.service.pipelines.metrics.receivers
+          content: mongodb
+      # The receiver's query sample support emits log records; this chart exports
+      # metrics only.
+      - notExists:
+          path: spec.config.service.pipelines.logs
+      # Only reported by servers older than 4.4 using the mmapv1 storage engine.
+      - equal:
+          path: spec.config.receivers.mongodb.metrics["mongodb.extent.count"].enabled
+          value: false
+      # Fails the scrape with "could not find key for metric" on WiredTiger.
+      - notExists:
+          path: spec.config.receivers.mongodb.metrics["mongodb.flushes.rate"]
+
+  - it: should create the monitor secret in the release namespace
+    template: secret-mongodb-monitoring.yaml
+    set:
+      mongodb.enabled: true
+    release:
+      namespace: "otel"
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: "mongodb-mongodb-monitor-credentials"
+      - equal:
+          path: metadata.namespace
+          value: "otel"
+      - exists:
+          path: data.password
+
+  - it: should replicate the secret into a cross-namespace target
+    template: secret-mongodb-monitoring.yaml
+    set:
+      mongodb.enabled: true
+      mongodb.databases:
+        - name: mongodb
+          namespace: databases
+          sidecar-name: mongodb-dbm-sidecar
+          user: root
+          pwd: otel
+          port: 27017
+          host: mongodb
+    release:
+      namespace: "otel"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.namespace
+          value: "otel"
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: "databases"
+        documentIndex: 1
+
+  - it: should mount the setup script as javascript, not sql
+    template: configmap-mongodb-monitoring.yaml
+    set:
+      mongodb.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: "mongodb-monitoring-setup"
+      - exists:
+          path: data["monitoring-setup.js"]
+      - matchRegex:
+          path: data["monitoring-setup.js"]
+          pattern: "clusterMonitor"
+
+  - it: should create a Helm-hooked setup job when argo events is disabled
+    template: job-mongodb-monitoring-setup.yaml
+    set:
+      mongodb.enabled: true
+      argoEvents.enabled: false
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: "mongodb-mongodb-monitoring-setup"
+      # Without the hook annotations, an upgrade fails on the Job's immutable fields.
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: "post-install,post-upgrade"
+
+  - it: should not create a Helm setup job when argo events drives it
+    template: job-mongodb-monitoring-setup.yaml
+    set:
+      mongodb.enabled: true
+      argoEvents.enabled: true
+      argoEvents.triggerSetupJob: true
+    asserts:
+      - hasDocuments:
+          count: 0
