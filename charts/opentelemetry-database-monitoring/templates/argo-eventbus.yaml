@@ -1,4 +1,4 @@
-{{- if and .Values.postgres.enabled .Values.argoEvents.enabled .Values.argoEvents.eventBus.create }}
+{{- if and (include "opentelemetry-database-monitoring.anyEngineEnabled" .) .Values.argoEvents.enabled .Values.argoEvents.eventBus.create }}
 apiVersion: argoproj.io/v1alpha1
 kind: EventBus
 metadata:

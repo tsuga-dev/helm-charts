@@ -8,7 +8,7 @@ metadata:
     meta.helm.sh/release-name: "example"
     meta.helm.sh/release-namespace: "default"
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -16,7 +16,7 @@ metadata:
     opentelemetry-database-monitoring/database: postgresql
 spec:
   mode: sidecar
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
   env:
     - name: K8S_NODE_IP
       valueFrom:
@@ -29,6 +29,11 @@ spec:
           key: password
   config:
     receivers:
+      # The collector runs as a sidecar inside the PostgreSQL Pod and reaches the
+      # server over the Pod's own network namespace, so this traffic does not leave
+      # the Pod. TLS is disabled here and every sqlquery datasource below sets
+      # sslmode=disable. Configure TLS before pointing this config at a PostgreSQL
+      # server outside the Pod.
       postgresql:
         endpoint: ${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME}:5432
         metrics:
@@ -428,7 +433,9 @@ spec:
         send_batch_max_size: 5000
         send_batch_size: 5000
     exporters:
-      otlp:
+      # otlp_grpc is the canonical exporter type. The shorter `otlp` spelling is a
+      # deprecated alias that logs a warning on every collector startup.
+      otlp_grpc:
         compression: gzip
         endpoint: ${env:K8S_NODE_IP}:4317
         tls:
@@ -437,7 +444,7 @@ spec:
       pipelines:
         metrics:
           exporters:
-            - otlp
+            - otlp_grpc
           processors:
             - batch
           receivers:

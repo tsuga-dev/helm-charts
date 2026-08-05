@@ -1,18 +1,8 @@
-{{- if and .Values.postgres.enabled .Values.argoEvents.enabled }}
+{{- if and (include "opentelemetry-database-monitoring.anyEngineEnabled" .) .Values.argoEvents.enabled }}
 {{- $root := . }}
 {{- $eventSourceSa := default (printf "%s-argo-eventsource" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.serviceAccount.name }}
 {{- $sensorSa := default (printf "%s-argo-sensor" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.sensor.serviceAccount.name }}
-{{- $watchNamespaces := list -}}
-{{- if .Values.argoEvents.eventSource.watchNamespace -}}
-{{- $watchNamespaces = append $watchNamespaces .Values.argoEvents.eventSource.watchNamespace -}}
-{{- else -}}
-{{- range $db := .Values.postgres.databases -}}
-{{- $ns := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
-{{- if not (has $ns $watchNamespaces) -}}
-{{- $watchNamespaces = append $watchNamespaces $ns -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{- $watchNamespaces := splitList "," (include "opentelemetry-database-monitoring.watchNamespaces" .) -}}
 
 {{- if .Values.argoEvents.eventSource.serviceAccount.create }}
 apiVersion: v1

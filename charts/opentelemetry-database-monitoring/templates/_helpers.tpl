@@ -48,14 +48,72 @@ app.kubernetes.io/name: {{ include "opentelemetry-database-monitoring.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{/*
-Namespace where the target Postgres pod (and injected sidecar) run.
+Namespace where the target database pod (and injected sidecar) run.
 */}}
 {{- define "opentelemetry-database-monitoring.databaseNamespace" -}}
 {{- default $.Release.Namespace (index . "namespace") -}}
 {{- end }}
 
 {{/*
-Monitor credentials secret name for a database entry.
+Space-separated list of the database engines this chart supports.
+
+Each name must match a top-level values key that has `enabled` and `databases`.
+The shared Argo Events plumbing is derived from this list, so adding an engine here
+is what brings it into the EventBus, EventSource and RBAC gating.
+*/}}
+{{- define "opentelemetry-database-monitoring.engines" -}}
+postgres
+{{- end }}
+
+{{/*
+True when at least one database engine is enabled.
+
+The Argo Events plumbing (EventBus, EventSource, RBAC) is shared across engines, so
+it is gated on the union rather than on any single engine.
+*/}}
+{{- define "opentelemetry-database-monitoring.anyEngineEnabled" -}}
+{{- $root := . -}}
+{{- $any := false -}}
+{{- range $engine := splitList " " (include "opentelemetry-database-monitoring.engines" $root) -}}
+{{- if (index $root.Values $engine).enabled -}}
+{{- $any = true -}}
+{{- end -}}
+{{- end -}}
+{{- if $any -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Comma-separated union of the namespaces the Argo EventSource must watch, across
+every enabled engine. Returned as a string because a template cannot return a list;
+callers do `splitList ","` on it.
+
+An explicit argoEvents.eventSource.watchNamespace overrides the union entirely.
+*/}}
+{{- define "opentelemetry-database-monitoring.watchNamespaces" -}}
+{{- $root := . -}}
+{{- $namespaces := list -}}
+{{- if $root.Values.argoEvents.eventSource.watchNamespace -}}
+{{- $namespaces = append $namespaces $root.Values.argoEvents.eventSource.watchNamespace -}}
+{{- else -}}
+{{- range $engine := splitList " " (include "opentelemetry-database-monitoring.engines" $root) -}}
+{{- $config := index $root.Values $engine -}}
+{{- if $config.enabled -}}
+{{- range $db := $config.databases -}}
+{{- $ns := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
+{{- if not (has $ns $namespaces) -}}
+{{- $namespaces = append $namespaces $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- join "," $namespaces -}}
+{{- end }}
+
+{{/*
+Monitor credentials secret name for a PostgreSQL database entry.
 */}}
 {{- define "opentelemetry-database-monitoring.monitorSecretName" -}}
 {{- printf "%s-pg-monitor-credentials" .name -}}
@@ -63,11 +121,16 @@ Monitor credentials secret name for a database entry.
 
 {{/*
 Resolve a stable monitor password, preferring an existing secret in the release or target namespace.
+
+Context:
+  .root       - root Helm context
+  .db         - database entry
+  .secretName - optional; defaults to the PostgreSQL monitor secret name
 */}}
 {{- define "opentelemetry-database-monitoring.monitorPassword" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}
-{{- $secretName := include "opentelemetry-database-monitoring.monitorSecretName" $db -}}
+{{- $secretName := default (include "opentelemetry-database-monitoring.monitorSecretName" $db) .secretName -}}
 {{- $targetNamespace := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) -}}
 {{- $password := randAlphaNum 24 -}}
 {{- $releaseSecret := lookup "v1" "Secret" $root.Release.Namespace $secretName -}}
@@ -83,13 +146,18 @@ Resolve a stable monitor password, preferring an existing secret in the release 
 {{- end }}
 
 {{/*
-Hostname used by setup Jobs to reach Postgres.
+Hostname used by setup Jobs to reach the database.
 Uses cluster DNS when the database runs in another namespace.
 */}}
 {{- define "opentelemetry-database-monitoring.databaseHost" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}
-{{- $host := $db.host -}}
+{{/*
+default "" coerces an absent host to a string. A values override that replaces a
+databases[] entry without repeating `host` otherwise yields nil here, and the
+`contains` below fails the render with "invalid value; expected string".
+*/}}
+{{- $host := default "" $db.host -}}
 {{- if contains "." $host -}}
 {{- $host -}}
 {{- else -}}

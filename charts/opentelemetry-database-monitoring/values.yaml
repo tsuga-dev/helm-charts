@@ -1,47 +1,123 @@
 ---
+# =============================================================================
+# POSTGRESQL
+# =============================================================================
 postgres:
+  # -- Deploy PostgreSQL monitoring: the injected sidecar collector, the monitor
+  # credentials secret, the setup ConfigMap, and the setup Job.
+  # @default -- false
   enabled: false
-  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+  # Keep the tag. An untagged image resolves to :latest, which forces
+  # imagePullPolicy: Always and lets the collector version change under the
+  # receiver configuration in assets/pg-monitoring-config.yaml.
+  # -- Collector image for the injected sidecar.
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"
+  # -- PostgreSQL instances to monitor. Each entry produces its own sidecar
+  # collector, monitor secret, and setup Job.
   databases:
+      # -- Name for this instance. Used as the prefix of the monitor secret and
+      # setup Job names, and set as the
+      # `opentelemetry-database-monitoring/database` label on every resource.
     - name: postgresql
-      # Namespace where the annotated Postgres pod runs. Replicates the monitor secret there and
-      # sets the expected inject annotation to "<releaseNamespace>/<sidecar-name>" when different.
+      # -- Namespace where the annotated PostgreSQL Pod runs. Replicates the
+      # monitor secret into that namespace and sets the expected inject
+      # annotation to `<releaseNamespace>/<sidecar-name>` when it differs from
+      # the release namespace. Empty means the release namespace.
+      # @default -- ""
       namespace: ""
+      # -- Name of the OpenTelemetryCollector resource for this instance. This is
+      # the value the target Pod's `sidecar.opentelemetry.io/inject` annotation
+      # must carry for the operator to inject the sidecar.
       sidecar-name: postgres-dbm-sidecar
+      # -- Administrative user the setup Job connects as. Needs to be a superuser,
+      # or a role with CREATEROLE and CREATEDB.
+      # @default -- ""
       user: ""
+      # -- Password for the administrative user. Interpolated into the setup Job
+      # spec, so it is readable by anyone who can read Jobs in the release
+      # namespace. It is not written to a secret.
+      # @default -- ""
       pwd: ""
+      # -- Port the setup Job connects to. The sidecar's receiver port is fixed at
+      # 5432 in assets/pg-monitoring-config.yaml; override that asset to change
+      # the port the collector uses.
       port: 5432
+      # -- Host the setup Job connects to, normally the PostgreSQL Service name. A
+      # value containing a dot is used as-is; otherwise, when the instance runs in
+      # another namespace, it is expanded to `<host>.<namespace>.svc.cluster.local`.
+      # @default -- ""
       host: ""
 
-# Installs the Argo Events controller when argoEvents.enabled is true.
-# CRDs are shipped in this chart's crds/ directory (installed before other resources).
+# =============================================================================
+# ARGO EVENTS SUBCHART
+# =============================================================================
+# Installs the Argo Events controller. The CRDs are shipped in this chart's crds/
+# directory, which Helm installs before any other resource, so the subchart must
+# not install them again.
 argo-events:
+  # -- Install the bundled Argo Events controller subchart.
+  # @default -- true
   enabled: true
   crds:
+    # -- Let the Argo Events subchart install its own CRDs. Keep this false: the
+    # CRDs are shipped in this chart's crds/ directory.
+    # @default -- false
     install: false
 
+# =============================================================================
+# ARGO EVENTS WIRING
+# =============================================================================
 argoEvents:
-  # When true, watch for pods with sidecar.opentelemetry.io/inject and trigger setup jobs.
+  # -- Watch for Pods carrying the sidecar inject annotation and react to them.
+  # Also gates the EventBus, EventSource, Sensors, and their RBAC.
+  # @default -- true
   enabled: true
-  # When true, Argo Events sensors create setup jobs instead of Helm post-install hooks.
+  # -- Create each setup Job from an Argo Events Sensor when a target Pod appears,
+  # instead of from a Helm post-install/post-upgrade hook. Running setup after the
+  # operator has injected the sidecar avoids racing database setup against sidecar
+  # startup, and allows the release to live in a different namespace from the
+  # database.
+  # @default -- true
   triggerSetupJob: true
-  # Pod annotation key used by the OpenTelemetry Operator for sidecar injection.
+  # -- Pod annotation key the OpenTelemetry Operator reads to inject a sidecar.
+  # The Sensors filter incoming Pod events on this key.
   sidecarInjectAnnotation: sidecar.opentelemetry.io/inject
+  # -- Name of the EventBus the EventSource and Sensors connect to.
   eventBusName: default
   eventBus:
-    # Argo Events requires an EventBus in the namespace; the controller subchart does not create one.
+    # -- Create the EventBus. Argo Events requires one in the namespace and the
+    # controller subchart does not create it.
+    # @default -- true
     create: true
+    # -- Number of NATS replicas in the native EventBus.
     replicas: 1
+    # -- Authentication strategy for the native NATS EventBus.
     auth: none
   eventSource:
+    # -- Name of the EventSource. Defaults to `<fullname>-pod-created` when empty.
+    # @default -- ""
     name: ""
+    # -- Single namespace to watch for Pod events. When empty, the chart watches
+    # the union of the target namespaces of every enabled engine.
+    # @default -- ""
     watchNamespace: ""
     serviceAccount:
+      # -- Create the EventSource ServiceAccount and its Pod-watch RBAC.
+      # @default -- true
       create: true
+      # -- Name of the EventSource ServiceAccount. Defaults to
+      # `<fullname>-argo-eventsource` when empty.
+      # @default -- ""
       name: ""
   sensor:
     serviceAccount:
+      # -- Create the Sensor ServiceAccount and its Job-create RBAC.
+      # @default -- true
       create: true
+      # -- Name of the Sensor ServiceAccount. Defaults to
+      # `<fullname>-argo-sensor` when empty.
+      # @default -- ""
       name: ""
   job:
+    # -- Suffix appended to the generateName of Sensor-created setup Jobs.
     generateNameSuffix: "setup-"

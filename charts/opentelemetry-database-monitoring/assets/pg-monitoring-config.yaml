@@ -1,4 +1,9 @@
 receivers:
+  # The collector runs as a sidecar inside the PostgreSQL Pod and reaches the
+  # server over the Pod's own network namespace, so this traffic does not leave
+  # the Pod. TLS is disabled here and every sqlquery datasource below sets
+  # sslmode=disable. Configure TLS before pointing this config at a PostgreSQL
+  # server outside the Pod.
   postgresql:
     endpoint: ${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME}:5432
     metrics:
@@ -398,7 +403,9 @@ processors:
     send_batch_max_size: 5000
     send_batch_size: 5000
 exporters:
-  otlp:
+  # otlp_grpc is the canonical exporter type. The shorter `otlp` spelling is a
+  # deprecated alias that logs a warning on every collector startup.
+  otlp_grpc:
     compression: gzip
     endpoint: ${env:K8S_NODE_IP}:4317
     tls:
@@ -407,7 +414,7 @@ service:
   pipelines:
     metrics:
       exporters:
-        - otlp
+        - otlp_grpc
       processors:
         - batch
       receivers:
