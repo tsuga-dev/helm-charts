@@ -465,6 +465,11 @@ agent:
     # those metrics; the spans themselves are unaffected.
     # @default -- true
     enabled: true
+    # -- Aggregation temporality of the generated metrics. Delta drops a series
+    # once its spans stop; cumulative keeps re-exporting the last value forever,
+    # which cumulative_to_delta then reads as an endless run of zeros.
+    # @default -- AGGREGATION_TEMPORALITY_DELTA
+    aggregationTemporality: AGGREGATION_TEMPORALITY_DELTA
     # `http.route` is a route template in frameworks that expose one, and a raw
     # path in those that do not (Express, raw net/http, some gRPC gateways) —
     # where it becomes unbounded, one histogram set per distinct URL. Drop it if

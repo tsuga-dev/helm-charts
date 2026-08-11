@@ -56,6 +56,9 @@ tests:
       - isKind:
           of: OpenTelemetryCollector
       - equal:
+          path: spec.config.connectors.span_metrics.aggregation_temporality
+          value: "AGGREGATION_TEMPORALITY_DELTA"
+      - equal:
           path: spec.config.connectors.span_metrics.dimensions[0].name
           value: "http.request.method"
       - equal:
