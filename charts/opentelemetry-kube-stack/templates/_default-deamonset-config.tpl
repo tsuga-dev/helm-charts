@@ -199,6 +199,7 @@ exporters:
 connectors:
 {{- if ne .Values.agent.spanMetrics.enabled false }}
   span_metrics:
+    aggregation_temporality: {{ .Values.agent.spanMetrics.aggregationTemporality }}
     dimensions:
       {{- toYaml .Values.agent.spanMetrics.dimensions | nindent 6 }}
 {{- end }}

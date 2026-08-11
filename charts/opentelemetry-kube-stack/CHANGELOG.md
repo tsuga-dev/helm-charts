@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.11.4] - 2026-08-11
+
+### Added
+- agent.spanMetrics.aggregationTemporality, which sets the temporality of the generated RED metrics
+
+### Fixed
+- span_metrics now generates delta temporality instead of cumulative. Under cumulative the connector kept re-exporting series for pods that had stopped serving, and cumulative_to_delta turned that flatline into an endless run of zeros. Exported temporality is unchanged, since cumulative_to_delta forwards delta untouched. Set agent.spanMetrics.aggregationTemporality back to AGGREGATION_TEMPORALITY_CUMULATIVE where a self-healing running total is worth the stale series
+
 ## [opentelemetry-kube-stack-0.11.3] - 2026-08-03
 
 ### Added
