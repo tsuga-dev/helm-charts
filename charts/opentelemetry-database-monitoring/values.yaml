@@ -8,6 +8,9 @@ postgres:
       # sets the expected inject annotation to "<releaseNamespace>/<sidecar-name>" when different.
       namespace: ""
       sidecar-name: postgres-dbm-sidecar
+      # Logical database holding the monitoring role, the otel schema and its
+      # functions. Defaults to "otel".
+      database: otel
       user: ""
       pwd: ""
       port: 5432

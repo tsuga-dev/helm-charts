@@ -25,6 +25,8 @@ spec:
         secretKeyRef:
           name: {{ include "opentelemetry-database-monitoring.monitorSecretName" $db }}
           key: password
+    - name: OTEL_MONITOR_DB
+      value: {{ include "opentelemetry-database-monitoring.databaseName" $db | quote }}
   config:
 {{ $root.Files.Get "assets/pg-monitoring-config.yaml" | trimPrefix "---" | trim | indent 4 }}
 {{- end }}

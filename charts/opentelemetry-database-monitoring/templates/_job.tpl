@@ -11,6 +11,7 @@ Context:
 {{- $root := .root -}}
 {{- $db := .db -}}
 {{- $dbHost := include "opentelemetry-database-monitoring.databaseHost" (dict "root" $root "db" $db) -}}
+{{- $dbName := include "opentelemetry-database-monitoring.databaseName" $db -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -43,11 +44,11 @@ spec:
             - |
               set -e
               until pg_isready -h {{ $dbHost }} -p {{ $db.port }} -U {{ $db.user }}; do sleep 2; done
-              PGPASSWORD={{ $db.pwd }} psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U {{ $db.user }} -d otel -f /scripts/monitoring-setup.sql
-              PGPASSWORD={{ $db.pwd }} psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U {{ $db.user }} -d otel -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
+              PGPASSWORD={{ $db.pwd }} psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U {{ $db.user }} -d {{ $dbName }} -f /scripts/monitoring-setup.sql
+              PGPASSWORD={{ $db.pwd }} psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U {{ $db.user }} -d {{ $dbName }} -c "ALTER USER otel_monitor WITH PASSWORD '$OTEL_MONITOR_PASSWORD'"
               # Confirm the monitoring role is actually usable on the endpoint we reached;
               # fail (and let backoffLimit retry) if the setup did not land where the collector connects.
-              PGPASSWORD="$OTEL_MONITOR_PASSWORD" psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U otel_monitor -d otel -c "SELECT 1" > /dev/null
+              PGPASSWORD="$OTEL_MONITOR_PASSWORD" psql -v ON_ERROR_STOP=1 -h {{ $dbHost }} -p {{ $db.port }} -U otel_monitor -d {{ $dbName }} -c "SELECT 1" > /dev/null
           env:
             - name: OTEL_MONITOR_PASSWORD
               valueFrom:

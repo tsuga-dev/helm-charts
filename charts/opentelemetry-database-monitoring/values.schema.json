@@ -103,6 +103,9 @@
                     "items": {
                         "type": "object",
                         "properties": {
+                            "database": {
+                                "type": "string"
+                            },
                             "host": {
                                 "type": "string"
                             },

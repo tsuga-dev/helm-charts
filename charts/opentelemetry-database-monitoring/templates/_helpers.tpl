@@ -86,6 +86,14 @@ Resolve a stable monitor password, preferring an existing secret in the release 
 Hostname used by setup Jobs to reach Postgres.
 Uses cluster DNS when the database runs in another namespace.
 */}}
+{{/*
+Logical database holding the monitoring role, the otel schema and its
+functions. Defaults to "otel" so existing installs are unaffected.
+*/}}
+{{- define "opentelemetry-database-monitoring.databaseName" -}}
+{{- .database | default "otel" -}}
+{{- end }}
+
 {{- define "opentelemetry-database-monitoring.databaseHost" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}

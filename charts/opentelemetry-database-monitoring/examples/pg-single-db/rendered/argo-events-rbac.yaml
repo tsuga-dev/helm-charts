@@ -5,11 +5,12 @@ kind: ServiceAccount
 metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
     app.kubernetes.io/managed-by: Helm
+
 ---
 # Source: opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
 apiVersion: v1
@@ -17,11 +18,12 @@ kind: ServiceAccount
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
     app.kubernetes.io/managed-by: Helm
+
 ---
 # Source: opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -30,7 +32,7 @@ metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -39,6 +41,7 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch"]
+
 ---
 # Source: opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -46,7 +49,7 @@ kind: Role
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -55,6 +58,7 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create"]
+
 ---
 # Source: opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -63,7 +67,7 @@ metadata:
   name: example-opentelemetry-database-monitoring-argo-eventsource
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
@@ -76,6 +80,7 @@ roleRef:
   kind: Role
   name: example-opentelemetry-database-monitoring-argo-eventsource
   apiGroup: rbac.authorization.k8s.io
+
 ---
 # Source: opentelemetry-database-monitoring/templates/argo-events-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -83,7 +88,7 @@ kind: RoleBinding
 metadata:
   name: example-opentelemetry-database-monitoring-argo-sensor
   labels:
-    helm.sh/chart: opentelemetry-database-monitoring-0.1.2
+    helm.sh/chart: opentelemetry-database-monitoring-0.2.0
     app.kubernetes.io/name: opentelemetry-database-monitoring
     app.kubernetes.io/instance: example
     app.kubernetes.io/version: "1.16.0"
