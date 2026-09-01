@@ -3,6 +3,21 @@ entries:
   opentelemetry-database-monitoring:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-09-01T14:34:43.523358854Z"
+    dependencies:
+    - condition: argoEvents.enabled
+      name: argo-events
+      repository: https://argoproj.github.io/argo-helm
+      version: 2.4.22
+    description: A Helm chart for Kubernetes
+    digest: 090bb2519e28d788dbd48d553d5907c3507ae3841094b76879e6da56f60bc19e
+    name: opentelemetry-database-monitoring
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-database-monitoring-0.2.0/opentelemetry-database-monitoring-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-07-07T09:16:45.674067948Z"
     dependencies:
     - condition: argoEvents.enabled
@@ -2216,4 +2231,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-09-01T09:38:49.550951492Z"
+generated: "2026-09-01T14:34:43.523551483Z"
