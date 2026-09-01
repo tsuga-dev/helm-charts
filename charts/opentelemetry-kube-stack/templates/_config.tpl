@@ -92,7 +92,11 @@ https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/) —
 app.kubernetes.io/instance and app.kubernetes.io/name pod labels, the full
 owner-kind ancestor chain (deployment, replicaset, statefulset, daemonset,
 cronjob, job), and, for service.version, the app.kubernetes.io/version label
-and a container-image-tag fallback.
+and a container-image-tag fallback. That's also why each collector's
+extract.labels has no service.name/service.version entry of its own: the spec
+defines those only as pod annotations, and a same-named labels rule runs
+before the app.kubernetes.io/instance/name copy above, so it would silently
+lose precedence to them.
 
 k8s.replicaset.name itself is left out: it churns on every rollout the same
 as k8s.pod.name/k8s.pod.uid, but adds little identification value beyond what

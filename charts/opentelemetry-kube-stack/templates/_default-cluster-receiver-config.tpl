@@ -80,13 +80,8 @@ processors:
     extract:
       metadata:
         {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
-      # service.name and service.version are deliberately not mapped here from a
-      # pod label: the spec only defines resource.opentelemetry.io/service.name
-      # and .../service.version as pod *annotations* (below), and once
-      # k8sAttributesMetadata's service.name/service.version entries activate the
-      # processor's own app.kubernetes.io/instance and .../name label precedence,
-      # a same-named label rule here would run before those and lose to them —
-      # silently inverting precedence. Annotations run last and are unaffected.
+      # service.name/service.version stay annotation-only here; see
+      # opentelemetry-kube-stack.k8sAttributesMetadata in _config.tpl for why.
       labels:
         - tag_name: env
           key: resource.opentelemetry.io/env
