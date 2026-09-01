@@ -729,6 +729,43 @@ entries:
   opentelemetry-kube-stack:
   - apiVersion: v2
     appVersion: v1
+    created: "2026-09-01T09:38:49.550755853Z"
+    dependencies:
+    - condition: opentelemetry-operator.enabled
+      name: otel-crds
+      repository: ""
+      version: 0.0.0
+    - condition: opentelemetry-operator.enabled
+      name: opentelemetry-operator
+      repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+      version: 0.114.1
+    description: A comprehensive Helm chart for OpenTelemetry Kubernetes operator
+      with Tsuga integration, featuring dual deployment pattern (agent DaemonSet +
+      cluster receiver), secure credential management, and production-ready configurations
+      for telemetry collection to Tsuga platform.
+    digest: 3b79a712f2d8400dfe768f971d12ebbdef4e46db7dd8cda2a628b2cf40e35d93
+    home: https://tsuga-dev.github.io/helm-charts/
+    keywords:
+    - opentelemetry
+    - observability
+    - monitoring
+    - tracing
+    - metrics
+    - kubernetes
+    - operator
+    maintainers:
+    - email: antonin@tsuga.com
+      name: OpenTelemetry Team
+    name: opentelemetry-kube-stack
+    sources:
+    - https://github.com/open-telemetry/opentelemetry-operator
+    - https://github.com/tsuga-dev/helm-charts
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.11.4/opentelemetry-kube-stack-0.11.4.tgz
+    version: 0.11.4
+  - apiVersion: v2
+    appVersion: v1
     created: "2026-08-03T09:47:09.758635201Z"
     dependencies:
     - condition: opentelemetry-operator.enabled
@@ -2179,4 +2216,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-08-03T09:47:09.758977014Z"
+generated: "2026-09-01T09:38:49.550951492Z"
