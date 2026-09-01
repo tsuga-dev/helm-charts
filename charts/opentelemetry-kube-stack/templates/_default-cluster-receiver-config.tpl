@@ -80,13 +80,9 @@ processors:
     extract:
       metadata:
         {{- include "opentelemetry-kube-stack.k8sAttributesMetadata" . | nindent 8 }}
+      # service.name/service.version stay annotation-only here; see
+      # opentelemetry-kube-stack.k8sAttributesMetadata in _config.tpl for why.
       labels:
-        - tag_name: service.name
-          key: resource.opentelemetry.io/service.name
-          from: pod
-        - tag_name: service.version
-          key: resource.opentelemetry.io/service.version
-          from: pod
         - tag_name: env
           key: resource.opentelemetry.io/env
           from: pod

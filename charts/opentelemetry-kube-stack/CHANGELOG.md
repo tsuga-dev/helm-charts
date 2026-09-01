@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.11.4] - 2026-09-01
+
+### Added
+- service.name and service.version to the default k8sAttributes.metadata list, which activates the k8s_attributes processor's own implementation of the OTel k8s service-identity precedence: the resource.opentelemetry.io/* annotation this chart already mapped, then app.kubernetes.io/instance, app.kubernetes.io/name and the owner-kind ancestor chain, then (for service.version) app.kubernetes.io/version and a container-image-tag fallback. Previously only the annotation tier resolved
+- k8s.container.name, container.id, container.image.name and container.image.tag to the default k8sAttributes.metadata list, for direct container-image visibility and to feed the container-image-tag fallback above
+
+### Changed
+- Dropped the labels-based resource.opentelemetry.io/service.name and .../service.version mapping in favor of the annotations-based one already present. The spec only defines these as pod annotations, and once app.kubernetes.io/instance/name are wired up, a same-named labels rule would silently lose precedence to them. If you were setting either as a pod label rather than an annotation, switch to the annotation
+
 ## [opentelemetry-kube-stack-0.11.3] - 2026-08-03
 
 ### Added
