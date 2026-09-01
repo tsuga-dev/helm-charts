@@ -1,0 +1,28 @@
+charts/opentelemetry-kube-stack/values.yaml
+  s_255dcc0e03d4e3::t_7cea9f41e4dd54 1073-1083,1099-1104
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  s_255dcc0e03d4e3::t_2756bcc3d2d282 113-119
+charts/opentelemetry-kube-stack/templates/_config.tpl
+  s_255dcc0e03d4e3::t_e69e795e115fe7 88-90,95,97-101
+  s_255dcc0e03d4e3::t_8c5e1aaafabef9 87,91-94,96,102-110,113
+charts/opentelemetry-kube-stack/templates/_default-statefulset-config.tpl
+  s_255dcc0e03d4e3::t_68297b477b63f6 40-46
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  s_255dcc0e03d4e3::t_d48b69334106e4 83-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "65ca89d89ed4d9647d000278a646c9effa07902a",
+  "prompts": {},
+  "sessions": {
+    "s_255dcc0e03d4e3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "369f117f-b80f-42fc-a5d0-9050adebbcd1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
