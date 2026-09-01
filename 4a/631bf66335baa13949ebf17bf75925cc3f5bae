@@ -1,0 +1,32 @@
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_255dcc0e03d4e3::t_71e1ba0e193d88 21
+charts/opentelemetry-kube-stack/README.md
+  s_255dcc0e03d4e3::t_4b9802699b067e 3
+charts/opentelemetry-kube-stack/templates/_default-statefulset-config.tpl
+  s_255dcc0e03d4e3::t_259929ea3d7c66 40-41
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  s_255dcc0e03d4e3::t_8f5e239b395d46 83-84
+charts/opentelemetry-kube-stack/templates/_default-deamonset-config.tpl
+  s_255dcc0e03d4e3::t_bb2e560144e86a 113-114
+charts/opentelemetry-kube-stack/templates/_config.tpl
+  s_255dcc0e03d4e3::t_d176e09f042883 95-99
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_255dcc0e03d4e3::t_cb352b4dff4994 9-16
+  s_255dcc0e03d4e3::t_7d3e58859930bd 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4a631bf66335baa13949ebf17bf75925cc3f5bae",
+  "prompts": {},
+  "sessions": {
+    "s_255dcc0e03d4e3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "369f117f-b80f-42fc-a5d0-9050adebbcd1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
