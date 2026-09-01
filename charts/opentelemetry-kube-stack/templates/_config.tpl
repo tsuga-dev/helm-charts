@@ -84,9 +84,33 @@ batch:
 {{/*
 The Kubernetes metadata that k8s_attributes attaches, shared by all three
 collectors. Emitted as a bare list, so callers supply their own indentation.
+
+service.name and service.version are not just static fields: including them
+here activates the processor's own built-in implementation of the OTel k8s
+service.name/service.version precedence (see
+https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/) —
+app.kubernetes.io/instance and app.kubernetes.io/name pod labels, the full
+owner-kind ancestor chain (deployment, replicaset, statefulset, daemonset,
+cronjob, job), and, for service.version, the app.kubernetes.io/version label
+and a container-image-tag fallback.
+
+k8s.replicaset.name itself is left out: it churns on every rollout the same
+as k8s.pod.name/k8s.pod.uid, but adds little identification value beyond what
+k8s.deployment.name + k8s.pod.name already give. The ReplicaSet ancestor tier
+of the chain above resolves regardless of whether k8s.replicaset.name is in
+this list.
+
+k8s.container.name, container.id, container.image.name and container.image.tag
+are added for direct container-image visibility and to feed the
+container-image-tag fallback tier of service.version above. They resolve for
+any single-container pod without extra wiring; a multi-container pod only
+resolves them on the logs pipeline, where the file_log receiver's container
+parser operator already sets k8s.container.name as an incoming resource
+attribute (the association the processor needs — see its README, "Additional
+container level attributes").
 */}}
 {{- define "opentelemetry-kube-stack.k8sAttributesMetadata" -}}
-{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time")) }}
+{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time" "service.name" "service.version" "k8s.container.name" "container.id" "container.image.name" "container.image.tag")) }}
 {{- end }}
 
 {{/*
