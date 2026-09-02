@@ -27,6 +27,14 @@ kubectl get daemonset {{ $fullname }}-agent -n {{ .Release.Namespace }}
 kubectl get deployment {{ $fullname }}-cluster-receiver -n {{ .Release.Namespace }}
 {{- end }}
 
+{{- if .Values.profiling.enabled }}
+# Check profiling DaemonSet. It runs privileged with hostPID, so a namespace at
+# Pod Security "restricted" rejects its pods and the DaemonSet stays at 0
+# desired — label the namespace with
+# pod-security.kubernetes.io/enforce=privileged if that happens.
+kubectl get daemonset {{ $fullname }}-profiling -n {{ .Release.Namespace }}
+{{- end }}
+
 # Check secret
 kubectl get secret {{ $secretName }} -n {{ .Release.Namespace }}
 

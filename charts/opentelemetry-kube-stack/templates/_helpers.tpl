@@ -69,9 +69,13 @@ Whether Tsuga is used by any collector. Returns "true" unless the Tsuga OTLP
 exporter is explicitly disabled for every component. When empty, the Tsuga
 secret is not referenced (env injection and internal-telemetry export are both
 skipped), so no secret is required.
+
+enabledForProfiling only counts while profiling.enabled is true: it defaults to
+true like the rest, and a Tsuga-less install that never asked for profiling
+would otherwise be dragged back into requiring the secret.
 */}}
 {{- define "opentelemetry-kube-stack.tsugaEnabled" -}}
-{{- if or (ne (index .Values "tsuga" "enabledForClusterReceiver") false) (ne (index .Values "tsuga" "enabledForDaemonset") false) (ne (index .Values "tsuga" "enabledForStatefulset") false) -}}
+{{- if or (ne (index .Values "tsuga" "enabledForClusterReceiver") false) (ne (index .Values "tsuga" "enabledForDaemonset") false) (ne (index .Values "tsuga" "enabledForStatefulset") false) (and .Values.profiling.enabled (ne (index .Values "tsuga" "enabledForProfiling") false)) -}}
 true
 {{- end -}}
 {{- end }}

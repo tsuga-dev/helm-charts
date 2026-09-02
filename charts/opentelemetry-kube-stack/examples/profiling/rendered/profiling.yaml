@@ -1,0 +1,185 @@
+---
+# Source: opentelemetry-kube-stack/templates/profiling.yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: example-opentelemetry-kube-stack-profiling
+  labels:
+    app.kubernetes.io/name: opentelemetry-kube-stack
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: profiling
+    app.kubernetes.io/part-of: opentelemetry-kube-stack
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: "example"
+    meta.helm.sh/release-namespace: "default"
+spec:
+  mode: daemonset
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0"
+  # Profiles support is still an alpha signal in the collector, gated off by
+  # default. Without this the collector refuses the config outright: "profiling
+  # signal support is at alpha level, gated under the service.profilesSupport
+  # feature gate".
+  args:
+    feature-gates: +service.profilesSupport
+  # The profiler reads other processes' memory and loads eBPF programs, so it
+  # needs the host PID namespace to see them and root with CAP_SYS_ADMIN/CAP_BPF
+  # to attach. This is a real security posture change on every node, not a
+  # detail, and it is why the release namespace must admit privileged pods.
+  hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+  volumeMounts:
+    # sysfs for the eBPF and perf plumbing, tracefs for the tracepoints the
+    # unwinder attaches to, and the kernel module info the symbolizer reads.
+    - name: sys-kernel
+      mountPath: /sys/kernel
+      readOnly: true
+    - name: tracefs
+      mountPath: /sys/kernel/tracing
+      readOnly: true
+    - name: lib-modules
+      mountPath: /lib/modules
+      readOnly: true
+  volumes:
+    - name: sys-kernel
+      hostPath:
+        path: /sys/kernel
+    - name: tracefs
+      hostPath:
+        path: /sys/kernel/tracing
+    - name: lib-modules
+      hostPath:
+        path: /lib/modules
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  serviceAccount: example-opentelemetry-kube-stack
+  env:
+    
+    - name: TSUGA_OTLP_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_OTLP_ENDPOINT
+    - name: TSUGA_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: otel-secret
+          key: TSUGA_API_KEY
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_UID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.uid
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+  config:
+    receivers:
+      profiling:
+        include_env_vars: OTEL_SERVICE_NAME
+        samples_per_second: 20
+    processors:
+      k8s_attributes:
+        extract:
+          annotations:
+          - from: pod
+            key: resource.opentelemetry.io/service.name
+            tag_name: service.name
+          - from: pod
+            key: resource.opentelemetry.io/service.version
+            tag_name: service.version
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.container.name
+          - service.name
+          - service.version
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: container.id
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      resource:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: test-cluster
+      transform/service_name:
+        error_mode: ignore
+        profile_statements:
+        - context: resource
+          statements:
+          - set(attributes["service.name"], attributes["process.environment_variable.OTEL_SERVICE_NAME"])
+            where attributes["process.environment_variable.OTEL_SERVICE_NAME"] != nil and
+            attributes["process.environment_variable.OTEL_SERVICE_NAME"] != ""
+          - delete_key(attributes, "process.environment_variable.OTEL_SERVICE_NAME")
+    exporters:
+      otlp_http/tsuga:
+        compression: gzip
+        encoding: proto
+        endpoint: ${TSUGA_OTLP_ENDPOINT}
+        headers:
+          Authorization: Bearer ${TSUGA_API_KEY}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    service:
+      extensions:
+      - health_check
+      pipelines:
+        profiles:
+          exporters:
+          - otlp_http/tsuga
+          processors:
+          - memory_limiter
+          - transform/service_name
+          - k8s_attributes
+          - resource
+          receivers:
+          - profiling
+      telemetry:
+        metrics:
+          readers:
+          - periodic:
+              exporter:
+                otlp:
+                  endpoint: ${TSUGA_OTLP_ENDPOINT}/v1/metrics
+                  headers:
+                  - name: Authorization
+                    value: Bearer ${TSUGA_API_KEY}
+                  protocol: http/protobuf
+        resource:
+          k8s.cluster.name: test-cluster
+          service.instance.id: ${POD_UID}

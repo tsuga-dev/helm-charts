@@ -108,7 +108,7 @@ tsuga:
   # the secret while secret.create is true.
   # @default -- ""
   apiKey: ""
-  # These three are also read together: only when all of them are false does the
+  # These four are also read together: only when all of them are false does the
   # chart stop injecting TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT into every collector
   # and stop exporting collector self-telemetry. Any one left true keeps both.
   # -- Enable the Tsuga OTLP exporter in the cluster receiver's default config.
@@ -120,6 +120,10 @@ tsuga:
   # -- Enable the Tsuga OTLP exporter in the StatefulSet collector's default config.
   # @default -- true
   enabledForStatefulset: true
+  # -- Enable the Tsuga OTLP exporter in the profiling collector's default config.
+  # Only read when profiling.enabled is true.
+  # @default -- true
+  enabledForProfiling: true
   # `proto` sends fewer bytes over the wire than `json`, even after compression, so
   # it is the cheaper choice where the intake accepts it. Note the collector's own
   # default is `proto`; this chart defaults to `json`.
@@ -1017,6 +1021,201 @@ statefulset:
   affinity: {}
 
 # =============================================================================
+# PROFILING (eBPF) CONFIGURATION
+# =============================================================================
+# Whole-cluster CPU profiles with no application changes: no SDK, no
+# re-instrumentation, no restart of the profiled workloads. A separate
+# privileged DaemonSet samples every process on the node from the outside and
+# exports OTLP profiles to Tsuga.
+#
+# It is its own collector, not a pipeline on the agent, for two reasons: the
+# profiling receiver only exists in the ebpf-profiler distro (the contrib image
+# the agent runs does not have it), and it needs privileged + hostPID, which
+# the agent does not.
+#
+# Before enabling:
+#   1. The release namespace must admit privileged pods. A namespace at
+#      `restricted` rejects this DaemonSet outright:
+#        kubectl label ns <namespace> pod-security.kubernetes.io/enforce=privileged
+#   2. Nodes need a kernel of 5.10 or newer (the receiver refuses to start
+#      below that) with debugfs/tracefs available. AL2023 is the safe default;
+#      Bottlerocket restricts the host paths this mounts and is unverified.
+#
+# The shared resourceDetection block applies here as it does to the other three
+# collectors: when resourceDetection.enabled is true, resource_detection runs
+# first among the enrichment processors and adds cloud and host attributes to
+# profiles too.
+profiling:
+  # -- Deploy the eBPF profiling collector, a privileged DaemonSet with one pod
+  # per node. Off by default: it runs privileged with hostPID on every node,
+  # which is a security posture change, and it samples every process on every
+  # node.
+  # @default -- false
+  enabled: false
+
+  # Deliberately separate from the top-level `image`: the profiling receiver
+  # ships only in the ebpf-profiler distro, so the contrib image the other
+  # collectors run cannot serve this one. Pinned, and multi-arch (amd64 and
+  # arm64), so Graviton and x86 node groups both resolve.
+  # -- Collector image for the profiling DaemonSet. Must be a distro carrying the
+  # `profiling` receiver, which contrib is not.
+  # @default -- see values.yaml
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0
+
+  # The rate is not carried on the exported profile, so it cannot be recovered at
+  # read time: Tsuga's UI assumes 20 Hz when converting samples into CPU time,
+  # and any other value makes every derived CPU figure wrong by exactly
+  # rate / 20. Change it only alongside that assumption.
+  # -- Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time
+  # assuming 20 Hz, and the rate is not recoverable from the exported profile.
+  # @default -- 20
+  samplesPerSecond: 20
+
+  # eBPF has no SDK to ask, so nothing sets service.name for a profiled process.
+  # The chart resolves it in two tiers: this environment variable is read off the
+  # profiled process and promoted to service.name, and whatever it does not cover
+  # falls through to k8s_attributes, which implements the OTel Kubernetes
+  # service.name precedence (app.kubernetes.io/instance and .../name labels, then
+  # the owner-kind ancestor chain). Tier one is the one that makes profiles join
+  # to traces and logs on an identical service.name, so prefer setting the
+  # variable on your workloads.
+  #
+  # One variable, by construction: this is the name the receiver is told to
+  # surface and the name the transform promotes, so the two cannot disagree.
+  # Surfacing more of a process's environment means overriding the receiver
+  # yourself through profiling.customConfig.
+  # -- Environment variable read from each profiled process and promoted to
+  # service.name. Set to "" to rely on Kubernetes metadata alone.
+  # @default -- "OTEL_SERVICE_NAME"
+  serviceNameEnvVar: OTEL_SERVICE_NAME
+
+  # Narrower than the other collectors' k8sAttributes.metadata, and only because
+  # this is what a profile is grouped and filtered by in practice — workload and
+  # container, not individual pod. The pod-scoped attributes are a reasonable
+  # addition if you want to pin a flame graph to one pod; they are left out of
+  # the default rather than forbidden.
+  #
+  # service.name and service.version are what activate the processor's own
+  # implementation of the OTel Kubernetes service precedence — see
+  # opentelemetry-kube-stack.k8sAttributesMetadata in _config.tpl.
+  # -- Kubernetes metadata k8s_attributes attaches to profiles.
+  # @default -- see values.yaml
+  k8sAttributesMetadata:
+    - k8s.namespace.name
+    - k8s.deployment.name
+    - k8s.statefulset.name
+    - k8s.daemonset.name
+    - k8s.container.name
+    - service.name
+    - service.version
+
+  # -- Address for the health_check extension, which backs the liveness probe.
+  # Set to "" to omit the extension, and the liveness probe with it.
+  # @default -- "${env:MY_POD_IP}:13133"
+  healthCheckEndpoint: "${env:MY_POD_IP}:13133"
+
+  # -- Extra environment variables for the profiling collector. Added after the
+  # variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME,
+  # POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while
+  # any collector exports to Tsuga.
+  # @default -- []
+  extraEnvs: []
+
+  # Overhead at 20 Hz is low but non-zero, and scales with core count per node,
+  # so a limit that fits a 4-core node can throttle the profiler on a 64-core
+  # one. The defaults follow upstream's own DaemonSet example.
+  # -- Resource limits and requests for the profiling collector. Replaces the
+  # top-level resources block wholesale rather than merging.
+  # @default -- see values.yaml
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  # -- Profiling-specific node selector.
+  # If not set, inherits from global nodeSelector configuration.
+  # @default -- {}
+  nodeSelector: {}
+  # -- Profiling-specific tolerations.
+  # If not set, inherits from global tolerations configuration. A node the
+  # profiler does not tolerate is simply not profiled.
+  # @default -- []
+  tolerations: []
+  # -- Profiling-specific affinity rules.
+  # If not set, inherits from global affinity configuration.
+  # @default -- {}
+  affinity: {}
+
+  # -- Replace default config with complete custom configuration.
+  # When set, this completely replaces the default collector configuration.
+  # See cluster.customConfig for example format.
+  # @default -- {}
+  customConfig: {}
+  # -- Profiling collector configuration (merge-based approach).
+  # Use this to extend the default configuration.
+  # Default receivers: profiling.
+  # Default processors: memory_limiter, resource_detection (when
+  # resourceDetection.enabled), transform/service_name (when
+  # profiling.serviceNameEnvVar is set), k8s_attributes, resource.
+  # Default extensions: health_check (when profiling.healthCheckEndpoint is set).
+  #
+  # Note that `batch` is absent on purpose: the batch processor supports traces,
+  # metrics and logs only, and a profiles pipeline referencing it fails to start.
+  # The receiver emits on its own reporter interval instead.
+  config:
+    # -- Additional receivers to merge into the collector configuration.
+    # These are merged with default receivers.
+    # @default -- {}
+    extraReceivers: {}
+    # -- Additional processors to merge into the collector configuration.
+    # These are merged with default processors.
+    # @default -- {}
+    extraProcessors: {}
+    # -- Additional exporters to merge into the collector configuration.
+    # These are merged with default exporters (otlp_http/tsuga).
+    # @default -- {}
+    extraExporters: {}
+    # -- Additional extensions to merge into the collector configuration.
+    # These are merged with the default health_check extension, which is present
+    # only when profiling.healthCheckEndpoint is set.
+    # @default -- {}
+    extraExtensions: {}
+    # -- Additional connectors to merge into the collector configuration.
+    # @default -- {}
+    extraConnectors: {}
+    # Service configuration
+    service:
+      # -- Additional extensions to add to the service configuration.
+      # Added after the default health_check extension, which is present only
+      # when profiling.healthCheckEndpoint is set.
+      # @default -- []
+      extraExtensions: []
+      # Pipeline configuration
+      pipelines:
+        # Profiles pipeline configuration
+        profiles:
+          # -- Additional exporters to add to the profiles pipeline.
+          # Added to default exporter (otlp_http/tsuga).
+          # @default -- []
+          extraExporters: []
+          # -- Additional processors to add to the profiles pipeline.
+          # Added to default processors (memory_limiter, resource_detection,
+          # transform/service_name, k8s_attributes, resource).
+          # @default -- []
+          extraProcessors: []
+          # -- Additional receivers to add to the profiles pipeline.
+          # Added to default receiver (profiling).
+          # @default -- []
+          extraReceivers: []
+        # -- Additional pipelines to add to the service configuration.
+        # These are completely new pipelines, not extensions of the default one.
+        # @default -- {}
+        extraPipelines: {}
+
+# =============================================================================
 # AUTO-INSTRUMENTATION (APM) CONFIGURATION
 # =============================================================================
 # This creates an OpenTelemetry Operator `Instrumentation` resource.
@@ -1060,7 +1259,10 @@ autoInstrumentation:
 # =============================================================================
 # SHARED PROCESSOR CONFIGURATION
 # =============================================================================
-# Applies to all three collectors (agent, cluster receiver, StatefulSet).
+# Applies to the agent, cluster receiver and StatefulSet collectors. The
+# profiling collector takes batch out of the picture entirely and carries its
+# own metadata list in profiling.k8sAttributesMetadata; resourceDetection below
+# is the one block that reaches all four.
 
 k8sAttributes:
   # Every entry is added to each metric series, span and log record, except the
@@ -1226,9 +1428,10 @@ redaction:
 # =============================================================================
 # SCHEDULING & RESOURCE DEFAULTS
 # =============================================================================
-# Defaults for all three collectors. Each collector's own resources,
-# nodeSelector, tolerations or affinity value overrides the value here when it
-# is set.
+# Defaults for every collector. Each collector's own resources, nodeSelector,
+# tolerations or affinity value overrides the value here when it is set — and
+# profiling.resources ships non-empty, so the resources default below does not
+# reach the profiling collector unless you clear it.
 #
 # These defaults suit a cluster of up to roughly 50 nodes. The collectors scale
 # on different axes, so override them individually as the cluster grows:
@@ -1304,7 +1507,7 @@ opentelemetry-operator:
 # =============================================================================
 # SERVICE ACCOUNT & RBAC CONFIGURATION
 # =============================================================================
-# Service account shared by all three collectors and the Target Allocator.
+# Service account shared by every collector and the Target Allocator.
 serviceAccount:
   # -- Create the service account. Set this to false to run under an account you
   # create yourself, named by serviceAccount.name.

@@ -20,6 +20,7 @@
 - **Agent (DaemonSet)**: Collects host metrics, kubelet metrics, container logs and application telemetry from each node
 - **Cluster Receiver (Deployment)**: Collects cluster metrics, pod objects and Kubernetes Warning events from the API server
 - **StatefulSet Collector + Target Allocator (optional)**: Scrapes Prometheus targets, sharded across replicas (`targetAllocator.enabled`)
+- **eBPF Profiling (optional)**: Whole-cluster CPU profiles with no application changes, via a privileged DaemonSet running the OpenTelemetry eBPF profiler (`profiling.enabled`)
 - **Secret Management**: Configurable secrets for OpenTelemetry configuration with external secret support
 - **RBAC Support**: Comprehensive service account and role-based access control
 - **Resource Management**: Configurable resource limits and requests for both components
@@ -32,7 +33,7 @@
 
 ## Architecture
 
-The chart deploys two collectors by default, plus a third that is opt-in:
+The chart deploys two collectors by default, plus two that are opt-in:
 
 ### Agent (DaemonSet)
 
@@ -147,6 +148,113 @@ Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Pr
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
 - **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
 - **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets both the scrape interval and how often the collector refreshes its target list.
+
+### Profiling collector (optional, privileged DaemonSet)
+
+Disabled by default; enable with `profiling.enabled=true`. Gives whole-cluster CPU
+profiles with no application changes — no SDK, no re-instrumentation, no restart of
+the profiled workloads. eBPF samples processes from the outside, and the profiles
+arrive in Tsuga as metrics named `profile.<sample_type>.<service.name>` that can be
+flame-graphed and diffed across versions.
+
+It is a separate collector rather than a pipeline on the agent for two reasons: the
+`profiling` receiver ships only in the eBPF profiler distro, which is not the contrib
+image the other collectors run, and it needs `privileged` plus `hostPID`, which the
+agent does not.
+
+**Before enabling:**
+
+1. **The release namespace must admit privileged pods.** A namespace at `restricted`
+   rejects this DaemonSet outright:
+   `kubectl label ns <namespace> pod-security.kubernetes.io/enforce=privileged`
+2. **Nodes need kernel 5.10 or newer** with debugfs/tracefs available — the receiver
+   refuses to start below that. AL2023 (kernel 6.1) is the safe default; Bottlerocket
+   restricts the host paths this mounts and is unverified.
+
+- **Receiver**: `profiling`, sampling at 20 Hz (`profiling.samplesPerSecond`). Leave
+  that alone unless you know what you are doing: the rate is not carried on the
+  exported profile, so it cannot be recovered at read time, and Tsuga converts samples
+  into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
+  by exactly `rate / 20`.
+- **Processors**: `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource`
+- **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
+  `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
+  this one exporter ignores a chart-wide `tsuga.encoding: json`.
+- **No `batch` processor.** The batch processor registers traces, metrics and logs
+  only; a profiles pipeline that names it fails at startup. The receiver's own
+  reporter interval groups profiles for export instead.
+- **Pipeline**: `profiling` → `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource` → `otlp_http/tsuga`
+
+Components in [brackets] are conditional, as on the other collectors:
+`resource_detection` appears only when `resourceDetection.enabled=true`, and
+`transform/service_name` only while `profiling.serviceNameEnvVar` is set. When both
+are present the transform runs second, so a `service.name` the collector's own
+`OTEL_RESOURCE_ATTRIBUTES` happened to carry does not outrank the one the profiled
+process reports for itself.
+
+#### `service.name` resolution
+
+eBPF has no SDK to ask, so nothing sets `service.name` for a profiled process, and a
+profile without one lands in Tsuga under the literal `unknown` — a silent, useless
+result. The chart resolves it in two tiers:
+
+1. `profiling.serviceNameEnvVar` (default `OTEL_SERVICE_NAME`) is read off each
+   profiled process and promoted to `service.name` by `transform/service_name`, which
+   then deletes the raw attribute. This is the tier that makes profiles join to traces
+   and logs on an *identical* `service.name`, so prefer setting that variable on your
+   workloads. Set the value to `""` to skip this tier entirely.
+2. Whatever tier 1 did not cover falls through to `k8s_attributes`, which implements
+   the OTel Kubernetes `service.name`/`service.version` precedence — the
+   `app.kubernetes.io/instance` and `app.kubernetes.io/name` pod labels, then the
+   owner-kind ancestor chain. This covers everything, but the name is whatever
+   Kubernetes says, which may not match what the SDK reports.
+
+The transform runs *before* `k8s_attributes` for exactly this reason: the processor
+only fills an attribute that is not already set.
+
+#### What ends up on a profile
+
+Beyond `service.name`, the receiver attaches the process's own identity to each
+resource — `container.id`, `process.pid`, `process.executable.path` and
+`process.executable.name` — and `thread.id`, `thread.name` and
+`cpu.logical_number` at sample level. The chart exports all of it: on this signal
+those are what let you tell one process, container or thread apart from another
+inside the same service.
+
+`profiling.k8sAttributesMetadata` is what `k8s_attributes` adds on top, and it is
+narrower than the other collectors' `k8sAttributes.metadata` — workload and
+container rather than individual pod, which is how profiles are usually grouped.
+Adding `k8s.pod.name` or `k8s.pod.uid` is a reasonable change if you want to pin a
+flame graph to a single pod.
+
+Still worth rolling out to one namespace first (`profiling.nodeSelector`, or a
+values file per cluster) and confirming what arrives before widening: this samples
+every process on every node, and volume scales with core count.
+
+#### Verifying a rollout
+
+```bash
+# One pod per node
+kubectl -n <namespace> get pods -l app.kubernetes.io/component=profiling -o wide
+# No export or permission errors
+kubectl -n <namespace> logs -l app.kubernetes.io/component=profiling | grep -i 'profil\|error\|permission'
+```
+
+Then look for the profiled services in Tsuga. Profiles arriving under the literal
+`unknown` mean `service.name` resolution failed — check that your workloads set
+`OTEL_SERVICE_NAME`, or that the Kubernetes fallback can see them; nothing arriving at
+all points at the API key or the exporter rather than the profiler. Finally, check that
+the flame graph attributes to real frames and not `[unknown]` addresses — that is how
+you catch a runtime the unwinder cannot walk. Native code (Go, Rust, C/C++) unwinds
+well; interpreted and JIT'd runtimes depend on which interpreter unwinders the distro
+was built with.
+
+Two limits worth knowing up front: eBPF profiles carry no route or endpoint dimension,
+because the kernel has no notion of an HTTP request, so per-endpoint flame graphs need
+in-process profiling instead. And `service.version` here comes from Kubernetes metadata
+while traces and logs get it from the SDK, so the two can legitimately disagree.
 
 ## Quick Start
 

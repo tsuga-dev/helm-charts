@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.12.0] - 2026-09-02
+
+### Added
+- An opt-in eBPF profiling collector, `profiling.enabled`. A privileged DaemonSet running the OpenTelemetry eBPF profiler distro, which samples CPU profiles from every process on the node with no application changes — no SDK, no re-instrumentation, no restart of the profiled workloads — and exports them to Tsuga. It is a separate collector rather than a pipeline on the agent because the `profiling` receiver ships only in that distro, and it needs `privileged` plus `hostPID`, which the agent does not. Requires a release namespace that admits privileged pods, and nodes on kernel 5.10 or newer
+- `service.name` resolution in two tiers, since eBPF has no SDK to ask: `profiling.serviceNameEnvVar` (default `OTEL_SERVICE_NAME`) is read off each profiled process and promoted, then whatever it did not cover falls through to `k8s_attributes` and its OTel Kubernetes service-identity precedence. Without either, every profile lands under the literal `unknown`
+- `profiling.k8sAttributesMetadata`, the Kubernetes metadata attached to profiles. Narrower than the other collectors' `k8sAttributes.metadata` — workload and container rather than individual pod, which is how profiles are usually grouped. The process identity the receiver sets (`container.id`, `process.pid`, `process.executable.path`, `process.executable.name`) is exported as-is: on this signal it is what tells one process apart from another inside a service
+- `tsuga.enabledForProfiling`, mirroring the existing per-collector exporter toggles. Only read while `profiling.enabled` is true, so a Tsuga-less install that never asked for profiling is not dragged back into requiring the secret
+
+### Notes
+- The profiles pipeline has no `batch` processor. The batch processor registers traces, metrics and logs only, and a profiles pipeline that names it fails at startup; the receiver's own reporter interval groups profiles for export instead
+- The profiling exporter pins `encoding: proto` and ignores `tsuga.encoding`. Tsuga's profiles intake takes OTLP/HTTP protobuf, so a chart-wide `tsuga.encoding: json` would otherwise break profiles alone while every other signal kept working
+- `resourceDetection.enabled` reaches this collector as it does the other three: `resource_detection` runs first among the enrichment processors, before `transform/service_name`, so a `service.name` the collector's own `OTEL_RESOURCE_ATTRIBUTES` carried does not outrank the one the profiled process reports for itself
+- `profiling.samplesPerSecond` defaults to 20 and should stay there. The rate is not carried on the exported profile, so it cannot be recovered at read time, and Tsuga converts samples into CPU time assuming 20 Hz
+
 ## [opentelemetry-kube-stack-0.11.4] - 2026-09-01
 
 ### Added
