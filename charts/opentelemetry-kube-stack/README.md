@@ -186,16 +186,23 @@ agent does not.
   exported profile, so it cannot be recovered at read time, and Tsuga converts samples
   into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
   by exactly `rate / 20`.
-- **Processors**: `memory_limiter`, [`transform/service_name`], `k8s_attributes`,
-  `resource`
+- **Processors**: `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
   `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
   this one exporter ignores a chart-wide `tsuga.encoding: json`.
 - **No `batch` processor.** The batch processor registers traces, metrics and logs
   only; a profiles pipeline that names it fails at startup. The receiver's own
   reporter interval groups profiles for export instead.
-- **Pipeline**: `profiling` → `memory_limiter`, [`transform/service_name`],
-  `k8s_attributes`, `resource` → `otlp_http/tsuga`
+- **Pipeline**: `profiling` → `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource` → `otlp_http/tsuga`
+
+Components in [brackets] are conditional, as on the other collectors:
+`resource_detection` appears only when `resourceDetection.enabled=true`, and
+`transform/service_name` only while `profiling.serviceNameEnvVar` is set. When both
+are present the transform runs second, so a `service.name` the collector's own
+`OTEL_RESOURCE_ATTRIBUTES` happened to carry does not outrank the one the profiled
+process reports for itself.
 
 #### `service.name` resolution
 
@@ -544,7 +551,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | opentelemetry-operator.enabled | bool | `false` | Install the OpenTelemetry Operator and its CRDs as subchart dependencies. Leave this false when the operator is already installed in the cluster; the custom resources this chart creates need it either way. |
 | opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` | Collector image repository the operator falls back to for any OpenTelemetryCollector that does not set an image of its own. This chart always sets one, so it applies only when the top-level image is "". |
 | profiling.affinity | object | {} | Profiling-specific affinity rules. If not set, inherits from global affinity configuration. |
-| profiling.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"profiles":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Profiling collector configuration (merge-based approach). Use this to extend the default configuration. Default receivers: profiling. Default processors: memory_limiter, transform/service_name (when profiling.serviceNameEnvVar is set), k8s_attributes, resource. Default extensions: health_check (when profiling.healthCheckEndpoint is set).  Note that `batch` is absent on purpose: the batch processor supports traces, metrics and logs only, and a profiles pipeline referencing it fails to start. The receiver emits on its own reporter interval instead. |
+| profiling.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"profiles":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Profiling collector configuration (merge-based approach). Use this to extend the default configuration. Default receivers: profiling. Default processors: memory_limiter, resource_detection (when resourceDetection.enabled), transform/service_name (when profiling.serviceNameEnvVar is set), k8s_attributes, resource. Default extensions: health_check (when profiling.healthCheckEndpoint is set).  Note that `batch` is absent on purpose: the batch processor supports traces, metrics and logs only, and a profiles pipeline referencing it fails to start. The receiver emits on its own reporter interval instead. |
 | profiling.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration. |
 | profiling.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with default exporters (otlp_http/tsuga). |
 | profiling.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration. These are merged with the default health_check extension, which is present only when profiling.healthCheckEndpoint is set. |
@@ -553,7 +560,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | profiling.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when profiling.healthCheckEndpoint is set. |
 | profiling.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default one. |
 | profiling.config.service.pipelines.profiles.extraExporters | list | [] | Additional exporters to add to the profiles pipeline. Added to default exporter (otlp_http/tsuga). |
-| profiling.config.service.pipelines.profiles.extraProcessors | list | [] | Additional processors to add to the profiles pipeline. Added to default processors (memory_limiter, transform/service_name, k8s_attributes, resource). |
+| profiling.config.service.pipelines.profiles.extraProcessors | list | [] | Additional processors to add to the profiles pipeline. Added to default processors (memory_limiter, resource_detection, transform/service_name, k8s_attributes, resource). |
 | profiling.config.service.pipelines.profiles.extraReceivers | list | [] | Additional receivers to add to the profiles pipeline. Added to default receiver (profiling). |
 | profiling.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration. See cluster.customConfig for example format. |
 | profiling.enabled | bool | false | Deploy the eBPF profiling collector, a privileged DaemonSet with one pod per node. Off by default: it runs privileged with hostPID on every node, which is a security posture change, and it samples every process on every node. |

@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Notes
 - The profiles pipeline has no `batch` processor. The batch processor registers traces, metrics and logs only, and a profiles pipeline that names it fails at startup; the receiver's own reporter interval groups profiles for export instead
 - The profiling exporter pins `encoding: proto` and ignores `tsuga.encoding`. Tsuga's profiles intake takes OTLP/HTTP protobuf, so a chart-wide `tsuga.encoding: json` would otherwise break profiles alone while every other signal kept working
-- `resourceDetection` is not wired into this collector whatever `resourceDetection.enabled` says. Add `resource_detection` through `profiling.config.extraProcessors` if you want cloud and host attributes on profiles; `values.yaml` carries the snippet
+- `resourceDetection.enabled` reaches this collector as it does the other three: `resource_detection` runs first among the enrichment processors, before `transform/service_name`, so a `service.name` the collector's own `OTEL_RESOURCE_ATTRIBUTES` carried does not outrank the one the profiled process reports for itself
 - `profiling.samplesPerSecond` defaults to 20 and should stay there. The rate is not carried on the exported profile, so it cannot be recovered at read time, and Tsuga converts samples into CPU time assuming 20 Hz
 
 ## [opentelemetry-kube-stack-0.11.4] - 2026-09-01

@@ -185,6 +185,45 @@ tests:
             - service.name
             - service.version
 
+  - it: should honour resourceDetection.enabled like the other collectors
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      resourceDetection.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.processors.resource_detection.override
+          value: false
+      # First among the enrichment processors, and before the transform so the
+      # profiled process's own OTEL_SERVICE_NAME still wins on service.name.
+      - equal:
+          path: spec.config.service.pipelines.profiles.processors
+          value:
+            - memory_limiter
+            - resource_detection
+            - transform/service_name
+            - k8s_attributes
+            - resource
+
+  - it: should omit resource_detection while resourceDetection is disabled
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.processors.resource_detection
+      - notContains:
+          path: spec.config.service.pipelines.profiles.processors
+          content: resource_detection
+
   - it: should pin proto encoding regardless of the chart-wide encoding
     set:
       clusterName: "test-cluster"

@@ -1041,19 +1041,10 @@ statefulset:
 #      below that) with debugfs/tracefs available. AL2023 is the safe default;
 #      Bottlerocket restricts the host paths this mounts and is unverified.
 #
-# The shared resourceDetection block is not wired into this collector, whatever
-# resourceDetection.enabled says. Add it yourself if you want cloud and host
-# attributes on profiles:
-#
-#   profiling:
-#     config:
-#       extraProcessors:
-#         resource_detection:
-#           detectors: [env, eks]
-#       service:
-#         pipelines:
-#           profiles:
-#             extraProcessors: [resource_detection]
+# The shared resourceDetection block applies here as it does to the other three
+# collectors: when resourceDetection.enabled is true, resource_detection runs
+# first among the enrichment processors and adds cloud and host attributes to
+# profiles too.
 profiling:
   # -- Deploy the eBPF profiling collector, a privileged DaemonSet with one pod
   # per node. Off by default: it runs privileged with hostPID on every node,
@@ -1166,7 +1157,8 @@ profiling:
   # -- Profiling collector configuration (merge-based approach).
   # Use this to extend the default configuration.
   # Default receivers: profiling.
-  # Default processors: memory_limiter, transform/service_name (when
+  # Default processors: memory_limiter, resource_detection (when
+  # resourceDetection.enabled), transform/service_name (when
   # profiling.serviceNameEnvVar is set), k8s_attributes, resource.
   # Default extensions: health_check (when profiling.healthCheckEndpoint is set).
   #
@@ -1210,8 +1202,8 @@ profiling:
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the profiles pipeline.
-          # Added to default processors (memory_limiter, transform/service_name,
-          # k8s_attributes, resource).
+          # Added to default processors (memory_limiter, resource_detection,
+          # transform/service_name, k8s_attributes, resource).
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the profiles pipeline.
@@ -1267,7 +1259,10 @@ autoInstrumentation:
 # =============================================================================
 # SHARED PROCESSOR CONFIGURATION
 # =============================================================================
-# Applies to all three collectors (agent, cluster receiver, StatefulSet).
+# Applies to the agent, cluster receiver and StatefulSet collectors. The
+# profiling collector takes batch out of the picture entirely and carries its
+# own metadata list in profiling.k8sAttributesMetadata; resourceDetection below
+# is the one block that reaches all four.
 
 k8sAttributes:
   # Every entry is added to each metric series, span and log record, except the
@@ -1433,9 +1428,10 @@ redaction:
 # =============================================================================
 # SCHEDULING & RESOURCE DEFAULTS
 # =============================================================================
-# Defaults for all three collectors. Each collector's own resources,
-# nodeSelector, tolerations or affinity value overrides the value here when it
-# is set.
+# Defaults for every collector. Each collector's own resources, nodeSelector,
+# tolerations or affinity value overrides the value here when it is set — and
+# profiling.resources ships non-empty, so the resources default below does not
+# reach the profiling collector unless you clear it.
 #
 # These defaults suit a cluster of up to roughly 50 nodes. The collectors scale
 # on different axes, so override them individually as the cluster grows:
@@ -1511,7 +1507,7 @@ opentelemetry-operator:
 # =============================================================================
 # SERVICE ACCOUNT & RBAC CONFIGURATION
 # =============================================================================
-# Service account shared by all three collectors and the Target Allocator.
+# Service account shared by every collector and the Target Allocator.
 serviceAccount:
   # -- Create the service account. Set this to false to run under an account you
   # create yourself, named by serviceAccount.name.

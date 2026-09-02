@@ -176,16 +176,23 @@ agent does not.
   exported profile, so it cannot be recovered at read time, and Tsuga converts samples
   into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
   by exactly `rate / 20`.
-- **Processors**: `memory_limiter`, [`transform/service_name`], `k8s_attributes`,
-  `resource`
+- **Processors**: `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
   `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
   this one exporter ignores a chart-wide `tsuga.encoding: json`.
 - **No `batch` processor.** The batch processor registers traces, metrics and logs
   only; a profiles pipeline that names it fails at startup. The receiver's own
   reporter interval groups profiles for export instead.
-- **Pipeline**: `profiling` → `memory_limiter`, [`transform/service_name`],
-  `k8s_attributes`, `resource` → `otlp_http/tsuga`
+- **Pipeline**: `profiling` → `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource` → `otlp_http/tsuga`
+
+Components in [brackets] are conditional, as on the other collectors:
+`resource_detection` appears only when `resourceDetection.enabled=true`, and
+`transform/service_name` only while `profiling.serviceNameEnvVar` is set. When both
+are present the transform runs second, so a `service.name` the collector's own
+`OTEL_RESOURCE_ATTRIBUTES` happened to carry does not outrank the one the profiled
+process reports for itself.
 
 #### `service.name` resolution
 

@@ -22,6 +22,9 @@ processors:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
+{{- if .Values.resourceDetection.enabled }}
+  {{- include "opentelemetry-kube-stack.resourceDetection" . | nindent 2 }}
+{{- end }}
 {{- if $envVar }}
   # Runs before k8s_attributes on purpose. k8s_attributes only fills an
   # attribute that is not already set, so promoting the process's own
@@ -96,7 +99,13 @@ service:
         - profiling
       processors:
         - memory_limiter
+{{- if .Values.resourceDetection.enabled }}
+        - resource_detection
+{{- end }}
 {{- if $envVar }}
+        # After resource_detection, so a service.name the collector's own
+        # OTEL_RESOURCE_ATTRIBUTES happened to carry does not outrank the one
+        # the profiled process reports for itself.
         - transform/service_name
 {{- end }}
         - k8s_attributes
