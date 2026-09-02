@@ -1026,8 +1026,7 @@ statefulset:
 # Whole-cluster CPU profiles with no application changes: no SDK, no
 # re-instrumentation, no restart of the profiled workloads. A separate
 # privileged DaemonSet samples every process on the node from the outside and
-# exports OTLP profiles to Tsuga, where they arrive as metrics named
-# profile.<sample_type>.<service.name>.
+# exports OTLP profiles to Tsuga.
 #
 # It is its own collector, not a pipeline on the agent, for two reasons: the
 # profiling receiver only exists in the ebpf-profiler distro (the contrib image
@@ -1035,26 +1034,31 @@ statefulset:
 # the agent does not.
 #
 # Before enabling:
-#   1. Profiles ingestion must be turned on for the target Tsuga cluster. It is
-#      cluster-level config, not something the collector can ask for; without
-#      it the intake route does not exist and the exporter 404s with no other
-#      symptom.
-#   2. The release namespace must admit privileged pods. A namespace at
+#   1. The release namespace must admit privileged pods. A namespace at
 #      `restricted` rejects this DaemonSet outright:
 #        kubectl label ns <namespace> pod-security.kubernetes.io/enforce=privileged
-#   3. Nodes need a kernel of 5.10 or newer (the receiver refuses to start
+#   2. Nodes need a kernel of 5.10 or newer (the receiver refuses to start
 #      below that) with debugfs/tracefs available. AL2023 is the safe default;
 #      Bottlerocket restricts the host paths this mounts and is unverified.
 #
-# The shared resourceDetection block is deliberately not wired into this
-# collector, whatever resourceDetection.enabled says: host.id is one value per
-# node, and on a signal where every attribute is a metric dimension that
-# multiplies the whole stack space by the node count.
+# The shared resourceDetection block is not wired into this collector, whatever
+# resourceDetection.enabled says. Add it yourself if you want cloud and host
+# attributes on profiles:
+#
+#   profiling:
+#     config:
+#       extraProcessors:
+#         resource_detection:
+#           detectors: [env, eks]
+#       service:
+#         pipelines:
+#           profiles:
+#             extraProcessors: [resource_detection]
 profiling:
   # -- Deploy the eBPF profiling collector, a privileged DaemonSet with one pod
   # per node. Off by default: it runs privileged with hostPID on every node,
-  # which is a security posture change, and it needs profiles ingestion enabled
-  # on the Tsuga cluster first.
+  # which is a security posture change, and it samples every process on every
+  # node.
   # @default -- false
   enabled: false
 
@@ -1067,12 +1071,12 @@ profiling:
   # @default -- see values.yaml
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0
 
-  # The rate is not carried on the exported metric, so it cannot be recovered at
+  # The rate is not carried on the exported profile, so it cannot be recovered at
   # read time: Tsuga's UI assumes 20 Hz when converting samples into CPU time,
   # and any other value makes every derived CPU figure wrong by exactly
   # rate / 20. Change it only alongside that assumption.
   # -- Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time
-  # assuming 20 Hz, and the rate is not recoverable from the metric.
+  # assuming 20 Hz, and the rate is not recoverable from the exported profile.
   # @default -- 20
   samplesPerSecond: 20
 
@@ -1085,32 +1089,25 @@ profiling:
   # to traces and logs on an identical service.name, so prefer setting the
   # variable on your workloads.
   #
-  # Keep this to one variable. Every env var the receiver surfaces becomes a
-  # resource attribute, and Tsuga turns every resource attribute into a metric
-  # dimension.
+  # One variable, by construction: this is the name the receiver is told to
+  # surface and the name the transform promotes, so the two cannot disagree.
+  # Surfacing more of a process's environment means overriding the receiver
+  # yourself through profiling.customConfig.
   # -- Environment variable read from each profiled process and promoted to
   # service.name. Set to "" to rely on Kubernetes metadata alone.
   # @default -- "OTEL_SERVICE_NAME"
   serviceNameEnvVar: OTEL_SERVICE_NAME
 
-  # Cardinality is the thing that will hurt here. Tsuga carries the whole stack
-  # as one `stack_trace` dimension — one series per unique stack per service —
-  # and every other attribute multiplies that: series is roughly
-  # unique_stacks x the product of the other dimensions. Anything near-unique
-  # per pod multiplies the entire stack space by your pod count.
-  #
-  # So this list is short on purpose. Adding k8s.pod.name, k8s.pod.uid or
-  # container.id here is the fastest way to turn a profiling rollout into an
-  # ingestion incident; the chart deletes those again in
-  # profiling.dropAttributes even when k8s_attributes resolves them, because
-  # k8s_attributes needs container.id to associate the pod in the first place.
+  # Narrower than the other collectors' k8sAttributes.metadata, and only because
+  # this is what a profile is grouped and filtered by in practice — workload and
+  # container, not individual pod. The pod-scoped attributes are a reasonable
+  # addition if you want to pin a flame graph to one pod; they are left out of
+  # the default rather than forbidden.
   #
   # service.name and service.version are what activate the processor's own
   # implementation of the OTel Kubernetes service precedence — see
   # opentelemetry-kube-stack.k8sAttributesMetadata in _config.tpl.
-  # -- Kubernetes metadata k8s_attributes attaches to profiles. Kept far narrower
-  # than the other collectors' list: each entry becomes a metric dimension on top
-  # of the stack_trace dimension.
+  # -- Kubernetes metadata k8s_attributes attaches to profiles.
   # @default -- see values.yaml
   k8sAttributesMetadata:
     - k8s.namespace.name
@@ -1120,26 +1117,6 @@ profiling:
     - k8s.container.name
     - service.name
     - service.version
-
-  # Deleted after k8s_attributes has run, so the association it needs still
-  # works. process.pid and process.executable.path are set by the receiver on
-  # every profiled process; the k8s.pod.* pair and host.name only appear when
-  # something upstream resolved them. Deleting an absent key is a no-op, so
-  # entries that never appear cost nothing.
-  #
-  # The receiver also attaches thread.id, thread.name and cpu.logical_number at
-  # sample level. Those are dimensions in Tsuga too, and nothing in this distro
-  # can strip sample attributes — no chart setting reaches them.
-  # -- Resource attributes deleted before export. These are near-unique per pod
-  # or per process, and each one multiplies the whole stack space.
-  # @default -- see values.yaml
-  dropAttributes:
-    - process.pid
-    - process.executable.path
-    - container.id
-    - k8s.pod.name
-    - k8s.pod.uid
-    - host.name
 
   # -- Address for the health_check extension, which backs the liveness probe.
   # Set to "" to omit the extension, and the liveness probe with it.
@@ -1190,7 +1167,7 @@ profiling:
   # Use this to extend the default configuration.
   # Default receivers: profiling.
   # Default processors: memory_limiter, transform/service_name (when
-  # profiling.serviceNameEnvVar is set), k8s_attributes, resource, resource/trim.
+  # profiling.serviceNameEnvVar is set), k8s_attributes, resource.
   # Default extensions: health_check (when profiling.healthCheckEndpoint is set).
   #
   # Note that `batch` is absent on purpose: the batch processor supports traces,
@@ -1234,7 +1211,7 @@ profiling:
           extraExporters: []
           # -- Additional processors to add to the profiles pipeline.
           # Added to default processors (memory_limiter, transform/service_name,
-          # k8s_attributes, resource, resource/trim).
+          # k8s_attributes, resource).
           # @default -- []
           extraProcessors: []
           # -- Additional receivers to add to the profiles pipeline.

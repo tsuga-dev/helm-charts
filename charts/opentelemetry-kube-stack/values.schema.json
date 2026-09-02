@@ -502,12 +502,6 @@
                 "customConfig": {
                     "type": "object"
                 },
-                "dropAttributes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "enabled": {
                     "type": "boolean"
                 },

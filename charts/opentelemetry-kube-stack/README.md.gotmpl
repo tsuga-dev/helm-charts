@@ -164,23 +164,20 @@ agent does not.
 
 **Before enabling:**
 
-1. **Profiles ingestion must be enabled on the target Tsuga cluster.** That is
-   cluster-level configuration, not something the collector can request. Without it
-   the intake route does not exist and the exporter 404s with no other symptom.
-2. **The release namespace must admit privileged pods.** A namespace at `restricted`
+1. **The release namespace must admit privileged pods.** A namespace at `restricted`
    rejects this DaemonSet outright:
    `kubectl label ns <namespace> pod-security.kubernetes.io/enforce=privileged`
-3. **Nodes need kernel 5.10 or newer** with debugfs/tracefs available — the receiver
+2. **Nodes need kernel 5.10 or newer** with debugfs/tracefs available — the receiver
    refuses to start below that. AL2023 (kernel 6.1) is the safe default; Bottlerocket
    restricts the host paths this mounts and is unverified.
 
 - **Receiver**: `profiling`, sampling at 20 Hz (`profiling.samplesPerSecond`). Leave
   that alone unless you know what you are doing: the rate is not carried on the
-  exported metric, so it cannot be recovered at read time, and Tsuga converts samples
+  exported profile, so it cannot be recovered at read time, and Tsuga converts samples
   into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
   by exactly `rate / 20`.
 - **Processors**: `memory_limiter`, [`transform/service_name`], `k8s_attributes`,
-  `resource`, `resource/trim`
+  `resource`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
   `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
   this one exporter ignores a chart-wide `tsuga.encoding: json`.
@@ -188,7 +185,7 @@ agent does not.
   only; a profiles pipeline that names it fails at startup. The receiver's own
   reporter interval groups profiles for export instead.
 - **Pipeline**: `profiling` → `memory_limiter`, [`transform/service_name`],
-  `k8s_attributes`, `resource`, `resource/trim` → `otlp_http/tsuga`
+  `k8s_attributes`, `resource` → `otlp_http/tsuga`
 
 #### `service.name` resolution
 
@@ -210,31 +207,24 @@ result. The chart resolves it in two tiers:
 The transform runs *before* `k8s_attributes` for exactly this reason: the processor
 only fills an attribute that is not already set.
 
-#### Cardinality budget
+#### What ends up on a profile
 
-This is the part that will hurt if ignored. Tsuga carries the whole stack as a single
-`stack_trace` dimension — one series per unique stack per service — and turns every
-other resource attribute into another dimension on top of it. Series is roughly
-`unique_stacks × ∏(other dimensions)`, so anything near-unique per pod multiplies the
-entire stack space by your pod count.
+Beyond `service.name`, the receiver attaches the process's own identity to each
+resource — `container.id`, `process.pid`, `process.executable.path` and
+`process.executable.name` — and `thread.id`, `thread.name` and
+`cpu.logical_number` at sample level. The chart exports all of it: on this signal
+those are what let you tell one process, container or thread apart from another
+inside the same service.
 
-Hence two deliberately narrow lists:
+`profiling.k8sAttributesMetadata` is what `k8s_attributes` adds on top, and it is
+narrower than the other collectors' `k8sAttributes.metadata` — workload and
+container rather than individual pod, which is how profiles are usually grouped.
+Adding `k8s.pod.name` or `k8s.pod.uid` is a reasonable change if you want to pin a
+flame graph to a single pod.
 
-- `profiling.k8sAttributesMetadata` is far shorter than the other collectors'
-  `k8sAttributes.metadata`. Adding `k8s.pod.name`, `k8s.pod.uid` or `container.id`
-  here is the fastest way to turn a profiling rollout into an ingestion incident.
-- `profiling.dropAttributes` deletes what the receiver sets per process
-  (`process.pid`, `process.executable.path`) and the pod-scoped attributes
-  `k8s_attributes` may have resolved. `container.id` is in that list even though
-  `k8s_attributes` needs it — it is the only key the receiver gives the processor to
-  associate a pod on, so it is deleted afterwards rather than never collected.
-
-One cost no chart setting can reach: the receiver also attaches `thread.id`,
-`thread.name` and `cpu.logical_number` at *sample* level, and those become dimensions
-too. Nothing in this distro can strip sample attributes.
-
-Roll out to one namespace first (`profiling.nodeSelector`, or a `values` file per
-cluster) and look at the series count for the new metric before widening.
+Still worth rolling out to one namespace first (`profiling.nodeSelector`, or a
+values file per cluster) and confirming what arrives before widening: this samples
+every process on every node, and volume scales with core count.
 
 #### Verifying a rollout
 
@@ -245,12 +235,14 @@ kubectl -n <namespace> get pods -l app.kubernetes.io/component=profiling -o wide
 kubectl -n <namespace> logs -l app.kubernetes.io/component=profiling | grep -i 'profil\|error\|permission'
 ```
 
-Then look for `profile.samples.<service>` in Tsuga's metrics list. `profile.samples.unknown`
-means `service.name` resolution failed; nothing at all points at the cluster gate or the
-API key rather than the profiler. Finally, check that the flame graph attributes to real
-frames and not `[unknown]` addresses — that is how you catch a runtime the unwinder
-cannot walk. Native code (Go, Rust, C/C++) unwinds well; interpreted and JIT'd runtimes
-depend on which interpreter unwinders the distro was built with.
+Then look for the profiled services in Tsuga. Profiles arriving under the literal
+`unknown` mean `service.name` resolution failed — check that your workloads set
+`OTEL_SERVICE_NAME`, or that the Kubernetes fallback can see them; nothing arriving at
+all points at the API key or the exporter rather than the profiler. Finally, check that
+the flame graph attributes to real frames and not `[unknown]` addresses — that is how
+you catch a runtime the unwinder cannot walk. Native code (Go, Rust, C/C++) unwinds
+well; interpreted and JIT'd runtimes depend on which interpreter unwinders the distro
+was built with.
 
 Two limits worth knowing up front: eBPF profiles carry no route or endpoint dimension,
 because the kernel has no notion of an HTTP request, so per-endpoint flame graphs need

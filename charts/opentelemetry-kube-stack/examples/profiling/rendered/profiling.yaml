@@ -136,22 +136,6 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
-      resource/trim:
-        attributes:
-        - action: delete
-          key: process.pid
-        - action: delete
-          key: process.executable.path
-        - action: delete
-          key: container.id
-        - action: delete
-          key: k8s.pod.name
-        - action: delete
-          key: k8s.pod.uid
-        - action: delete
-          key: host.name
-        - action: delete
-          pattern: ^process\.environment_variable\.
       transform/service_name:
         error_mode: ignore
         profile_statements:
@@ -183,7 +167,6 @@ spec:
           - transform/service_name
           - k8s_attributes
           - resource
-          - resource/trim
           receivers:
           - profiling
       telemetry:

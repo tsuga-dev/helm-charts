@@ -31,9 +31,7 @@ kubectl get deployment {{ $fullname }}-cluster-receiver -n {{ .Release.Namespace
 # Check profiling DaemonSet. It runs privileged with hostPID, so a namespace at
 # Pod Security "restricted" rejects its pods and the DaemonSet stays at 0
 # desired — label the namespace with
-# pod-security.kubernetes.io/enforce=privileged if that happens. Profiles also
-# require profiles ingestion to be enabled on the Tsuga cluster; without it the
-# exporter gets a 404 and nothing else looks wrong.
+# pod-security.kubernetes.io/enforce=privileged if that happens.
 kubectl get daemonset {{ $fullname }}-profiling -n {{ .Release.Namespace }}
 {{- end }}
 

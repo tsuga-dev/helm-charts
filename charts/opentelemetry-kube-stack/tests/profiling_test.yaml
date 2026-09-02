@@ -70,7 +70,6 @@ tests:
             - transform/service_name
             - k8s_attributes
             - resource
-            - resource/trim
       - equal:
           path: spec.config.service.pipelines.profiles.receivers
           value:
@@ -136,9 +135,8 @@ tests:
             - memory_limiter
             - k8s_attributes
             - resource
-            - resource/trim
 
-  - it: should associate pods on container.id and then delete it
+  - it: should associate pods on container.id
     set:
       clusterName: "test-cluster"
       profiling.enabled: true
@@ -155,23 +153,14 @@ tests:
       - equal:
           path: spec.config.processors.k8s_attributes.filter.node_from_env_var
           value: K8S_NODE_NAME
-      # ...and it is deleted afterwards: it is unique per pod, and every
-      # surviving resource attribute is a metric dimension in Tsuga.
-      - contains:
-          path: spec.config.processors.resource/trim.attributes
-          content:
-            key: container.id
-            action: delete
-      - contains:
-          path: spec.config.processors.resource/trim.attributes
-          content:
-            key: process.pid
-            action: delete
-      - contains:
-          path: spec.config.processors.resource/trim.attributes
-          content:
-            pattern: ^process\.environment_variable\.
-            action: delete
+      # Nothing trims the resource afterwards: container.id, process.pid and the
+      # process executable attributes the receiver sets are what tell one
+      # process apart from another inside a service, so they are exported.
+      - isNull:
+          path: spec.config.processors.resource/trim
+      - notContains:
+          path: spec.config.service.pipelines.profiles.processors
+          content: resource/trim
 
   - it: should keep the k8s metadata list narrow for cardinality
     set:
@@ -238,7 +227,7 @@ tests:
       name: "test-release"
     asserts:
       - equal:
-          path: spec.config.service.pipelines.profiles.processors[5]
+          path: spec.config.service.pipelines.profiles.processors[4]
           value: filter/drop
 
   - it: should fail without a cluster name

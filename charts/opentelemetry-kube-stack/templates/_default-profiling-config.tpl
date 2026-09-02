@@ -64,21 +64,6 @@ processors:
       - key: k8s.cluster.name
         value: {{ include "opentelemetry-kube-stack.clusterName" . }}
         action: upsert
-  # Last in the pipeline: everything here is either needed by k8s_attributes to
-  # associate the pod (container.id) or set by the receiver per process, and all
-  # of it is near-unique per pod. Tsuga makes every resource attribute a
-  # dimension on top of the stack_trace dimension, so leaving these in
-  # multiplies the whole stack space by the pod count.
-  resource/trim:
-    attributes:
-      {{- range .Values.profiling.dropAttributes | default (list "process.pid" "process.executable.path" "container.id" "k8s.pod.name" "k8s.pod.uid" "host.name") }}
-      - key: {{ . }}
-        action: delete
-      {{- end }}
-      # Backstop for any other env var a custom include_env_vars surfaced: the
-      # one promoted to service.name is already deleted by transform/service_name.
-      - pattern: ^process\.environment_variable\.
-        action: delete
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForProfiling") false }}
   # Spelled out rather than reusing opentelemetry-kube-stack.tsugaExporters
@@ -116,7 +101,6 @@ service:
 {{- end }}
         - k8s_attributes
         - resource
-        - resource/trim
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForProfiling") false }}
         - otlp_http/tsuga
