@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.11.4](https://img.shields.io/badge/Version-0.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -30,6 +30,7 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 - **Agent (DaemonSet)**: Collects host metrics, kubelet metrics, container logs and application telemetry from each node
 - **Cluster Receiver (Deployment)**: Collects cluster metrics, pod objects and Kubernetes Warning events from the API server
 - **StatefulSet Collector + Target Allocator (optional)**: Scrapes Prometheus targets, sharded across replicas (`targetAllocator.enabled`)
+- **eBPF Profiling (optional)**: Whole-cluster CPU profiles with no application changes, via a privileged DaemonSet running the OpenTelemetry eBPF profiler (`profiling.enabled`)
 - **Secret Management**: Configurable secrets for OpenTelemetry configuration with external secret support
 - **RBAC Support**: Comprehensive service account and role-based access control
 - **Resource Management**: Configurable resource limits and requests for both components
@@ -42,7 +43,7 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 
 ## Architecture
 
-The chart deploys two collectors by default, plus a third that is opt-in:
+The chart deploys two collectors by default, plus two that are opt-in:
 
 ### Agent (DaemonSet)
 
@@ -157,6 +158,113 @@ Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Pr
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
 - **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
 - **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets both the scrape interval and how often the collector refreshes its target list.
+
+### Profiling collector (optional, privileged DaemonSet)
+
+Disabled by default; enable with `profiling.enabled=true`. Gives whole-cluster CPU
+profiles with no application changes — no SDK, no re-instrumentation, no restart of
+the profiled workloads. eBPF samples processes from the outside, and the profiles
+arrive in Tsuga as metrics named `profile.<sample_type>.<service.name>` that can be
+flame-graphed and diffed across versions.
+
+It is a separate collector rather than a pipeline on the agent for two reasons: the
+`profiling` receiver ships only in the eBPF profiler distro, which is not the contrib
+image the other collectors run, and it needs `privileged` plus `hostPID`, which the
+agent does not.
+
+**Before enabling:**
+
+1. **The release namespace must admit privileged pods.** A namespace at `restricted`
+   rejects this DaemonSet outright:
+   `kubectl label ns <namespace> pod-security.kubernetes.io/enforce=privileged`
+2. **Nodes need kernel 5.10 or newer** with debugfs/tracefs available — the receiver
+   refuses to start below that. AL2023 (kernel 6.1) is the safe default; Bottlerocket
+   restricts the host paths this mounts and is unverified.
+
+- **Receiver**: `profiling`, sampling at 20 Hz (`profiling.samplesPerSecond`). Leave
+  that alone unless you know what you are doing: the rate is not carried on the
+  exported profile, so it cannot be recovered at read time, and Tsuga converts samples
+  into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
+  by exactly `rate / 20`.
+- **Processors**: `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource`
+- **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
+  `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
+  this one exporter ignores a chart-wide `tsuga.encoding: json`.
+- **No `batch` processor.** The batch processor registers traces, metrics and logs
+  only; a profiles pipeline that names it fails at startup. The receiver's own
+  reporter interval groups profiles for export instead.
+- **Pipeline**: `profiling` → `memory_limiter`, [`resource_detection`],
+  [`transform/service_name`], `k8s_attributes`, `resource` → `otlp_http/tsuga`
+
+Components in [brackets] are conditional, as on the other collectors:
+`resource_detection` appears only when `resourceDetection.enabled=true`, and
+`transform/service_name` only while `profiling.serviceNameEnvVar` is set. When both
+are present the transform runs second, so a `service.name` the collector's own
+`OTEL_RESOURCE_ATTRIBUTES` happened to carry does not outrank the one the profiled
+process reports for itself.
+
+#### `service.name` resolution
+
+eBPF has no SDK to ask, so nothing sets `service.name` for a profiled process, and a
+profile without one lands in Tsuga under the literal `unknown` — a silent, useless
+result. The chart resolves it in two tiers:
+
+1. `profiling.serviceNameEnvVar` (default `OTEL_SERVICE_NAME`) is read off each
+   profiled process and promoted to `service.name` by `transform/service_name`, which
+   then deletes the raw attribute. This is the tier that makes profiles join to traces
+   and logs on an *identical* `service.name`, so prefer setting that variable on your
+   workloads. Set the value to `""` to skip this tier entirely.
+2. Whatever tier 1 did not cover falls through to `k8s_attributes`, which implements
+   the OTel Kubernetes `service.name`/`service.version` precedence — the
+   `app.kubernetes.io/instance` and `app.kubernetes.io/name` pod labels, then the
+   owner-kind ancestor chain. This covers everything, but the name is whatever
+   Kubernetes says, which may not match what the SDK reports.
+
+The transform runs *before* `k8s_attributes` for exactly this reason: the processor
+only fills an attribute that is not already set.
+
+#### What ends up on a profile
+
+Beyond `service.name`, the receiver attaches the process's own identity to each
+resource — `container.id`, `process.pid`, `process.executable.path` and
+`process.executable.name` — and `thread.id`, `thread.name` and
+`cpu.logical_number` at sample level. The chart exports all of it: on this signal
+those are what let you tell one process, container or thread apart from another
+inside the same service.
+
+`profiling.k8sAttributesMetadata` is what `k8s_attributes` adds on top, and it is
+narrower than the other collectors' `k8sAttributes.metadata` — workload and
+container rather than individual pod, which is how profiles are usually grouped.
+Adding `k8s.pod.name` or `k8s.pod.uid` is a reasonable change if you want to pin a
+flame graph to a single pod.
+
+Still worth rolling out to one namespace first (`profiling.nodeSelector`, or a
+values file per cluster) and confirming what arrives before widening: this samples
+every process on every node, and volume scales with core count.
+
+#### Verifying a rollout
+
+```bash
+# One pod per node
+kubectl -n <namespace> get pods -l app.kubernetes.io/component=profiling -o wide
+# No export or permission errors
+kubectl -n <namespace> logs -l app.kubernetes.io/component=profiling | grep -i 'profil\|error\|permission'
+```
+
+Then look for the profiled services in Tsuga. Profiles arriving under the literal
+`unknown` mean `service.name` resolution failed — check that your workloads set
+`OTEL_SERVICE_NAME`, or that the Kubernetes fallback can see them; nothing arriving at
+all points at the API key or the exporter rather than the profiler. Finally, check that
+the flame graph attributes to real frames and not `[unknown]` addresses — that is how
+you catch a runtime the unwinder cannot walk. Native code (Go, Rust, C/C++) unwinds
+well; interpreted and JIT'd runtimes depend on which interpreter unwinders the distro
+was built with.
+
+Two limits worth knowing up front: eBPF profiles carry no route or endpoint dimension,
+because the kernel has no notion of an HTTP request, so per-endpoint flame graphs need
+in-process profiling instead. And `service.version` here comes from Kubernetes metadata
+while traces and logs get it from the SDK, so the two can legitimately disagree.
 
 ## Quick Start
 
@@ -442,6 +550,29 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | opentelemetry-operator.crds.create | bool | `false` | Let the operator subchart install the CRDs. Keep this false: it races with helm, and this chart ships the CRDs through its own otel-crds dependency instead. |
 | opentelemetry-operator.enabled | bool | `false` | Install the OpenTelemetry Operator and its CRDs as subchart dependencies. Leave this false when the operator is already installed in the cluster; the custom resources this chart creates need it either way. |
 | opentelemetry-operator.manager.collectorImage.repository | string | `"otel/opentelemetry-collector-k8s"` | Collector image repository the operator falls back to for any OpenTelemetryCollector that does not set an image of its own. This chart always sets one, so it applies only when the top-level image is "". |
+| profiling.affinity | object | {} | Profiling-specific affinity rules. If not set, inherits from global affinity configuration. |
+| profiling.config | object | `{"extraConnectors":{},"extraExporters":{},"extraExtensions":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"profiles":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Profiling collector configuration (merge-based approach). Use this to extend the default configuration. Default receivers: profiling. Default processors: memory_limiter, resource_detection (when resourceDetection.enabled), transform/service_name (when profiling.serviceNameEnvVar is set), k8s_attributes, resource. Default extensions: health_check (when profiling.healthCheckEndpoint is set).  Note that `batch` is absent on purpose: the batch processor supports traces, metrics and logs only, and a profiles pipeline referencing it fails to start. The receiver emits on its own reporter interval instead. |
+| profiling.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration. |
+| profiling.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with default exporters (otlp_http/tsuga). |
+| profiling.config.extraExtensions | object | {} | Additional extensions to merge into the collector configuration. These are merged with the default health_check extension, which is present only when profiling.healthCheckEndpoint is set. |
+| profiling.config.extraProcessors | object | {} | Additional processors to merge into the collector configuration. These are merged with default processors. |
+| profiling.config.extraReceivers | object | {} | Additional receivers to merge into the collector configuration. These are merged with default receivers. |
+| profiling.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when profiling.healthCheckEndpoint is set. |
+| profiling.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default one. |
+| profiling.config.service.pipelines.profiles.extraExporters | list | [] | Additional exporters to add to the profiles pipeline. Added to default exporter (otlp_http/tsuga). |
+| profiling.config.service.pipelines.profiles.extraProcessors | list | [] | Additional processors to add to the profiles pipeline. Added to default processors (memory_limiter, resource_detection, transform/service_name, k8s_attributes, resource). |
+| profiling.config.service.pipelines.profiles.extraReceivers | list | [] | Additional receivers to add to the profiles pipeline. Added to default receiver (profiling). |
+| profiling.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration. See cluster.customConfig for example format. |
+| profiling.enabled | bool | false | Deploy the eBPF profiling collector, a privileged DaemonSet with one pod per node. Off by default: it runs privileged with hostPID on every node, which is a security posture change, and it samples every process on every node. |
+| profiling.extraEnvs | list | [] | Extra environment variables for the profiling collector. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
+| profiling.healthCheckEndpoint | string | "${env:MY_POD_IP}:13133" | Address for the health_check extension, which backs the liveness probe. Set to "" to omit the extension, and the liveness probe with it. |
+| profiling.image | string | see values.yaml | Collector image for the profiling DaemonSet. Must be a distro carrying the `profiling` receiver, which contrib is not. |
+| profiling.k8sAttributesMetadata | list | see values.yaml | Kubernetes metadata k8s_attributes attaches to profiles. |
+| profiling.nodeSelector | object | {} | Profiling-specific node selector. If not set, inherits from global nodeSelector configuration. |
+| profiling.resources | object | see values.yaml | Resource limits and requests for the profiling collector. Replaces the top-level resources block wholesale rather than merging. |
+| profiling.samplesPerSecond | int | 20 | Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time assuming 20 Hz, and the rate is not recoverable from the exported profile. |
+| profiling.serviceNameEnvVar | string | "OTEL_SERVICE_NAME" | Environment variable read from each profiled process and promoted to service.name. Set to "" to rely on Kubernetes metadata alone. |
+| profiling.tolerations | list | [] | Profiling-specific tolerations. If not set, inherits from global tolerations configuration. A node the profiler does not tolerate is simply not profiled. |
 | rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
 | redaction.config | object | see values.yaml | Redaction processor configuration, passed to the collector as-is. Covers credentials, not PII. Applies to attributes at every level and to log bodies, including nested maps and slices. Maps merge with these defaults but lists replace them, so overriding `blocked_key_patterns` must repeat the entries you want to keep. An empty config fails the render, because the processor's own default deletes every attribute. |
 | redaction.enabled | bool | false | Mask credentials in the agent's logs, metrics and traces pipelines, via the redaction processor. Off by default: the rules have to match your own key and secret formats, and an over-broad one silently masks data you need. |
@@ -499,6 +630,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | tsuga.compression | string | "gzip" | Compression for the OTLP exporter. One of `gzip`, `zlib`, `deflate`, `snappy`, `zstd`, `lz4`, `none`. |
 | tsuga.enabledForClusterReceiver | bool | true | Enable the Tsuga OTLP exporter in the cluster receiver's default config. |
 | tsuga.enabledForDaemonset | bool | true | Enable the Tsuga OTLP exporter in the agent's default config. |
+| tsuga.enabledForProfiling | bool | true | Enable the Tsuga OTLP exporter in the profiling collector's default config. Only read when profiling.enabled is true. |
 | tsuga.enabledForStatefulset | bool | true | Enable the Tsuga OTLP exporter in the StatefulSet collector's default config. |
 | tsuga.encoding | string | "json" | Payload encoding for the OTLP exporter. One of `json`, `proto`. |
 | tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
