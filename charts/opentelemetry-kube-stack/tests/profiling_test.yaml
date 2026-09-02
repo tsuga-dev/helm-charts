@@ -1,0 +1,253 @@
+---
+suite: profiling collector tests
+templates:
+  - profiling.yaml
+tests:
+  - it: should not render anything by default
+    set:
+      clusterName: "test-cluster"
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create a privileged hostPID daemonset with the profiles feature gate
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isKind:
+          of: OpenTelemetryCollector
+      - equal:
+          path: metadata.name
+          value: "test-release-opentelemetry-kube-stack-profiling"
+      - equal:
+          path: spec.mode
+          value: daemonset
+      - equal:
+          path: spec.hostPID
+          value: true
+      - equal:
+          path: spec.securityContext.privileged
+          value: true
+      - equal:
+          path: spec.securityContext.runAsUser
+          value: 0
+      # Without the gate the collector rejects the profiles pipeline outright.
+      - equal:
+          path: spec.args.feature-gates
+          value: "+service.profilesSupport"
+      # Its own distro, not the shared contrib image, which has no profiling receiver.
+      - equal:
+          path: spec.image
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0
+      - equal:
+          path: spec.serviceAccount
+          value: "test-release-opentelemetry-kube-stack"
+
+  - it: should build a profiles pipeline without the batch processor
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # batch registers traces/metrics/logs only; a profiles pipeline naming it
+      # fails at startup.
+      - equal:
+          path: spec.config.service.pipelines.profiles.processors
+          value:
+            - memory_limiter
+            - transform/service_name
+            - k8s_attributes
+            - resource
+            - resource/trim
+      - equal:
+          path: spec.config.service.pipelines.profiles.receivers
+          value:
+            - profiling
+      - equal:
+          path: spec.config.service.pipelines.profiles.exporters
+          value:
+            - otlp_http/tsuga
+      - isNull:
+          path: spec.config.processors.batch
+
+  - it: should sample at 20Hz, the rate Tsuga assumes when deriving CPU time
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.profiling.samples_per_second
+          value: 20
+
+  - it: should promote the service name env var and drop the raw attribute
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.profiling.include_env_vars
+          value: OTEL_SERVICE_NAME
+      # Before k8s_attributes, so the process's own value wins over the
+      # Kubernetes-derived fallback.
+      - equal:
+          path: spec.config.service.pipelines.profiles.processors[1]
+          value: transform/service_name
+      - matchRegex:
+          path: spec.config.processors.transform/service_name.profile_statements[0].statements[1]
+          pattern: 'delete_key\(attributes, "process\.environment_variable\.OTEL_SERVICE_NAME"\)'
+
+  - it: should drop the transform when no service name env var is configured
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      profiling.serviceNameEnvVar: ""
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - isNull:
+          path: spec.config.receivers.profiling.include_env_vars
+      - isNull:
+          path: spec.config.processors.transform/service_name
+      - equal:
+          path: spec.config.service.pipelines.profiles.processors
+          value:
+            - memory_limiter
+            - k8s_attributes
+            - resource
+            - resource/trim
+
+  - it: should associate pods on container.id and then delete it
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # container.id is the only key the profiling receiver gives k8s_attributes
+      # to match on.
+      - equal:
+          path: spec.config.processors.k8s_attributes.pod_association[0].sources[0].name
+          value: container.id
+      - equal:
+          path: spec.config.processors.k8s_attributes.filter.node_from_env_var
+          value: K8S_NODE_NAME
+      # ...and it is deleted afterwards: it is unique per pod, and every
+      # surviving resource attribute is a metric dimension in Tsuga.
+      - contains:
+          path: spec.config.processors.resource/trim.attributes
+          content:
+            key: container.id
+            action: delete
+      - contains:
+          path: spec.config.processors.resource/trim.attributes
+          content:
+            key: process.pid
+            action: delete
+      - contains:
+          path: spec.config.processors.resource/trim.attributes
+          content:
+            pattern: ^process\.environment_variable\.
+            action: delete
+
+  - it: should keep the k8s metadata list narrow for cardinality
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      # service.name/service.version are what activate the processor's OTel
+      # Kubernetes service precedence; the pod-scoped attributes are absent on
+      # purpose.
+      - equal:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          value:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
+            - k8s.container.name
+            - service.name
+            - service.version
+
+  - it: should pin proto encoding regardless of the chart-wide encoding
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.encoding: json
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.exporters.otlp_http/tsuga.encoding
+          value: proto
+
+  - it: should drop the tsuga exporter when disabled for profiling
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      tsuga.enabledForProfiling: false
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines.profiles.exporters
+          value: []
+
+  - it: should accept extra processors and a full custom config
+    set:
+      clusterName: "test-cluster"
+      profiling.enabled: true
+      profiling.config.extraProcessors:
+        filter/drop: {}
+      profiling.config.service.pipelines.profiles.extraProcessors:
+        - filter/drop
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines.profiles.processors[5]
+          value: filter/drop
+
+  - it: should fail without a cluster name
+    set:
+      profiling.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - failedTemplate:
+          errorMessage: "clusterName is required: it identifies this cluster in telemetry. Set it with --set clusterName=<name> or in your values file."

@@ -443,6 +443,130 @@
                 }
             }
         },
+        "profiling": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "extraConnectors": {
+                            "type": "object"
+                        },
+                        "extraExporters": {
+                            "type": "object"
+                        },
+                        "extraExtensions": {
+                            "type": "object"
+                        },
+                        "extraProcessors": {
+                            "type": "object"
+                        },
+                        "extraReceivers": {
+                            "type": "object"
+                        },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "extraExtensions": {
+                                    "type": "array"
+                                },
+                                "pipelines": {
+                                    "type": "object",
+                                    "properties": {
+                                        "extraPipelines": {
+                                            "type": "object"
+                                        },
+                                        "profiles": {
+                                            "type": "object",
+                                            "properties": {
+                                                "extraExporters": {
+                                                    "type": "array"
+                                                },
+                                                "extraProcessors": {
+                                                    "type": "array"
+                                                },
+                                                "extraReceivers": {
+                                                    "type": "array"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "customConfig": {
+                    "type": "object"
+                },
+                "dropAttributes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "extraEnvs": {
+                    "type": "array"
+                },
+                "healthCheckEndpoint": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "k8sAttributesMetadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "samplesPerSecond": {
+                    "type": "integer"
+                },
+                "serviceNameEnvVar": {
+                    "type": "string"
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
         "rbac": {
             "type": "object",
             "properties": {
@@ -716,6 +840,9 @@
                     "type": "boolean"
                 },
                 "enabledForDaemonset": {
+                    "type": "boolean"
+                },
+                "enabledForProfiling": {
                     "type": "boolean"
                 },
                 "enabledForStatefulset": {

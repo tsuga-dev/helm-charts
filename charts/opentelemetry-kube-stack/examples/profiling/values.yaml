@@ -1,0 +1,4 @@
+---
+clusterName: test-cluster
+profiling:
+  enabled: true

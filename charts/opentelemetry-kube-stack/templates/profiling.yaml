@@ -1,0 +1,102 @@
+{{- if .Values.profiling.enabled }}
+{{- /*
+     Same default-config-into-context dance as daemonset.yaml. The collector
+     version floor is not asserted here: it exists for the cumulative_to_delta
+     processor in the other default configs, and this collector runs a different
+     distro entirely, whose tags are not comparable to contrib's for that check.
+*/ -}}
+{{- $default := dict }}
+{{- if not .Values.profiling.customConfig }}
+{{- $default = include "tsuga-otel.profiling.config.default" . | fromYaml }}
+{{- end }}
+{{- $ctx := merge (dict "defaultConfig" $default "customConfig" .Values.profiling.customConfig) .Values.profiling.config }}
+{{- include "opentelemetry-kube-stack.validateResourceNames" . }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-profiling
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "profiling" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+spec:
+  mode: daemonset
+  image: {{ .Values.profiling.image | quote }}
+  # Profiles support is still an alpha signal in the collector, gated off by
+  # default. Without this the collector refuses the config outright: "profiling
+  # signal support is at alpha level, gated under the service.profilesSupport
+  # feature gate".
+  args:
+    feature-gates: +service.profilesSupport
+  # The profiler reads other processes' memory and loads eBPF programs, so it
+  # needs the host PID namespace to see them and root with CAP_SYS_ADMIN/CAP_BPF
+  # to attach. This is a real security posture change on every node, not a
+  # detail, and it is why the release namespace must admit privileged pods.
+  hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+  volumeMounts:
+    # sysfs for the eBPF and perf plumbing, tracefs for the tracepoints the
+    # unwinder attaches to, and the kernel module info the symbolizer reads.
+    - name: sys-kernel
+      mountPath: /sys/kernel
+      readOnly: true
+    - name: tracefs
+      mountPath: /sys/kernel/tracing
+      readOnly: true
+    - name: lib-modules
+      mountPath: /lib/modules
+      readOnly: true
+  volumes:
+    - name: sys-kernel
+      hostPath:
+        path: /sys/kernel
+    - name: tracefs
+      hostPath:
+        path: /sys/kernel/tracing
+    - name: lib-modules
+      hostPath:
+        path: /lib/modules
+  {{- if or .Values.profiling.resources .Values.resources }}
+  resources:
+    {{- if .Values.profiling.resources }}
+    {{- toYaml .Values.profiling.resources | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.resources | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.profiling.nodeSelector .Values.nodeSelector }}
+  nodeSelector:
+    {{- if .Values.profiling.nodeSelector }}
+    {{- toYaml .Values.profiling.nodeSelector | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.nodeSelector | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.profiling.tolerations .Values.tolerations }}
+  tolerations:
+    {{- if .Values.profiling.tolerations }}
+    {{- toYaml .Values.profiling.tolerations | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.tolerations | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.profiling.affinity .Values.affinity }}
+  affinity:
+    {{- if .Values.profiling.affinity }}
+    {{- toYaml .Values.profiling.affinity | nindent 4 }}
+    {{- else }}
+    {{- toYaml .Values.affinity | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  serviceAccount: {{ include "opentelemetry-kube-stack.serviceAccountName" . }}
+  env:
+    {{- include "opentelemetry-kube-stack.collectorEnv" . | nindent 4 }}
+    {{- if .Values.profiling.extraEnvs }}
+    {{- toYaml .Values.profiling.extraEnvs | nindent 4 }}
+    {{- end }}
+  config:
+    {{- include "opentelemetry-kube-stack.otelConfig" $ctx | trim | nindent 4 }}
+{{- end }}
