@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.12.1] - 2026-09-07
+
+### Fixed
+- `transform/service_name` OTTL statements now carry their `resource.` context prefix. Collector 0.157.0 accepted the unprefixed form but rewrote it at startup and logged `one or more paths were modified to include their context prefix, please rewrite them accordingly` on every collector start. Rendered behaviour is unchanged; the log line is gone
+- The "Verifying a rollout" commands in the README selected pods by `app.kubernetes.io/component=profiling`, which matched nothing. The operator regenerates the `app.kubernetes.io/*` labels on the DaemonSet it creates and forces `component=opentelemetry-collector`, so the label on the collector resource never reaches the pods. The commands now select on `app.kubernetes.io/instance=<namespace>.<collector name>`
+
 ## [opentelemetry-kube-stack-0.12.0] - 2026-09-02
 
 ### Added

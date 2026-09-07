@@ -245,11 +245,15 @@ every process on every node, and volume scales with core count.
 
 #### Verifying a rollout
 
+The operator regenerates the `app.kubernetes.io/*` labels on the DaemonSet it creates, so
+the `component: profiling` label on the collector resource never reaches the pods. Select
+them by the instance label the operator does set, `<namespace>.<collector name>`:
+
 ```bash
 # One pod per node
-kubectl -n <namespace> get pods -l app.kubernetes.io/component=profiling -o wide
+kubectl -n <namespace> get pods -l app.kubernetes.io/instance=<namespace>.<release>-opentelemetry-kube-stack-profiling -o wide
 # No export or permission errors
-kubectl -n <namespace> logs -l app.kubernetes.io/component=profiling | grep -i 'profil\|error\|permission'
+kubectl -n <namespace> logs -l app.kubernetes.io/instance=<namespace>.<release>-opentelemetry-kube-stack-profiling | grep -i 'profil\|error\|permission'
 ```
 
 Then look for the profiled services in Tsuga. Profiles arriving under the literal

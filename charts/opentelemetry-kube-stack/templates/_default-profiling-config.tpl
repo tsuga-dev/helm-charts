@@ -36,8 +36,8 @@ processors:
     profile_statements:
       - context: resource
         statements:
-          - set(attributes["service.name"], attributes["process.environment_variable.{{ $envVar }}"]) where attributes["process.environment_variable.{{ $envVar }}"] != nil and attributes["process.environment_variable.{{ $envVar }}"] != ""
-          - delete_key(attributes, "process.environment_variable.{{ $envVar }}")
+          - set(resource.attributes["service.name"], resource.attributes["process.environment_variable.{{ $envVar }}"]) where resource.attributes["process.environment_variable.{{ $envVar }}"] != nil and resource.attributes["process.environment_variable.{{ $envVar }}"] != ""
+          - delete_key(resource.attributes, "process.environment_variable.{{ $envVar }}")
 {{- end }}
   k8s_attributes:
     extract:

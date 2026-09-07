@@ -141,10 +141,11 @@ spec:
         profile_statements:
         - context: resource
           statements:
-          - set(attributes["service.name"], attributes["process.environment_variable.OTEL_SERVICE_NAME"])
-            where attributes["process.environment_variable.OTEL_SERVICE_NAME"] != nil and
-            attributes["process.environment_variable.OTEL_SERVICE_NAME"] != ""
-          - delete_key(attributes, "process.environment_variable.OTEL_SERVICE_NAME")
+          - set(resource.attributes["service.name"], resource.attributes["process.environment_variable.OTEL_SERVICE_NAME"])
+            where resource.attributes["process.environment_variable.OTEL_SERVICE_NAME"]
+            != nil and resource.attributes["process.environment_variable.OTEL_SERVICE_NAME"]
+            != ""
+          - delete_key(resource.attributes, "process.environment_variable.OTEL_SERVICE_NAME")
     exporters:
       otlp_http/tsuga:
         compression: gzip

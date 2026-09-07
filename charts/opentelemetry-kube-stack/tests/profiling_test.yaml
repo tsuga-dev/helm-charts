@@ -111,9 +111,14 @@ tests:
       - equal:
           path: spec.config.service.pipelines.profiles.processors[1]
           value: transform/service_name
+      # Paths carry their `resource.` context prefix: without it the collector rewrites
+      # them at startup and logs that they should be rewritten.
+      - matchRegex:
+          path: spec.config.processors.transform/service_name.profile_statements[0].statements[0]
+          pattern: '^set\(resource\.attributes\["service\.name"\], resource\.attributes\['
       - matchRegex:
           path: spec.config.processors.transform/service_name.profile_statements[0].statements[1]
-          pattern: 'delete_key\(attributes, "process\.environment_variable\.OTEL_SERVICE_NAME"\)'
+          pattern: 'delete_key\(resource\.attributes, "process\.environment_variable\.OTEL_SERVICE_NAME"\)'
 
   - it: should drop the transform when no service name env var is configured
     set:
