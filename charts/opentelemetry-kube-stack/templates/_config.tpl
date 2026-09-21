@@ -104,17 +104,17 @@ k8s.deployment.name + k8s.pod.name already give. The ReplicaSet ancestor tier
 of the chain above resolves regardless of whether k8s.replicaset.name is in
 this list.
 
-k8s.container.name, container.id, container.image.name and container.image.tag
-are added for direct container-image visibility and to feed the
-container-image-tag fallback tier of service.version above. They resolve for
-any single-container pod without extra wiring; a multi-container pod only
-resolves them on the logs pipeline, where the file_log receiver's container
-parser operator already sets k8s.container.name as an incoming resource
-attribute (the association the processor needs — see its README, "Additional
-container level attributes").
+k8s.container.name, container.id, container.image.name and
+container.image.tags are added for direct container-image visibility, and
+service.version's image-tag tier resolves without them. They resolve for any
+single-container pod without extra wiring; a multi-container pod only resolves
+them on the logs pipeline, where the file_log receiver's container parser
+operator already sets k8s.container.name as an incoming resource attribute (the
+association the processor needs — see its README, "Additional container level
+attributes").
 */}}
 {{- define "opentelemetry-kube-stack.k8sAttributesMetadata" -}}
-{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time" "service.name" "service.version" "k8s.container.name" "container.id" "container.image.name" "container.image.tag")) }}
+{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time" "service.name" "service.version" "k8s.container.name" "container.id" "container.image.name" "container.image.tags")) }}
 {{- end }}
 
 {{/*
@@ -130,10 +130,9 @@ otlp_http/tsuga:
 {{- end }}
 
 {{/*
-Fail the render if the given collector image is older than v0.157.0, the oldest
-release carrying every component name the default configs use — cumulative_to_delta
-arrived there, resource_detection in v0.153.0. An older collector rejects the
-config at startup with `unknown type` and crash-loops.
+Fail the render if the given collector image is older than v0.161.0. The fail
+message below carries the reason; the point of checking is that the symptom
+would otherwise be a silently missing attribute rather than a crash.
 
 Takes one image string: the image the collector being rendered will actually run.
 Each collector template calls this for its own image, and only when it is
@@ -153,8 +152,8 @@ has none, so comparing the whole tag would let it past the floor.
 */}}
 {{- $core := regexFind "^[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
 {{- if $core -}}
-{{- if semverCompare "< 0.157.0" $core -}}
-{{- fail (printf "collector image %q is older than v0.157.0. This chart's default config uses the cumulative_to_delta processor type, which collectors below v0.157.0 reject at startup with `unknown type`. Either pin a v0.157.0+ image, or stay on chart 0.10.x." .) -}}
+{{- if semverCompare "< 0.161.0" $core -}}
+{{- fail (printf "collector image %q is older than v0.161.0. This chart's default config extracts container.image.tags, which a collector only emits once processor.k8sattributes.EmitV1K8sConventions is enabled by default, in v0.161.0. Below that the config loads and the attribute is silently absent. Either pin a v0.161.0+ image, or stay on chart 0.12.x." .) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

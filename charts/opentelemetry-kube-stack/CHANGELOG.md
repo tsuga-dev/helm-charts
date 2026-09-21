@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.13.0] - 2026-09-23
+
+### Changed
+- **BREAKING** `container.image.tag` is replaced by `container.image.tags` in the default `k8sAttributes.metadata` list, following the stable Kubernetes semantic conventions that the `k8s_attributes` processor adopted at v1.0.0. The value is now a **list of strings** holding a single tag, not a string. Anything of yours that reads it has to move: dashboard queries, monitors, log routes and saved filters using `context.container.image.tag` will find nothing under that name. On metrics the array reaches Tsuga as one JSON-encoded label value (`["1.2.3"]`); on logs and traces it is a native list. If you would rather keep the old attribute for now, pin `k8sAttributes.metadata` in your values with `container.image.tag` in place of the plural and run the collectors with `--feature-gates=-processor.k8sattributes.DontEmitV0K8sConventions`
+- **BREAKING** Raise the collector version floor to 0.161.0, from 0.157.0. `container.image.tags` is only emitted once `processor.k8sattributes.EmitV1K8sConventions` is enabled by default, which is that release; below it the config loads and the attribute is silently absent, so the chart fails the render instead. Move to a 0.161.0+ image, or stay on chart 0.12.x
+- Pin collector 0.161.0, up from 0.157.0, for the three contrib collectors and the eBPF profiler distro. The `k8s_attributes` processor is `stable` (v1.0.0) for logs, metrics and traces as of that release, so its configuration surface now carries API stability guarantees
+
+### Notes
+- The label and annotation rules this chart renders are unaffected by the stable conventions: every one of them sets `tag_name`, which the processor uses in place of its own naming, so the attribute keys are unchanged. The rename (`k8s.pod.labels.<key>` to `k8s.pod.label.<key>`, and the same for annotations, nodes and namespaces) only reaches rules that omit `tag_name`. Set it on anything you add through `extraLabelMapping` or `extraAnnotationsMapping`
+- `deployment_name_from_replicaset` no longer exists on the processor. It was never set by this chart, but `confmap` rejects unknown keys, so a copy of it reaching the config through `customConfig` — at `true` or at `false` — fails the collector at startup instead of warning
+- `kubelet_stats` calculates `container.cpu.usage`, `k8s.pod.cpu.usage`, `k8s.node.cpu.usage` and the utilization metrics derived from them as the rate of the matching `*.cpu.time` counter between scrapes, rather than reading the kubelet's `UsageNanoCores`. Values shift slightly and none of them are reported on the first scrape after a collector restart. Upstream's escape hatch is the `-receiver.kubeletstats.cpuUsageScrapeBased` feature gate, which this chart does not expose: `spec.args` is rendered by the chart and no value feeds it
+- The `k8s_attributes` processor's own internal telemetry is now `otelcol.k8s.watcher.<kind>.<event>`, `otelcol.k8s.watcher.pod_cache.size` and `otelcol.k8s.pod.association`; the previous `otelcol_otelsvc_k8s_*` series are off by default. Dashboards or monitors built on the old series go blank
+- `redaction` applies `blocked_values` patterns in the order they are configured. Where two patterns overlapped on the same value the masked output could previously differ between runs
+
 ## [opentelemetry-kube-stack-0.12.1] - 2026-09-21
 
 ### Added

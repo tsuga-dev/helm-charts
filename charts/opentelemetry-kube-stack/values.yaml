@@ -84,11 +84,11 @@ fullnameOverride: ""
 # Keep the tag: an untagged image resolves to :latest, which forces
 # imagePullPolicy: Always and skips the version floor check. Set to "" to let the
 # operator choose the image.
-# -- Collector image used by all three collectors. Must be v0.157.0 or newer: the
-# default config uses the cumulative_to_delta processor, and the chart fails the
-# render on an older tag. Keep the tag, because an untagged image resolves to
-# :latest and skips that check.
-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+# -- Collector image used by all three collectors. Must be v0.161.0 or newer:
+# the default config extracts `container.image.tags`, which older collectors
+# accept and never emit, so the chart fails the render on an older tag. Keep the
+# tag, because an untagged image resolves to :latest and skips that check.
+image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
 
 # =============================================================================
 # TSUGA CONFIGURATION
@@ -582,8 +582,10 @@ agent:
   # Maps Kubernetes pod labels to OpenTelemetry resource attributes.
   # These are appended to default label mappings.
   # Format: List of objects with tag_name, key, and from fields, where from is one
-  # of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job`
-  # and defaults to `pod`.
+  # of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job`,
+  # `cronjob`, `replicaset` and defaults to `pod`.
+  # Set tag_name on every rule. Without it the attribute is named by the
+  # processor's own default, `k8s.pod.label.<key>`.
   # @default -- []
   extraLabelMapping: []
   #   - tag_name: "app.version"
@@ -1069,7 +1071,7 @@ profiling:
   # -- Collector image for the profiling DaemonSet. Must be a distro carrying the
   # `profiling` receiver, which contrib is not.
   # @default -- see values.yaml
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.161.0
 
   # The rate is not carried on the exported profile, so it cannot be recovered at
   # read time: Tsuga's UI assumes 20 Hz when converting samples into CPU time,
@@ -1292,6 +1294,9 @@ k8sAttributes:
   # covering app.kubernetes.io/instance, app.kubernetes.io/name and
   # app.kubernetes.io/version pod labels and the owner-kind ancestor chain, on
   # top of the resource.opentelemetry.io/* annotations this chart maps below.
+  # `container.image.tags` carries a list holding one tag, not a string, and a
+  # collector emits it only from v0.161.0 — this chart's version floor. On an
+  # older image the entry is accepted and the attribute never appears.
   # -- Kubernetes metadata to attach to telemetry. Dropping `k8s.pod.name` and
   # `k8s.pod.uid` is the largest cardinality saving available here, at the cost of
   # per-pod identification. An unsupported field name fails the collector at startup.
@@ -1312,7 +1317,7 @@ k8sAttributes:
     - k8s.container.name
     - container.id
     - container.image.name
-    - container.image.tag
+    - container.image.tags
 
 batch:
   # -- Item count that triggers a send.
