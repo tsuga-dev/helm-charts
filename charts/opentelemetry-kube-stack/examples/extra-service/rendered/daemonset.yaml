@@ -282,6 +282,7 @@ spec:
         endpoint: ${env:MY_POD_IP}:13133
     connectors:
       span_metrics:
+        aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
         dimensions:
         - default: GET
           name: http.request.method
