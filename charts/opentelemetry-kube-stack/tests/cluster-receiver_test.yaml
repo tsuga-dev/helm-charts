@@ -332,7 +332,7 @@ tests:
       # metric and logged the miss at debug level only.
       - equal:
           path: spec.config.receivers.k8s_cluster.allocatable_types_to_report
-          value: [cpu, memory, ephemeral-storage]
+          value: [cpu, memory, ephemeral-storage, pods]
 
   - it: should not re-report warning events when the API server expires them
     set:

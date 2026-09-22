@@ -698,14 +698,17 @@ cluster:
     - DiskPressure
     - PIDPressure
   # Any other key in the node's status.allocatable also works, e.g. hugepages-2Mi.
+  # pods is what k8s.node.allocatable_pods comes from, and without it a pod-count
+  # alert has no capacity figure to compare against.
   # -- Names from the node's `status.allocatable`, such as `cpu`, `memory`,
   # `ephemeral-storage` and `pods`. A name the node does not report, `storage` for
   # example, is skipped silently.
-  # @default -- [cpu, memory, ephemeral-storage]
+  # @default -- [cpu, memory, ephemeral-storage, pods]
   allocatableTypesToReport:
     - cpu
     - memory
     - ephemeral-storage
+    - pods
   # -- Replace default config with complete custom configuration.
   # When set, this completely replaces the default collector configuration.
   # Use this for full control over the OpenTelemetry Collector config.
