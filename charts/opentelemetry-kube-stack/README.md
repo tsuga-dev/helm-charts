@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.12.2](https://img.shields.io/badge/Version-0.12.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -512,7 +512,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | batch.sendBatchSize | int | 5000 | Item count that triggers a send. |
 | batch.timeout | string | "" | Maximum time to wait before sending an undersized batch, e.g. `5s`. Empty uses the processor's own default of 200ms. |
 | cluster.affinity | object | {} | Cluster-specific affinity rules. If not set, inherits from global affinity configuration. |
-| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
+| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage, pods] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
 | cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
 | cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs. Events are the only source for OOMKilled, FailedScheduling, Evicted, ErrImagePull, FailedMount and failing probes, since no metric receiver reports them. Off by default because the volume follows cluster health. Only Warning events are collected, filtered at the API server, so Normal events are never transferred. |
 | cluster.collectk8sobjects | bool | true | Watch pod objects and send them as logs. Powers the Kubernetes view, which uses them to show pod configuration. Costs one log record per pod change, plus a full snapshot of every pod on each collector restart. |
