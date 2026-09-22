@@ -76,6 +76,7 @@ spec:
         - cpu
         - memory
         - ephemeral-storage
+        - pods
         collection_interval: 10s
         metrics:
           k8s.pod.status_reason:

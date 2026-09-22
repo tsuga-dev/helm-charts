@@ -8,7 +8,7 @@ extensions:
 receivers:
   k8s_cluster:
     collection_interval: {{ .Values.cluster.collectionInterval | default "10s" }}
-    allocatable_types_to_report: {{ toYaml (.Values.cluster.allocatableTypesToReport | default (list "cpu" "memory" "ephemeral-storage")) | nindent 6 }}
+    allocatable_types_to_report: {{ toYaml (.Values.cluster.allocatableTypesToReport | default (list "cpu" "memory" "ephemeral-storage" "pods")) | nindent 6 }}
     node_conditions_to_report: {{ toYaml (.Values.cluster.nodeConditionsToReport | default (list "Ready" "MemoryPressure" "DiskPressure" "PIDPressure")) | nindent 6 }}
     metrics:
       k8s.pod.status_reason:
