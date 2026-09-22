@@ -157,7 +157,7 @@ Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Pr
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
 - **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
-- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets both the scrape interval and how often the collector refreshes its target list.
+- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets the per-target scrape interval. The allocator poll interval is written by the operator and is not configurable from the chart.
 
 ### Profiling collector (optional, privileged DaemonSet)
 
@@ -617,7 +617,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector. If not set, inherits from global nodeSelector configuration. |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets across replicas according to targetAllocator.spec.allocationStrategy. |
 | statefulset.resources | object | {} | Resource limits and requests for the StatefulSet collector. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
-| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Also the interval at which the collector refreshes its target list from the Target Allocator. |
+| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Does not affect how often the collector refreshes its target list from the Target Allocator: the operator writes that interval itself and pins it to 30s. |
 | statefulset.tolerations | list | [] | StatefulSet-specific tolerations. If not set, inherits from global tolerations configuration. |
 | targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector. |
 | targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Setting spec.serviceAccount here overrides the account the chart would otherwise set. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
