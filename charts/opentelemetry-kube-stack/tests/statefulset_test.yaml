@@ -139,7 +139,7 @@ tests:
           path: spec.config.service.extensions
           value: [health_check]
 
-  - it: should apply the scrape interval to both the scrape config and the allocator
+  - it: should apply the scrape interval to the scrape config
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
@@ -150,9 +150,17 @@ tests:
       - equal:
           path: spec.config.receivers.prometheus.config.scrape_configs[0].scrape_interval
           value: 60s
-      - equal:
-          path: spec.config.receivers.prometheus.target_allocator.interval
-          value: 60s
+
+  # The operator writes it from the label, overwriting whatever the chart sets.
+  - it: should not set a target_allocator block on the prometheus receiver
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - notExists:
+          path: spec.config.receivers.prometheus.target_allocator
 
   - it: should use the shared pinned collector image by default
     set:
