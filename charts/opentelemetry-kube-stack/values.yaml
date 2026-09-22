@@ -925,8 +925,9 @@ statefulset:
   # Set to "" to omit the extension, and the liveness probe with it.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- How often to scrape Prometheus targets, e.g. `60s`. Also the interval at
-  # which the collector refreshes its target list from the Target Allocator.
+  # -- How often to scrape Prometheus targets, e.g. `60s`. Does not affect how
+  # often the collector refreshes its target list from the Target Allocator:
+  # the operator writes that interval itself and pins it to 30s.
   # @default -- "30s"
   scrapeInterval: 30s
   # -- Replace default config with complete custom configuration.

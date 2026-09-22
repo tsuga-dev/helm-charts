@@ -63,10 +63,6 @@ spec:
             static_configs:
             - targets:
               - localhost:8888
-        target_allocator:
-          collector_id: ${POD_NAME}
-          endpoint: http://example-opentelemetry-kube-stack-ta:80
-          interval: 30s
     processors:
       batch:
         send_batch_max_size: 5000
