@@ -1074,38 +1074,37 @@ profiling:
   # @default -- see values.yaml
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.161.0
 
-  # The rate is not carried on the exported profile, so it cannot be recovered at
-  # read time: Tsuga's UI assumes 20 Hz when converting samples into CPU time,
-  # and any other value makes every derived CPU figure wrong by exactly
-  # rate / 20. Change it only alongside that assumption.
+  # The exported profile carries the rate as its period, but Tsuga's UI ignores
+  # it and assumes 20 Hz when converting samples into CPU time, so any other
+  # value makes every derived CPU figure wrong by exactly rate / 20. Change it
+  # only alongside that assumption.
   # -- Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time
-  # assuming 20 Hz, and the rate is not recoverable from the exported profile.
+  # assuming 20 Hz.
   # @default -- 20
   samplesPerSecond: 20
 
-  # eBPF has no SDK to ask, so nothing sets service.name for a profiled process.
-  # The chart resolves it in two tiers: this environment variable is read off the
-  # profiled process and promoted to service.name, and whatever it does not cover
+  # The receiver already takes each process's resource from the process itself:
+  # the OTel process context an SDK publishes, or failing that its
+  # OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES. Whatever that leaves unset
   # falls through to k8s_attributes, which implements the OTel Kubernetes
   # service.name precedence (app.kubernetes.io/instance and .../name labels, then
-  # the owner-kind ancestor chain). Tier one is the one that makes profiles join
-  # to traces and logs on an identical service.name, so prefer setting the
-  # variable on your workloads.
+  # the owner-kind ancestor chain).
   #
-  # One variable, by construction: this is the name the receiver is told to
-  # surface and the name the transform promotes, so the two cannot disagree.
-  # Surfacing more of a process's environment means overriding the receiver
-  # yourself through profiling.customConfig.
-  # -- Environment variable read from each profiled process and promoted to
-  # service.name. Set to "" to rely on Kubernetes metadata alone.
-  # @default -- "OTEL_SERVICE_NAME"
-  serviceNameEnvVar: OTEL_SERVICE_NAME
+  # This is only for workloads that name themselves in some other variable. One
+  # variable, by construction: this is the name the receiver is told to surface
+  # and the name the transform promotes, so the two cannot disagree.
+  # -- Environment variable, other than OTEL_SERVICE_NAME, read from each
+  # profiled process and promoted to service.name. OTEL_SERVICE_NAME and
+  # OTEL_RESOURCE_ATTRIBUTES are read without it.
+  # @default -- ""
+  serviceNameEnvVar: ""
 
   # Narrower than the other collectors' k8sAttributes.metadata, and only because
-  # this is what a profile is grouped and filtered by in practice — workload and
-  # container, not individual pod. The pod-scoped attributes are a reasonable
-  # addition if you want to pin a flame graph to one pod; they are left out of
-  # the default rather than forbidden.
+  # this is what a profile is grouped and filtered by in practice — workload,
+  # node, container and image, not individual pod. k8s.node.name costs one value
+  # per profiler pod. The pod-scoped attributes are a reasonable addition if you
+  # want to pin a flame graph to one pod; they are left out of the default
+  # rather than forbidden.
   #
   # service.name and service.version are what activate the processor's own
   # implementation of the OTel Kubernetes service precedence — see
@@ -1117,7 +1116,12 @@ profiling:
     - k8s.deployment.name
     - k8s.statefulset.name
     - k8s.daemonset.name
+    - k8s.cronjob.name
+    - k8s.job.name
+    - k8s.node.name
     - k8s.container.name
+    - container.image.name
+    - container.image.tags
     - service.name
     - service.version
 

@@ -100,7 +100,6 @@ spec:
   config:
     receivers:
       profiling:
-        include_env_vars: OTEL_SERVICE_NAME
         samples_per_second: 20
     processors:
       k8s_attributes:
@@ -117,7 +116,12 @@ spec:
           - k8s.deployment.name
           - k8s.statefulset.name
           - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
           - k8s.container.name
+          - container.image.name
+          - container.image.tags
           - service.name
           - service.version
         filter:
@@ -136,15 +140,16 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
-      transform/service_name:
+      transform/host_processes:
         error_mode: ignore
         profile_statements:
         - context: resource
           statements:
-          - set(attributes["service.name"], attributes["process.environment_variable.OTEL_SERVICE_NAME"])
-            where attributes["process.environment_variable.OTEL_SERVICE_NAME"] != nil and
-            attributes["process.environment_variable.OTEL_SERVICE_NAME"] != ""
-          - delete_key(attributes, "process.environment_variable.OTEL_SERVICE_NAME")
+          - set(resource.attributes["service.name"], "containerd-shim") where IsMatch(resource.attributes["service.name"],
+            "^containerd-shim-[0-9a-f]{64}$")
+          - set(resource.attributes["service.name"], Concat(["unknown_service", resource.attributes["process.executable.name"]],
+            ":")) where resource.attributes["service.name"] == nil and resource.attributes["process.executable.name"]
+            != nil
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -164,8 +169,8 @@ spec:
           - otlp_http/tsuga
           processors:
           - memory_limiter
-          - transform/service_name
           - k8s_attributes
+          - transform/host_processes
           - resource
           receivers:
           - profiling

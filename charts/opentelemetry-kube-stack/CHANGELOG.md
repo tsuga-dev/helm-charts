@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.13.2] - 2026-09-23
+
+### Changed
+- Profiles take `service.name` and the rest of the resource from the process's own OTel process context or `OTEL_SERVICE_NAME`/`OTEL_RESOURCE_ATTRIBUTES`, read by the profiler itself. `profiling.serviceNameEnvVar` now defaults to `""` and is only for a variable with another name
+- Profiles carry `k8s.node.name`, `k8s.cronjob.name`, `k8s.job.name`, `container.image.name` and `container.image.tags`
+- The profiling image takes the same 0.161.0 floor as the other collectors
+
+### Fixed
+- Host processes on profiles get a stable `service.name`. containerd's shims, named `containerd-shim-<container id>`, added one service per pod; they are now `containerd-shim`. Anything else without a name, such as kubelet, is `unknown_service:<executable>`, the OTel fallback, rather than `unknown`
+- `transform/service_name` OTTL paths carry the `resource.` prefix, so the profiling collector no longer logs a path-rewrite message on every start
+- The README rollout check selects profiling pods by `app.kubernetes.io/instance=<namespace>.<collector name>`. The old `component=profiling` selector matched nothing: the operator overwrites that label
+
 ## [opentelemetry-kube-stack-0.13.1] - 2026-09-23
 
 ### Fixed
