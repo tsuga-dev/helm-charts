@@ -241,6 +241,43 @@ tests:
           path: spec.config.service.pipelines.logs.receivers
           content: k8s_objects/events
 
+  - it: should send events wherever the logs pipeline exports
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      tsuga.enabledForClusterReceiver: false
+      cluster.config.extraExporters:
+        debug: {}
+      cluster.config.service.pipelines.logs.extraExporters: [debug]
+    release:
+      name: "test-release"
+    asserts:
+      # Without the logs exporters the pipeline has none, and the collector
+      # refuses to start.
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].exporters
+          value: [debug]
+
+  - it: should not list an events exporter twice
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      cluster.config.extraExporters:
+        debug: {}
+      cluster.config.service.pipelines:
+        logs:
+          extraExporters: [debug]
+        logs/events:
+          extraExporters: [debug]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].exporters
+          value: [otlp_http/tsuga, debug]
+
   - it: should not render the events pipeline or transform when disabled
     set:
       clusterName: "test-cluster"

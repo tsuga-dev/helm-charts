@@ -18,9 +18,6 @@ cluster:
         logs:
           extraExporters:
             - debug
-        logs/events:
-          extraExporters:
-            - debug
 agent:
   enabled: true
   config:

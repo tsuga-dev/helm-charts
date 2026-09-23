@@ -144,7 +144,7 @@ There is no `cumulative_to_delta` in this collector. `k8s_cluster` emits gauges 
 **Service Pipelines:**
 - **Metrics**: `k8s_cluster` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resource_detection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
+- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resource_detection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga` plus the logs pipeline's `extraExporters`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
 
 Components in [brackets] are conditional, as above.
 
@@ -524,7 +524,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.config.service.extraExtensions | list | [] | Additional extensions to add to the service configuration. Added after the default health_check extension, which is present only when cluster.healthCheckEndpoint is set. |
 | cluster.config.service.pipelines.extraPipelines | object | {} | Additional pipelines to add to the service configuration. These are completely new pipelines, not extensions of the default ones. |
 | cluster.config.service.pipelines.logs | object | `{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}` | Logs pipeline configuration (Kubernetes entity events). |
-| cluster.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline. Added to default exporter (otlp_http/tsuga). |
+| cluster.config.service.pipelines.logs.extraExporters | list | [] | Additional exporters to add to the logs pipeline. Added to default exporter (otlp_http/tsuga). The logs/events pipeline uses them too. |
 | cluster.config.service.pipelines.logs.extraProcessors | list | [] | Additional processors to add to the logs pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, batch). |
 | cluster.config.service.pipelines.logs.extraReceivers | list | [] | Additional receivers to add to the logs pipeline. Added to default receivers (k8s_cluster, plus k8s_objects when cluster.collectk8sobjects). |
 | cluster.config.service.pipelines.metrics.extraExporters | list | [] | Additional exporters to add to the metrics pipeline. Added to default exporter (otlp_http/tsuga). |

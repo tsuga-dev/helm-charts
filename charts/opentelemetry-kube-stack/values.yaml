@@ -777,7 +777,8 @@ cluster:
         # -- Logs pipeline configuration (Kubernetes entity events).
         logs:
           # -- Additional exporters to add to the logs pipeline.
-          # Added to default exporter (otlp_http/tsuga).
+          # Added to default exporter (otlp_http/tsuga). The logs/events pipeline
+          # uses them too.
           # @default -- []
           extraExporters: []
           # -- Additional processors to add to the logs pipeline.

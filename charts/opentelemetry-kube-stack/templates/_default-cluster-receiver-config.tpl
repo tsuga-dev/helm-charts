@@ -173,9 +173,13 @@ service:
         - transform/k8s_event_severity
         - resource
         - batch
+      # Events are logs, so they go wherever the logs pipeline sends its data.
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlp_http/tsuga
+        {{- end }}
+        {{- range dig "config" "service" "pipelines" "logs" "extraExporters" (list) .Values.cluster }}
+        - {{ . }}
         {{- end }}
 {{- end }}
     metrics:

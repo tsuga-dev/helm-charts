@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - cluster.collectk8sevents watches core/v1 events, so Tsuga's Kubernetes Events view shows Message, Kind, Resource and Count
+- Events are sent to the logs pipeline's `extraExporters` too. With Tsuga disabled and only those set, the cluster receiver failed to start
 
 ### Changed
 - cluster.collectk8sevents defaults to true, so the Kubernetes Events view has data without extra configuration
