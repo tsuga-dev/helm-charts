@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - cluster.collectk8sevents watches core/v1 events, so Tsuga's Kubernetes Events view shows Message, Kind, Resource and Count
 
+### Changed
+- cluster.collectk8sevents defaults to true, so the Kubernetes Events view has data without extra configuration
+
 ## [opentelemetry-kube-stack-0.12.1] - 2026-09-21
 
 ### Added

@@ -186,18 +186,18 @@ tests:
           path: spec.config.receivers.k8s_objects.include_initial_state
           value: true
 
-  - it: should not collect events by default
+  - it: should collect events by default
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
     release:
       name: "test-release"
     asserts:
-      - isNull:
+      - isNotNull:
           path: spec.config.receivers["k8s_objects/events"]
-      - notContains:
-          path: spec.config.service.pipelines.logs.receivers
-          content: k8s_objects/events
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].receivers
+          value: [k8s_objects/events]
 
   - it: should keep collecting events when pod objects are disabled
     set:

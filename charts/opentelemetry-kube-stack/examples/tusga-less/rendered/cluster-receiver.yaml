@@ -83,6 +83,16 @@ spec:
         - group: ""
           mode: watch
           name: pods
+      k8s_objects/events:
+        auth_type: serviceAccount
+        include_initial_state: false
+        objects:
+        - exclude_watch_type:
+          - DELETED
+          field_selector: type=Warning
+          group: ""
+          mode: watch
+          name: events
     processors:
       batch:
         send_batch_max_size: 5000
@@ -145,6 +155,11 @@ spec:
         - action: upsert
           key: k8s.cluster.name
           value: test-cluster
+      transform/k8s_event_severity:
+        error_mode: ignore
+        log_statements:
+        - set(log.severity_text, "WARN")
+        - set(log.severity_number, SEVERITY_NUMBER_WARN)
     exporters:
       debug: {}
     extensions:
@@ -165,6 +180,15 @@ spec:
           receivers:
           - k8s_cluster
           - k8s_objects
+        logs/events:
+          exporters: []
+          processors:
+          - memory_limiter
+          - transform/k8s_event_severity
+          - resource
+          - batch
+          receivers:
+          - k8s_objects/events
         metrics:
           exporters:
           - debug

@@ -660,26 +660,26 @@ cluster:
   # full snapshot of every pod on each collector restart.
   # @default -- true
   collectk8sobjects: true
-  # Worth enabling. Events are the only source for OOMKilled, FailedScheduling,
-  # Evicted, ErrImagePull, FailedMount and failing probes — no metric receiver
-  # reports them, and RBAC for events is already granted so this costs no extra
-  # configuration.
-  #
-  # Off by default because the log volume follows cluster health, which is not
-  # something an upgrade should turn on for you.
-  #
   # Only Warning events are collected, filtered by field_selector at the API
   # server, so Normal events are never watched or transferred. They are the
   # high-volume, low-value majority and largely restate what the pods object
   # stream already carries.
   #
+  # Kubernetes audit logs are not collected. EKS, GKE and AKS send them to the
+  # provider's logging service, outside the cluster. On a self-managed cluster
+  # the API server writes them only with --audit-policy-file and
+  # --audit-log-path, as root with mode 0600, so reading the file needs a
+  # file_log receiver on /hostfs/<audit-log-path>, a control-plane toleration
+  # (agent.tolerations) and an agent running as root, which the chart does not
+  # offer.
+  #
   # -- Collect Kubernetes Warning events as logs. Events are the only source for
   # OOMKilled, FailedScheduling, Evicted, ErrImagePull, FailedMount and failing
-  # probes, since no metric receiver reports them. Off by default because the volume
-  # follows cluster health. Only Warning events are collected, filtered at the API
-  # server, so Normal events are never transferred.
-  # @default -- false
-  collectk8sevents: false
+  # probes, since no metric receiver reports them. The log volume follows cluster
+  # health. Only Warning events are collected, filtered at the API server, so
+  # Normal events are never transferred.
+  # @default -- true
+  collectk8sevents: true
   # Datapoint volume scales inversely with this: every object in the informer
   # cache is re-reported on each pass, so 10s produces six times the datapoints
   # of 60s. Raise it to cut ingest on large clusters.
