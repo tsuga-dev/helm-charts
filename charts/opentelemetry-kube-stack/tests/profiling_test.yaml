@@ -47,7 +47,7 @@ tests:
       # Its own distro, not the shared contrib image, which has no profiling receiver.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.161.0
       - equal:
           path: spec.serviceAccount
           value: "test-release-opentelemetry-kube-stack"

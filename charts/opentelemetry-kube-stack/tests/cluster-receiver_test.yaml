@@ -22,7 +22,7 @@ tests:
       # The shared top-level image reaches the collector.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
 
   - it: should not include tsuga exporter when enabledForClusterReceiver is false
     set:
@@ -360,4 +360,4 @@ tests:
       name: "test-release"
     asserts:
       - failedTemplate:
-          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.161\\.0"

@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.12.2](https://img.shields.io/badge/Version-0.12.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.13.0](https://img.shields.io/badge/Version-0.13.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -475,7 +475,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | agent.enabled | bool | true | Deploy the agent, a DaemonSet with one pod per node. It collects host metrics, kubelet metrics and pod logs, and is the OTLP endpoint instrumented applications send to, so turning it off removes all four. |
 | agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
 | agent.extraEnvs | list | [] | Extra environment variables for the agent. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
-| agent.extraLabelMapping | list | [] | Label mapping configuration for agent. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Format: List of objects with tag_name, key, and from fields, where from is one of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job` and defaults to `pod`. |
+| agent.extraLabelMapping | list | [] | Label mapping configuration for agent. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Format: List of objects with tag_name, key, and from fields, where from is one of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job`, `cronjob`, `replicaset` and defaults to `pod`. Set tag_name on every rule. Without it the attribute is named by the processor's own default, `k8s.pod.label.<key>`. |
 | agent.fileLog | object | `{"exclude":[],"include":["/var/log/pods/*/*/*.log"]}` | file_log receiver paths (used when collectLogs is true). |
 | agent.fileLog.exclude | list | [] | Log file globs to skip. Narrowing this is the biggest log-cost lever in the chart: excluding a noisy namespace, e.g. `/var/log/pods/kube-system_*/*/*.log`, drops those records before they are ever read. |
 | agent.fileLog.include | list | ["/var/log/pods/*/*/*.log"] | Log file globs to read. |
@@ -543,7 +543,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.tolerations | list | [] | Cluster-specific tolerations. If not set, inherits from global tolerations configuration. |
 | clusterName | string | "" (must be set) | REQUIRED. Name of the cluster, attached to all telemetry as k8s.cluster.name. The install fails while this is empty and any collector is rendering the chart's default config. |
 | fullnameOverride | string | "" | Override the full name used in resource naming. |
-| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image used by all three collectors. Must be v0.157.0 or newer: the default config uses the cumulative_to_delta processor, and the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
+| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"` | Collector image used by all three collectors. Must be v0.161.0 or newer: the default config extracts `container.image.tags`, which older collectors accept and never emit, so the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
 | k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. Dropping `k8s.pod.name` and `k8s.pod.uid` is the largest cardinality saving available here, at the cost of per-pod identification. An unsupported field name fails the collector at startup. |
 | nameOverride | string | "" | Override the chart name used in resource naming. |
 | nodeSelector | object | {} | Node selector applied to every collector. Overridden per collector by agent.nodeSelector, cluster.nodeSelector or statefulset.nodeSelector. |

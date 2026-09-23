@@ -173,7 +173,7 @@ tests:
       # the k8s distribution, and the agent already pulls it onto every node.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
 
   - it: should not associate pods on net.host.name
     set:
@@ -206,4 +206,4 @@ tests:
       name: "test-release"
     asserts:
       - failedTemplate:
-          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.157\\.0"
+          errorPattern: "collector:0\\.150\\.0\" is older than v0\\.161\\.0"

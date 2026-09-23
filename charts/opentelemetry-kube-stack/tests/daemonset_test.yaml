@@ -26,7 +26,14 @@ tests:
       # The shared top-level image reaches the collector.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+      # The plural is the name a collector at this chart's floor emits.
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.tags
+      - notContains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: container.image.tag
 
   - it: should not include tsuga exporter when enabledForDaemonset is false
     set:
@@ -539,16 +546,17 @@ tests:
           path: spec.config.service.extensions
           value: []
 
-  - it: should reject a pinned collector image below the v0.157.0 floor
+  - it: should reject a pinned collector image below the v0.161.0 floor
     set:
       clusterName: "test-cluster"
       agent.enabled: true
-      agent.image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.156.0"
+      # Just below the floor: accepts every component name, emits no tags.
+      agent.image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.160.0"
     release:
       name: "test-release"
     asserts:
       - failedTemplate:
-          errorPattern: "opentelemetry-collector-contrib:0\\.156\\.0\" is older than v0\\.157\\.0"
+          errorPattern: "opentelemetry-collector-contrib:0\\.160\\.0\" is older than v0\\.161\\.0"
 
   - it: should keep the inline-map telemetry resource the operator can parse
     set:
@@ -578,7 +586,7 @@ tests:
       # The agent is unaffected by a stale image on a collector it does not run.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
 
   - it: should not apply the version floor when customConfig replaces the default
     set:
@@ -595,8 +603,8 @@ tests:
     release:
       name: "test-release"
     asserts:
-      # The floor exists for component names the default config uses. A custom
-      # config does not use them, so it is not bound by them.
+      # The floor exists for what the default config references. A custom
+      # config references none of it, so it is not bound by it.
       - equal:
           path: spec.image
           value: example.com/collector:0.150.0
@@ -612,7 +620,7 @@ tests:
       # The shared image is in the checked set too, not only the per-collector
       # overrides.
       - failedTemplate:
-          errorPattern: "collector:0\\.151\\.0\" is older than v0\\.157\\.0"
+          errorPattern: "collector:0\\.151\\.0\" is older than v0\\.161\\.0"
 
   - it: should hand the image choice to the operator when the shared image is empty
     set:
@@ -639,7 +647,7 @@ tests:
       # A suffixed tag is a semver prerelease, which a constraint without one
       # excludes — so comparing the bare tag used to let these straight through.
       - failedTemplate:
-          errorPattern: "collector:0\\.156\\.0-amd64\" is older than v0\\.157\\.0"
+          errorPattern: "collector:0\\.156\\.0-amd64\" is older than v0\\.161\\.0"
 
   - it: should skip the floor check for an image it cannot version
     set:
