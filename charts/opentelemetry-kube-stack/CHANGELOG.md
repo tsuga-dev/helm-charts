@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `transform/service_name` OTTL paths carry the `resource.` prefix, so the profiling collector no longer logs a path-rewrite message on every start
 - The README rollout check selects profiling pods by `app.kubernetes.io/instance=<namespace>.<collector name>`. The old `component=profiling` selector matched nothing: the operator overwrites that label
 
+## [opentelemetry-kube-stack-0.13.1] - 2026-09-23
+
+### Fixed
+- cluster.collectk8sevents watches core/v1 events, so Tsuga's Kubernetes Events view shows Message, Kind, Resource and Count
+- Events are sent to the logs pipeline's `extraExporters` too. With Tsuga disabled and only those set, the cluster receiver failed to start
+
+### Changed
+- cluster.collectk8sevents defaults to true, so the Kubernetes Events view has data without extra configuration
+
 ## [opentelemetry-kube-stack-0.13.0] - 2026-09-23
 
 ### Changed

@@ -23,6 +23,9 @@ receivers:
         mode: watch
 {{- end }}
 {{- if .Values.cluster.collectk8sevents }}
+  # Core/v1, not events.k8s.io/v1: Tsuga's Kubernetes Events view reads message,
+  # involvedObject and count, which events.k8s.io/v1 renames.
+  #
   # A separate receiver instance, only so events can set
   # include_initial_state: false — the field is receiver-wide and the pods stream
   # above needs its snapshot. Sharing one would re-emit the API server's entire
@@ -48,7 +51,7 @@ receivers:
     auth_type: serviceAccount
     include_initial_state: false
     objects:
-      - group: events.k8s.io
+      - group: ""
         name: events
         mode: watch
         field_selector: type=Warning
@@ -170,9 +173,13 @@ service:
         - transform/k8s_event_severity
         - resource
         - batch
+      # Events are logs, so they go wherever the logs pipeline sends its data.
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForClusterReceiver") false }}
         - otlp_http/tsuga
+        {{- end }}
+        {{- range dig "config" "service" "pipelines" "logs" "extraExporters" (list) .Values.cluster }}
+        - {{ . }}
         {{- end }}
 {{- end }}
     metrics:

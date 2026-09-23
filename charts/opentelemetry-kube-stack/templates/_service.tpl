@@ -50,7 +50,7 @@ Behavior:
   {{/* Exporters: default + extraExporters */}}
   {{- $exporters := default (list) (index $pdefault "exporters") }}
   {{- if $puser.extraExporters }}
-    {{- $exporters = concat $exporters $puser.extraExporters }}
+    {{- $exporters = concat $exporters $puser.extraExporters | uniq }}
   {{- end }}
 
   {{- $_ := set $pipelines $pname (dict
