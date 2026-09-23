@@ -76,6 +76,7 @@ charts/opentelemetry-kube-stack/CHANGELOG.md
   s_ab94406ea7e333::t_aa59dcc8f4a664 11-12,16-17,19-20
   s_ab94406ea7e333::t_e99413d9ad8df7 9-10,13-15,21
   s_ab94406ea7e333::t_5b2e56f2cdc9f3 18
+  s_322d1d3e1932a6::t_9489dafd049f4c 8
 charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
   s_ab94406ea7e333::t_8317999afb8c58 26
   s_ab94406ea7e333::t_aa59dcc8f4a664 138
@@ -98,6 +99,14 @@ charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.ya
   "base_commit_sha": "c7b0a546e013b9e2cf57116fd93dcb17b9c291ad",
   "prompts": {},
   "sessions": {
+    "s_322d1d3e1932a6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "312a6cb6-575e-412c-8cbf-9636a19c3078",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    },
     "s_ab94406ea7e333": {
       "agent_id": {
         "tool": "claude",
