@@ -9,6 +9,9 @@ extensions:
 receivers:
   profiling:
     samples_per_second: {{ .Values.profiling.samplesPerSecond | default 20 }}
+    # The receiver already sets the resource from each process's own OTel
+    # process context, or failing that its OTEL_SERVICE_NAME and
+    # OTEL_RESOURCE_ATTRIBUTES, without reporting either variable.
     {{- if $envVar }}
     # Surfaced by the receiver as the resource attribute
     # process.environment_variable.<NAME>, which transform/service_name below
@@ -27,10 +30,10 @@ processors:
 {{- end }}
 {{- if $envVar }}
   # Runs before k8s_attributes on purpose. k8s_attributes only fills an
-  # attribute that is not already set, so promoting the process's own
-  # OTEL_SERVICE_NAME first makes it win, and the Kubernetes precedence chain
-  # k8s_attributes implements covers whatever is left. The delete_key is what
-  # keeps the raw env-var attribute from becoming a dimension of its own.
+  # attribute that is not already set, so promoting the process's own variable
+  # first makes it win, and the Kubernetes precedence chain k8s_attributes
+  # implements covers whatever is left. The delete_key is what keeps the raw
+  # env-var attribute from becoming a dimension of its own.
   transform/service_name:
     error_mode: ignore
     profile_statements:
@@ -42,7 +45,7 @@ processors:
   k8s_attributes:
     extract:
       metadata:
-        {{- toYaml (.Values.profiling.k8sAttributesMetadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.container.name" "service.name" "service.version")) | nindent 8 }}
+        {{- toYaml (.Values.profiling.k8sAttributesMetadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.container.name" "container.image.name" "container.image.tags" "service.name" "service.version")) | nindent 8 }}
       annotations:
         - tag_name: service.name
           key: resource.opentelemetry.io/service.name
@@ -62,6 +65,17 @@ processors:
       - sources:
         - from: resource_attribute
           name: container.id
+  # Host processes, which no pod matches. containerd gives every shim its own
+  # OTEL_SERVICE_NAME, containerd-shim-<container id>, so each pod would add a
+  # service. The rest get the OTel SDK fallback, unknown_service:<executable>,
+  # rather than all landing in Tsuga's "unknown".
+  transform/host_processes:
+    error_mode: ignore
+    profile_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], "containerd-shim") where IsMatch(resource.attributes["service.name"], "^containerd-shim-[0-9a-f]{64}$")
+          - set(resource.attributes["service.name"], Concat(["unknown_service", resource.attributes["process.executable.name"]], ":")) where resource.attributes["service.name"] == nil and resource.attributes["process.executable.name"] != nil
   resource:
     attributes:
       - key: k8s.cluster.name
@@ -109,6 +123,7 @@ service:
         - transform/service_name
 {{- end }}
         - k8s_attributes
+        - transform/host_processes
         - resource
       exporters:
         {{- if ne (index .Values "tsuga" "enabledForProfiling") false }}

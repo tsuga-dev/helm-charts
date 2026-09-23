@@ -182,12 +182,11 @@ agent does not.
    restricts the host paths this mounts and is unverified.
 
 - **Receiver**: `profiling`, sampling at 20 Hz (`profiling.samplesPerSecond`). Leave
-  that alone unless you know what you are doing: the rate is not carried on the
-  exported profile, so it cannot be recovered at read time, and Tsuga converts samples
-  into CPU time assuming 20 Hz. Any other value makes every derived CPU figure wrong
-  by exactly `rate / 20`.
+  that alone unless you know what you are doing: the exported profile carries the rate
+  as its period, but Tsuga ignores it and converts samples into CPU time assuming
+  20 Hz. Any other value makes every derived CPU figure wrong by exactly `rate / 20`.
 - **Processors**: `memory_limiter`, [`resource_detection`],
-  [`transform/service_name`], `k8s_attributes`, `resource`
+  [`transform/service_name`], `k8s_attributes`, `transform/host_processes`, `resource`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForProfiling=false`), with
   `encoding` pinned to `proto` — Tsuga's profiles intake takes OTLP/HTTP protobuf, so
   this one exporter ignores a chart-wide `tsuga.encoding: json`.
@@ -195,7 +194,8 @@ agent does not.
   only; a profiles pipeline that names it fails at startup. The receiver's own
   reporter interval groups profiles for export instead.
 - **Pipeline**: `profiling` → `memory_limiter`, [`resource_detection`],
-  [`transform/service_name`], `k8s_attributes`, `resource` → `otlp_http/tsuga`
+  [`transform/service_name`], `k8s_attributes`, `transform/host_processes`, `resource`
+  → `otlp_http/tsuga`
 
 Components in [brackets] are conditional, as on the other collectors:
 `resource_detection` appears only when `resourceDetection.enabled=true`, and
@@ -206,23 +206,31 @@ process reports for itself.
 
 #### `service.name` resolution
 
-eBPF has no SDK to ask, so nothing sets `service.name` for a profiled process, and a
-profile without one lands in Tsuga under the literal `unknown` — a silent, useless
-result. The chart resolves it in two tiers:
+A profile without a `service.name` lands in Tsuga under the literal `unknown`. The
+resource is resolved in this order, and each step only fills what the earlier ones
+left unset:
 
-1. `profiling.serviceNameEnvVar` (default `OTEL_SERVICE_NAME`) is read off each
-   profiled process and promoted to `service.name` by `transform/service_name`, which
-   then deletes the raw attribute. This is the tier that makes profiles join to traces
-   and logs on an *identical* `service.name`, so prefer setting that variable on your
-   workloads. Set the value to `""` to skip this tier entirely.
-2. Whatever tier 1 did not cover falls through to `k8s_attributes`, which implements
-   the OTel Kubernetes `service.name`/`service.version` precedence — the
-   `app.kubernetes.io/instance` and `app.kubernetes.io/name` pod labels, then the
-   owner-kind ancestor chain. This covers everything, but the name is whatever
-   Kubernetes says, which may not match what the SDK reports.
-
-The transform runs *before* `k8s_attributes` for exactly this reason: the processor
-only fills an attribute that is not already set.
+1. **The process itself.** The receiver reads the
+   [OTel process context](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/profiles/4719-process-ctx.md)
+   an SDK publishes in the process's memory, or failing that the process's own
+   `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES`. This is what makes profiles join
+   to traces and logs on an *identical* `service.name`, with the same
+   `service.version`, `service.namespace` and `deployment.environment.name`, so set
+   those variables on your workloads. Neither variable is exported as an attribute.
+2. **`profiling.serviceNameEnvVar`**, off by default. For workloads that name
+   themselves in another variable: `transform/service_name` promotes it to
+   `service.name` and deletes the raw attribute.
+3. **Kubernetes.** `k8s_attributes` implements the OTel Kubernetes
+   `service.name`/`service.version` precedence — the `app.kubernetes.io/instance` and
+   `app.kubernetes.io/name` pod labels, then the owner-kind ancestor chain. The name is
+   whatever Kubernetes says, which may not match what the SDK reports.
+4. **Host processes**, which no pod matches. `transform/host_processes` renames every
+   `containerd-shim-<container id>` to `containerd-shim` (containerd gives each shim its
+   own `OTEL_SERVICE_NAME`, which would add one service per pod), and names anything
+   still unresolved `unknown_service:<process.executable.name>`, the OTel SDK
+   fallback. Kubelet or containerd CPU then shows up under its own name rather than
+   `unknown`; Tsuga writes the colon as `_` in the metric name
+   (`profile.samples.unknown_service_kubelet`).
 
 #### What ends up on a profile
 
@@ -233,9 +241,13 @@ resource — `container.id`, `process.pid`, `process.executable.path` and
 those are what let you tell one process, container or thread apart from another
 inside the same service.
 
+The receiver also attaches `profile.frame.type` to each frame and the executable's
+build ID to each mapping.
+
 `profiling.k8sAttributesMetadata` is what `k8s_attributes` adds on top, and it is
-narrower than the other collectors' `k8sAttributes.metadata` — workload and
-container rather than individual pod, which is how profiles are usually grouped.
+narrower than the other collectors' `k8sAttributes.metadata` — workload, node,
+container and image rather than individual pod, which is how profiles are usually
+grouped.
 Adding `k8s.pod.name` or `k8s.pod.uid` is a reasonable change if you want to pin a
 flame graph to a single pod.
 
@@ -256,9 +268,8 @@ kubectl -n <namespace> get pods -l app.kubernetes.io/instance=<namespace>.<relea
 kubectl -n <namespace> logs -l app.kubernetes.io/instance=<namespace>.<release>-opentelemetry-kube-stack-profiling | grep -i 'profil\|error\|permission'
 ```
 
-Then look for the profiled services in Tsuga. Profiles arriving under the literal
-`unknown` mean `service.name` resolution failed — check that your workloads set
-`OTEL_SERVICE_NAME`, or that the Kubernetes fallback can see them; nothing arriving at
+Then look for the profiled services in Tsuga. A workload arriving as
+`unknown_service:<executable>` means no pod matched its container; nothing arriving at
 all points at the API key or the exporter rather than the profiler. Finally, check that
 the flame graph attributes to real frames and not `[unknown]` addresses — that is how
 you catch a runtime the unwinder cannot walk. Native code (Go, Rust, C/C++) unwinds
@@ -267,8 +278,9 @@ was built with.
 
 Two limits worth knowing up front: eBPF profiles carry no route or endpoint dimension,
 because the kernel has no notion of an HTTP request, so per-endpoint flame graphs need
-in-process profiling instead. And `service.version` here comes from Kubernetes metadata
-while traces and logs get it from the SDK, so the two can legitimately disagree.
+in-process profiling instead. And a workload that sets neither `OTEL_SERVICE_NAME` nor
+`OTEL_RESOURCE_ATTRIBUTES` gets its `service.version` from Kubernetes metadata, while
+its traces get it from the SDK, so the two can legitimately disagree.
 
 ## Quick Start
 
@@ -575,8 +587,8 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | profiling.k8sAttributesMetadata | list | see values.yaml | Kubernetes metadata k8s_attributes attaches to profiles. |
 | profiling.nodeSelector | object | {} | Profiling-specific node selector. If not set, inherits from global nodeSelector configuration. |
 | profiling.resources | object | see values.yaml | Resource limits and requests for the profiling collector. Replaces the top-level resources block wholesale rather than merging. |
-| profiling.samplesPerSecond | int | 20 | Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time assuming 20 Hz, and the rate is not recoverable from the exported profile. |
-| profiling.serviceNameEnvVar | string | "OTEL_SERVICE_NAME" | Environment variable read from each profiled process and promoted to service.name. Set to "" to rely on Kubernetes metadata alone. |
+| profiling.samplesPerSecond | int | 20 | Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time assuming 20 Hz. |
+| profiling.serviceNameEnvVar | string | "" | Environment variable, other than OTEL_SERVICE_NAME, read from each profiled process and promoted to service.name. OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES are read without it. |
 | profiling.tolerations | list | [] | Profiling-specific tolerations. If not set, inherits from global tolerations configuration. A node the profiler does not tolerate is simply not profiled. |
 | rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
 | redaction.config | object | see values.yaml | Redaction processor configuration, passed to the collector as-is. Covers credentials, not PII. Applies to attributes at every level and to log bodies, including nested maps and slices. Maps merge with these defaults but lists replace them, so overriding `blocked_key_patterns` must repeat the entries you want to keep. An empty config fails the render, because the processor's own default deletes every attribute. |
