@@ -5,13 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [opentelemetry-kube-stack-0.12.4] - 2026-09-23
+## [opentelemetry-kube-stack-0.13.1] - 2026-09-23
 
 ### Fixed
 - cluster.collectk8sevents watches core/v1 events, so Tsuga's Kubernetes Events view shows Message, Kind, Resource and Count
 
 ### Changed
 - cluster.collectk8sevents defaults to true, so the Kubernetes Events view has data without extra configuration
+
+## [opentelemetry-kube-stack-0.13.0] - 2026-09-23
+
+### Changed
+- **BREAKING** `container.image.tag` is now `container.image.tags`, a list of strings. Queries, monitors and filters on the old key return nothing. On metrics it arrives as a JSON-encoded string (`["1.2.3"]`). To keep the old key: put `container.image.tag` back in `k8sAttributes.metadata` and run with `--feature-gates=-processor.k8sattributes.DontEmitV0K8sConventions`
+- **BREAKING** Collector floor raised to 0.161.0, from 0.157.0. Older collectors accept `container.image.tags` but never emit it, so the render fails instead. Stay on chart 0.12.x to keep an older image
+- Collectors and the eBPF profiler pinned to 0.161.0
+
+### Notes
+- Label and annotation keys are unchanged: every chart rule sets `tag_name`. Set it on your `extraLabelMapping`/`extraAnnotationsMapping` rules too, or they get the new `k8s.pod.label.<key>` naming
+- `deployment_name_from_replicaset` was removed upstream. Setting it via `customConfig` now fails the collector at startup
+- `kubelet_stats` CPU usage is now computed between scrapes: values shift slightly, and nothing is reported on the first scrape after a restart
+- `k8s_attributes` internal metrics moved to `otelcol.k8s.*`. Dashboards on `otelcol_otelsvc_k8s_*` go blank
+- `redaction` applies `blocked_values` in configured order, so overlapping patterns mask consistently
+
+## [opentelemetry-kube-stack-0.12.3] - 2026-09-22
+
+### Removed
+- The `target_allocator` block from the statefulset collector's prometheus receiver. The operator writes that block itself from the `opentelemetry.io/target-allocator` label, so the chart's copy was replaced before the collector read it, and its endpoint named a Service that does not exist. The generated collector config is unchanged
+
+### Fixed
+- statefulset.scrapeInterval is documented as setting the per-target scrape interval only. It never set how often the collector refreshes its target list from the Target Allocator: the operator writes that interval and pins it to 30s
+
+## [opentelemetry-kube-stack-0.12.2] - 2026-09-22
+
+### Changed
+- `pods` is added to the default cluster.allocatableTypesToReport, so k8s.node.allocatable_pods is emitted. Without it a node pod-count alert has no capacity figure to compare its pod count against. One extra gauge per node
 
 ## [opentelemetry-kube-stack-0.12.1] - 2026-09-21
 
