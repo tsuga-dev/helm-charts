@@ -1,0 +1,49 @@
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_e06750bc2ccebd::t_bb7e5c53e2681c 20-28
+charts/opentelemetry-kube-stack/README.md
+  s_e06750bc2ccebd::t_e3e9ffde36c59f 129,147,533,543
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_e06750bc2ccebd::t_872945686b2e53 119,137
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_10589bda1292b6 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_818d7cfe757a00 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_1cf6b9f18228fa 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_3e7bbb58394e62 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_b2cffe7d41a057 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_aca2fc7f0d6491 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_855cfb3407a9a3 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/profiling/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_05b283b57a2c58 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_0de2e802a61aff 86-95,158-162,183-192
+charts/opentelemetry-kube-stack/templates/_default-cluster-receiver-config.tpl
+  s_e06750bc2ccebd::t_e611387e4f95d0 26-28,54,176,181-183
+charts/opentelemetry-kube-stack/templates/_service.tpl
+  s_e06750bc2ccebd::t_3f1d682eecb46b 53
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_e06750bc2ccebd::t_da5a7688f9961d 174,189,196,198-200,244-280
+charts/opentelemetry-kube-stack/values.yaml
+  s_e06750bc2ccebd::t_424a71e3a09905 670-677,680-684,780-781
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6b948b3d3a185795622dc67d4673f4c1ebe8f5d2",
+  "prompts": {},
+  "sessions": {
+    "s_e06750bc2ccebd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "067f525f-2c72-4e9a-985a-d3d47c86a22e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
