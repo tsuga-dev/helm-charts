@@ -1,0 +1,21 @@
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_e06750bc2ccebd::t_fadda4832c8d6e 184-185
+charts/opentelemetry-kube-stack/examples/tusga-less/values.yaml
+  s_e06750bc2ccebd::t_a9582751d5568b 21-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "805de0db055df887f7cdcc390aff1b0f76572e9f",
+  "prompts": {},
+  "sessions": {
+    "s_e06750bc2ccebd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "067f525f-2c72-4e9a-985a-d3d47c86a22e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
