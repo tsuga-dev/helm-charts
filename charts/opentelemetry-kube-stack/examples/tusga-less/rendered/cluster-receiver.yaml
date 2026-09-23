@@ -181,7 +181,8 @@ spec:
           - k8s_cluster
           - k8s_objects
         logs/events:
-          exporters: []
+          exporters:
+          - debug
           processors:
           - memory_limiter
           - transform/k8s_event_severity
