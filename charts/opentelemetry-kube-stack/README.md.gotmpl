@@ -116,7 +116,7 @@ agent:
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
 - **Kubernetes Objects** (`k8s_objects`): Watches pod objects only (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Kubernetes Warning Events** (`k8s_objects/events`): Watches `events.k8s.io` filtered to `type=Warning` at the API server. **Off by default** — enable with `cluster.collectk8sevents=true`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
+- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. Enabled by default, disable with `cluster.collectk8sevents=false`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.
@@ -134,7 +134,7 @@ There is no `cumulative_to_delta` in this collector. `k8s_cluster` emits gauges 
 **Service Pipelines:**
 - **Metrics**: `k8s_cluster` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
 - **Entity Events (Logs)**: `k8s_cluster` (+`k8s_objects` when enabled) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `batch` → `otlp_http/tsuga`
-- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resource_detection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
+- **Warning Events (`logs/events`)**: `k8s_objects/events` → `memory_limiter`, [`resource_detection`], `transform/k8s_event_severity`, `resource`, `batch` → `otlp_http/tsuga` plus the logs pipeline's `extraExporters`. Only rendered when `cluster.collectk8sevents=true`. `k8s_attributes` is deliberately absent: a `k8s_objects` watch record carries only `k8s.namespace.name`, which none of the configured `pod_association` sources can match.
 
 Components in [brackets] are conditional, as above.
 

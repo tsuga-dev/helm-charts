@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.13.1] - 2026-09-23
+
+### Fixed
+- cluster.collectk8sevents watches core/v1 events, so Tsuga's Kubernetes Events view shows Message, Kind, Resource and Count
+- Events are sent to the logs pipeline's `extraExporters` too. With Tsuga disabled and only those set, the cluster receiver failed to start
+
+### Changed
+- cluster.collectk8sevents defaults to true, so the Kubernetes Events view has data without extra configuration
+
 ## [opentelemetry-kube-stack-0.13.0] - 2026-09-23
 
 ### Changed

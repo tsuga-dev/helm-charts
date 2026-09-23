@@ -171,7 +171,7 @@ tests:
       - equal:
           path: spec.config.receivers["k8s_objects/events"].objects
           value:
-            - group: events.k8s.io
+            - group: ""
               name: events
               mode: watch
               field_selector: type=Warning
@@ -186,18 +186,18 @@ tests:
           path: spec.config.receivers.k8s_objects.include_initial_state
           value: true
 
-  - it: should not collect events by default
+  - it: should collect events by default
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
     release:
       name: "test-release"
     asserts:
-      - isNull:
+      - isNotNull:
           path: spec.config.receivers["k8s_objects/events"]
-      - notContains:
-          path: spec.config.service.pipelines.logs.receivers
-          content: k8s_objects/events
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].receivers
+          value: [k8s_objects/events]
 
   - it: should keep collecting events when pod objects are disabled
     set:
@@ -240,6 +240,43 @@ tests:
       - notContains:
           path: spec.config.service.pipelines.logs.receivers
           content: k8s_objects/events
+
+  - it: should send events wherever the logs pipeline exports
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      tsuga.enabledForClusterReceiver: false
+      cluster.config.extraExporters:
+        debug: {}
+      cluster.config.service.pipelines.logs.extraExporters: [debug]
+    release:
+      name: "test-release"
+    asserts:
+      # Without the logs exporters the pipeline has none, and the collector
+      # refuses to start.
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].exporters
+          value: [debug]
+
+  - it: should not list an events exporter twice
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      cluster.collectk8sevents: true
+      cluster.config.extraExporters:
+        debug: {}
+      cluster.config.service.pipelines:
+        logs:
+          extraExporters: [debug]
+        logs/events:
+          extraExporters: [debug]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines["logs/events"].exporters
+          value: [otlp_http/tsuga, debug]
 
   - it: should not render the events pipeline or transform when disabled
     set:
