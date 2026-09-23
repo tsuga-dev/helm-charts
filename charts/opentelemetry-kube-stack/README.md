@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.12.2](https://img.shields.io/badge/Version-0.12.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.12.4](https://img.shields.io/badge/Version-0.12.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -126,7 +126,7 @@ agent:
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
 - **Kubernetes Objects** (`k8s_objects`): Watches pod objects only (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Kubernetes Warning Events** (`k8s_objects/events`): Watches `events.k8s.io` filtered to `type=Warning` at the API server. **Off by default** — enable with `cluster.collectk8sevents=true`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
+- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. **Off by default** — enable with `cluster.collectk8sevents=true`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.

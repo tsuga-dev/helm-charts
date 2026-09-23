@@ -171,7 +171,7 @@ tests:
       - equal:
           path: spec.config.receivers["k8s_objects/events"].objects
           value:
-            - group: events.k8s.io
+            - group: ""
               name: events
               mode: watch
               field_selector: type=Warning

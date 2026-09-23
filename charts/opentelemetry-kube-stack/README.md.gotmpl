@@ -116,7 +116,7 @@ agent:
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
 - **Kubernetes Objects** (`k8s_objects`): Watches pod objects only (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Kubernetes Warning Events** (`k8s_objects/events`): Watches `events.k8s.io` filtered to `type=Warning` at the API server. **Off by default** — enable with `cluster.collectk8sevents=true`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
+- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. **Off by default** — enable with `cluster.collectk8sevents=true`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.
