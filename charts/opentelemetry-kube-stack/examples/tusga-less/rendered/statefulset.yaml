@@ -17,7 +17,7 @@ metadata:
 spec:
   mode: statefulset
   replicas: 1
-  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"
   resources:
     limits:
       cpu: 500m
@@ -63,10 +63,6 @@ spec:
             static_configs:
             - targets:
               - localhost:8888
-        target_allocator:
-          collector_id: ${POD_NAME}
-          endpoint: http://example-opentelemetry-kube-stack-ta:80
-          interval: 30s
     processors:
       batch:
         send_batch_max_size: 5000
@@ -110,7 +106,7 @@ spec:
           - k8s.container.name
           - container.id
           - container.image.name
-          - container.image.tag
+          - container.image.tags
         passthrough: false
         pod_association:
         - sources:

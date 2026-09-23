@@ -10,15 +10,13 @@ receivers:
     config:
       scrape_configs:
         # This placeholder config is required but the Target Allocator
-        # will override it with dynamically discovered targets
+        # will override it with dynamically discovered targets. No
+        # target_allocator block here: the operator writes it from the
+        # opentelemetry.io/target-allocator label.
         - job_name: 'otel-collector'
           scrape_interval: {{ .Values.statefulset.scrapeInterval | default "30s" }}
           static_configs:
             - targets: ['localhost:8888']
-    target_allocator:
-      endpoint: http://{{ include "opentelemetry-kube-stack.fullname" . }}-ta:80
-      interval: {{ .Values.statefulset.scrapeInterval | default "30s" }}
-      collector_id: ${POD_NAME}
 
 processors:
   memory_limiter:

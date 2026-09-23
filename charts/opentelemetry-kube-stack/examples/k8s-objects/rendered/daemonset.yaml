@@ -16,7 +16,7 @@ metadata:
 spec:
   mode: daemonset
   hostNetwork: true
-  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"
   resources:
     limits:
       cpu: 500m
@@ -243,7 +243,7 @@ spec:
           - k8s.container.name
           - container.id
           - container.image.name
-          - container.image.tag
+          - container.image.tags
         filter:
           node_from_env_var: K8S_NODE_NAME
         passthrough: false
@@ -282,6 +282,7 @@ spec:
         endpoint: ${env:MY_POD_IP}:13133
     connectors:
       span_metrics:
+        aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
         dimensions:
         - default: GET
           name: http.request.method

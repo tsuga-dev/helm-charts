@@ -5,11 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [opentelemetry-kube-stack-0.12.1] - 2026-09-07
+## [opentelemetry-kube-stack-0.13.2] - 2026-09-23
 
 ### Fixed
-- `transform/service_name` OTTL statements now carry their `resource.` context prefix. Collector 0.157.0 accepted the unprefixed form but rewrote it at startup and logged `one or more paths were modified to include their context prefix, please rewrite them accordingly` on every collector start. Rendered behaviour is unchanged; the log line is gone
-- The "Verifying a rollout" commands in the README selected pods by `app.kubernetes.io/component=profiling`, which matched nothing. The operator regenerates the `app.kubernetes.io/*` labels on the DaemonSet it creates and forces `component=opentelemetry-collector`, so the label on the collector resource never reaches the pods. The commands now select on `app.kubernetes.io/instance=<namespace>.<collector name>`
+- `transform/service_name` OTTL paths carry the `resource.` prefix, so the profiling collector no longer logs a path-rewrite message on every start. Rendered behaviour is unchanged
+- The README rollout check selects profiling pods by `app.kubernetes.io/instance=<namespace>.<collector name>`. The old `component=profiling` selector matched nothing: the operator overwrites that label
+
+## [opentelemetry-kube-stack-0.13.0] - 2026-09-23
+
+### Changed
+- **BREAKING** `container.image.tag` is now `container.image.tags`, a list of strings. Queries, monitors and filters on the old key return nothing. On metrics it arrives as a JSON-encoded string (`["1.2.3"]`). To keep the old key: put `container.image.tag` back in `k8sAttributes.metadata` and run with `--feature-gates=-processor.k8sattributes.DontEmitV0K8sConventions`
+- **BREAKING** Collector floor raised to 0.161.0, from 0.157.0. Older collectors accept `container.image.tags` but never emit it, so the render fails instead. Stay on chart 0.12.x to keep an older image
+- Collectors and the eBPF profiler pinned to 0.161.0
+
+### Notes
+- Label and annotation keys are unchanged: every chart rule sets `tag_name`. Set it on your `extraLabelMapping`/`extraAnnotationsMapping` rules too, or they get the new `k8s.pod.label.<key>` naming
+- `deployment_name_from_replicaset` was removed upstream. Setting it via `customConfig` now fails the collector at startup
+- `kubelet_stats` CPU usage is now computed between scrapes: values shift slightly, and nothing is reported on the first scrape after a restart
+- `k8s_attributes` internal metrics moved to `otelcol.k8s.*`. Dashboards on `otelcol_otelsvc_k8s_*` go blank
+- `redaction` applies `blocked_values` in configured order, so overlapping patterns mask consistently
+
+## [opentelemetry-kube-stack-0.12.3] - 2026-09-22
+
+### Removed
+- The `target_allocator` block from the statefulset collector's prometheus receiver. The operator writes that block itself from the `opentelemetry.io/target-allocator` label, so the chart's copy was replaced before the collector read it, and its endpoint named a Service that does not exist. The generated collector config is unchanged
+
+### Fixed
+- statefulset.scrapeInterval is documented as setting the per-target scrape interval only. It never set how often the collector refreshes its target list from the Target Allocator: the operator writes that interval and pins it to 30s
+
+## [opentelemetry-kube-stack-0.12.2] - 2026-09-22
+
+### Changed
+- `pods` is added to the default cluster.allocatableTypesToReport, so k8s.node.allocatable_pods is emitted. Without it a node pod-count alert has no capacity figure to compare its pod count against. One extra gauge per node
+
+## [opentelemetry-kube-stack-0.12.1] - 2026-09-21
+
+### Added
+- agent.spanMetrics.aggregationTemporality, which sets the temporality of the generated RED metrics
+
+### Fixed
+- span_metrics now generates delta temporality instead of cumulative. Under cumulative the connector kept re-exporting series for pods that had stopped serving, and cumulative_to_delta turned that flatline into an endless run of zeros. Exported temporality is unchanged, since cumulative_to_delta forwards delta untouched. Set agent.spanMetrics.aggregationTemporality back to AGGREGATION_TEMPORALITY_CUMULATIVE only in a pipeline that drops cumulative_to_delta, which is where a running total still self-heals across a failed export
 
 ## [opentelemetry-kube-stack-0.12.0] - 2026-09-02
 

@@ -15,7 +15,7 @@ metadata:
     meta.helm.sh/release-namespace: "default"
 spec:
   mode: daemonset
-  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.157.0"
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.161.0"
   # Profiles support is still an alpha signal in the collector, gated off by
   # default. Without this the collector refuses the config outright: "profiling
   # signal support is at alpha level, gated under the service.profilesSupport

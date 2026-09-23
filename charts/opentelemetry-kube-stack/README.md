@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.13.2](https://img.shields.io/badge/Version-0.13.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -157,7 +157,7 @@ Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Pr
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
 - **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
-- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets both the scrape interval and how often the collector refreshes its target list.
+- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets the per-target scrape interval. The allocator poll interval is written by the operator and is not configurable from the chart.
 
 ### Profiling collector (optional, privileged DaemonSet)
 
@@ -479,7 +479,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | agent.enabled | bool | true | Deploy the agent, a DaemonSet with one pod per node. It collects host metrics, kubelet metrics and pod logs, and is the OTLP endpoint instrumented applications send to, so turning it off removes all four. |
 | agent.extraAnnotationsMapping | list | [] | Annotations mapping configuration for agent. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
 | agent.extraEnvs | list | [] | Extra environment variables for the agent. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
-| agent.extraLabelMapping | list | [] | Label mapping configuration for agent. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Format: List of objects with tag_name, key, and from fields, where from is one of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job` and defaults to `pod`. |
+| agent.extraLabelMapping | list | [] | Label mapping configuration for agent. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Format: List of objects with tag_name, key, and from fields, where from is one of `pod`, `namespace`, `node`, `deployment`, `statefulset`, `daemonset`, `job`, `cronjob`, `replicaset` and defaults to `pod`. Set tag_name on every rule. Without it the attribute is named by the processor's own default, `k8s.pod.label.<key>`. |
 | agent.fileLog | object | `{"exclude":[],"include":["/var/log/pods/*/*/*.log"]}` | file_log receiver paths (used when collectLogs is true). |
 | agent.fileLog.exclude | list | [] | Log file globs to skip. Narrowing this is the biggest log-cost lever in the chart: excluding a noisy namespace, e.g. `/var/log/pods/kube-system_*/*/*.log`, drops those records before they are ever read. |
 | agent.fileLog.include | list | ["/var/log/pods/*/*/*.log"] | Log file globs to read. |
@@ -501,7 +501,8 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | agent.otlp.grpcEndpoint | string | "${env:MY_POD_IP}:4317" | gRPC listen address. Set to "" to disable the gRPC protocol. |
 | agent.otlp.httpEndpoint | string | "${env:MY_POD_IP}:4318" | HTTP listen address. Set to "" to disable the HTTP protocol. Emptying both endpoints leaves the otlp receiver with no protocol, which the collector rejects at startup. |
 | agent.resources | object | {} | Resource limits and requests for the agent. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
-| agent.spanMetrics | object | `{"dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans). |
+| agent.spanMetrics | object | `{"aggregationTemporality":"AGGREGATION_TEMPORALITY_DELTA","dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans). |
+| agent.spanMetrics.aggregationTemporality | string | AGGREGATION_TEMPORALITY_DELTA | Aggregation temporality of the generated metrics. Delta drops a series once its spans stop; cumulative keeps re-exporting the last value forever, which cumulative_to_delta then reads as an endless run of zeros. |
 | agent.spanMetrics.dimensions | list | see values.yaml | Span attributes to keep as metric dimensions. `default` supplies a value when the attribute is absent. |
 | agent.spanMetrics.enabled | bool | true | Generate request count and duration metrics from spans, one series per service and per combination of the dimensions below. Disabling it removes those metrics; the spans themselves are unaffected. |
 | agent.tolerations | list | [] | Agent-specific tolerations. If not set, inherits from global tolerations configuration. |
@@ -515,7 +516,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | batch.sendBatchSize | int | 5000 | Item count that triggers a send. |
 | batch.timeout | string | "" | Maximum time to wait before sending an undersized batch, e.g. `5s`. Empty uses the processor's own default of 200ms. |
 | cluster.affinity | object | {} | Cluster-specific affinity rules. If not set, inherits from global affinity configuration. |
-| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
+| cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage, pods] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
 | cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
 | cluster.collectk8sevents | bool | false | Collect Kubernetes Warning events as logs. Events are the only source for OOMKilled, FailedScheduling, Evicted, ErrImagePull, FailedMount and failing probes, since no metric receiver reports them. Off by default because the volume follows cluster health. Only Warning events are collected, filtered at the API server, so Normal events are never transferred. |
 | cluster.collectk8sobjects | bool | true | Watch pod objects and send them as logs. Powers the Kubernetes view, which uses them to show pod configuration. Costs one log record per pod change, plus a full snapshot of every pod on each collector restart. |
@@ -546,7 +547,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.tolerations | list | [] | Cluster-specific tolerations. If not set, inherits from global tolerations configuration. |
 | clusterName | string | "" (must be set) | REQUIRED. Name of the cluster, attached to all telemetry as k8s.cluster.name. The install fails while this is empty and any collector is rendering the chart's default config. |
 | fullnameOverride | string | "" | Override the full name used in resource naming. |
-| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0"` | Collector image used by all three collectors. Must be v0.157.0 or newer: the default config uses the cumulative_to_delta processor, and the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
+| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"` | Collector image used by all three collectors. Must be v0.161.0 or newer: the default config extracts `container.image.tags`, which older collectors accept and never emit, so the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
 | k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. Dropping `k8s.pod.name` and `k8s.pod.uid` is the largest cardinality saving available here, at the cost of per-pod identification. An unsupported field name fails the collector at startup. |
 | nameOverride | string | "" | Override the chart name used in resource naming. |
 | nodeSelector | object | {} | Node selector applied to every collector. Overridden per collector by agent.nodeSelector, cluster.nodeSelector or statefulset.nodeSelector. |
@@ -620,7 +621,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector. If not set, inherits from global nodeSelector configuration. |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets across replicas according to targetAllocator.spec.allocationStrategy. |
 | statefulset.resources | object | {} | Resource limits and requests for the StatefulSet collector. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
-| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Also the interval at which the collector refreshes its target list from the Target Allocator. |
+| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Does not affect how often the collector refreshes its target list from the Target Allocator: the operator writes that interval itself and pins it to 30s. |
 | statefulset.tolerations | list | [] | StatefulSet-specific tolerations. If not set, inherits from global tolerations configuration. |
 | targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector. |
 | targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Setting spec.serviceAccount here overrides the account the chart would otherwise set. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
