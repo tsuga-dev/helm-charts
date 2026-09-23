@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `k8s_attributes` processor's own internal telemetry is now `otelcol.k8s.watcher.<kind>.<event>`, `otelcol.k8s.watcher.pod_cache.size` and `otelcol.k8s.pod.association`; the previous `otelcol_otelsvc_k8s_*` series are off by default. Dashboards or monitors built on the old series go blank
 - `redaction` applies `blocked_values` patterns in the order they are configured. Where two patterns overlapped on the same value the masked output could previously differ between runs
 
+## [opentelemetry-kube-stack-0.12.3] - 2026-09-22
+
+### Removed
+- The `target_allocator` block from the statefulset collector's prometheus receiver. The operator writes that block itself from the `opentelemetry.io/target-allocator` label, so the chart's copy was replaced before the collector read it, and its endpoint named a Service that does not exist. The generated collector config is unchanged
+
+### Fixed
+- statefulset.scrapeInterval is documented as setting the per-target scrape interval only. It never set how often the collector refreshes its target list from the Target Allocator: the operator writes that interval and pins it to 30s
+
+## [opentelemetry-kube-stack-0.12.2] - 2026-09-22
+
+### Changed
+- `pods` is added to the default cluster.allocatableTypesToReport, so k8s.node.allocatable_pods is emitted. Without it a node pod-count alert has no capacity figure to compare its pod count against. One extra gauge per node
+
 ## [opentelemetry-kube-stack-0.12.1] - 2026-09-21
 
 ### Added
