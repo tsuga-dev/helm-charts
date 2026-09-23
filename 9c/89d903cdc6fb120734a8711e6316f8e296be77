@@ -1,0 +1,45 @@
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_3f742716189469::t_48d2612b83a586 13-15
+charts/opentelemetry-kube-stack/README.md
+  s_3f742716189469::t_3631cd8563b693 129,517
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_3f742716189469::t_382e0bf147f87b 119
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_523e20e7f89e3a 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_f30bbfc2af53a7 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/custom-config/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_25d16eb2566203 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/default/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_2977916bb7124b 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/extra-service/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_6e8e3455a5a035 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/k8s-objects/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_2467352eba8fbc 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/otel-demo/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_f2801c28a40444 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/profiling/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_a1459e7a18380d 96-105,168-172,198-207
+charts/opentelemetry-kube-stack/examples/tusga-less/rendered/cluster-receiver.yaml
+  s_3f742716189469::t_944bffb875bf56 86-95,158-162,183-191
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_3f742716189469::t_5a7ad1ed0f2697 189,196,198-200
+charts/opentelemetry-kube-stack/values.yaml
+  s_3f742716189469::t_371768116ec3cf 668-675,678-682
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9c89d903cdc6fb120734a8711e6316f8e296be77",
+  "prompts": {},
+  "sessions": {
+    "s_3f742716189469": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1c629ef5-ba2f-4732-a4ba-3d884a52a368",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
