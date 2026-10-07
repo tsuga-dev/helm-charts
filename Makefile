@@ -1,4 +1,4 @@
-CHARTS ?= opentelemetry-kube-stack tsuga-spicy-gremlin opentelemetry-database-monitoring
+CHARTS ?= opentelemetry-kube-stack tsuga-spicy-gremlin opentelemetry-database-monitoring tsuga-operator
 TMP_DIRECTORY = ./tmp
 
 .PHONY: generate-examples

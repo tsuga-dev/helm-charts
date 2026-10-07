@@ -1,0 +1,231 @@
+---
+# Source: tsuga-operator/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: example-tsuga-operator-manager
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  - namespaces
+  - nodes
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - replicationcontrollers
+  - resourcequotas
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  - nodes/stats
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - apps
+  - extensions
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - observability.tsuga.com
+  resources:
+  - dashboards
+  - monitors
+  - slos
+  - tsugamonitorings
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - observability.tsuga.com
+  resources:
+  - dashboards/status
+  - monitors/status
+  - slos/status
+  - tsugacollectorconfigs/finalizers
+  - tsugacollectorconfigs/status
+  - tsugamonitorings/finalizers
+  - tsugamonitorings/status
+  - tsugapostgresmonitorings/finalizers
+  - tsugapostgresmonitorings/status
+  verbs:
+  - update
+- apiGroups:
+  - observability.tsuga.com
+  resources:
+  - tsugacollectorconfigs
+  - tsugapostgresmonitorings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - instrumentations
+  - opentelemetrycollectors
+  - targetallocators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - create
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - tsuga-operator-collector
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - tsuga-operator-collector-tsuga-agent
+  - tsuga-operator-collector-tsuga-gateway
+  - tsuga-operator-collector-tsuga-scraper
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - delete
+  - patch
+
+---
+# Source: tsuga-operator/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: example-tsuga-operator-metrics-auth
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+
+---
+# Source: tsuga-operator/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: example-tsuga-operator-metrics-reader
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get

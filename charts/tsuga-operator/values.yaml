@@ -1,0 +1,119 @@
+---
+# -- Override chart name.
+nameOverride: ""
+# -- Override full chart release name.
+fullnameOverride: ""
+# -- Image pull secrets for the manager pod.
+imagePullSecrets: []
+# -- Number of manager replicas. Only the leader reconciles when leader election is on.
+replicaCount: 1
+
+crds:
+  # -- Install the observability.tsuga.com CRDs. They carry `helm.sh/resource-policy: keep`, so uninstalling the chart leaves them (and your CRs) in place.
+  create: true
+  # -- Extra annotations on every CRD.
+  annotations: {}
+
+credentials:
+  # -- Create the credentials Secret from the values below. Set to false to reference a Secret you manage yourself (same name and keys).
+  create: true
+  # -- Secret name. The operator docs and examples use `tsuga-credentials`.
+  secretName: tsuga-credentials
+  # -- Tsuga operation key, stored under `api-token`. Required when `credentials.create` is true. Raw key, no `Bearer ` prefix.
+  apiToken: ""
+  # -- Optional OTLP ingestion key for collectors, stored under `api-key`. Reference it from `TsugaCollectorConfig.spec.export.tokenSecretRef`.
+  apiKey: ""
+  # -- Optional OTLP endpoint for collectors, stored under `otlp-endpoint`. Reference it from `TsugaCollectorConfig.spec.export.endpointSecretRef`.
+  otlpEndpoint: ""
+
+manager:
+  image:
+    # -- Operator image repository.
+    repository: ghcr.io/tsuga-dev/tsuga-operator
+    # -- Operator image tag. Defaults to the chart appVersion.
+    tag: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent
+
+  # -- Tsuga management API base URL. Must be https.
+  tsugaBaseUrl: https://api.tsuga.com # @schema pattern: ^https://
+
+  leaderElection:
+    # -- Run with `--leader-elect`.
+    enabled: true
+
+  ports:
+    # -- Metrics port.
+    metricsPort: 8443
+    # -- Health probe port.
+    healthzPort: 8081
+
+  metrics:
+    # -- Expose the metrics endpoint and its Service.
+    enabled: true
+    # -- Serve metrics over HTTPS with Kubernetes authn/authz (`--metrics-secure`). Scrapers need the `<fullname>-metrics-reader` ClusterRole.
+    secure: true
+
+  serviceMonitor:
+    # -- Create a Prometheus Operator ServiceMonitor for the metrics Service.
+    enabled: false
+    # -- Extra labels on the ServiceMonitor.
+    extraLabels: {}
+
+  serviceAccount:
+    # -- Create the manager ServiceAccount.
+    create: true
+    # -- ServiceAccount name. Defaults to the full name.
+    name: ""
+    # -- ServiceAccount annotations.
+    annotations: {}
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+  # -- Container security context.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  # -- Extra manager arguments.
+  extraArgs: []
+  # -- Extra environment variables.
+  extraEnvs: []
+  # -- Pod annotations.
+  podAnnotations: {}
+  # -- Pod labels.
+  podLabels: {}
+
+role:
+  # -- Create the leader-election Role and RoleBinding.
+  create: true
+
+clusterRole:
+  # -- Create the manager and metrics ClusterRoles and ClusterRoleBindings.
+  create: true
+
+# -- Pod security context.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Priority class for the manager pod.
+priorityClassName: ""
+affinity: {}
+tolerations: []
+nodeSelector:
+  kubernetes.io/os: linux
+topologySpreadConstraints: []

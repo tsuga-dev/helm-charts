@@ -1,0 +1,58 @@
+# {{ template "chart.name" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+{{ template "chart.description" . }}
+
+Operator documentation: <https://tsuga-dev.github.io/tsuga-operator/>
+
+## Prerequisites
+
+- A Tsuga **operation key** (Settings in the Tsuga app). The operator needs it to start, even for collection-only use.
+- For telemetry collection only (`TsugaCollectorConfig`, `TsugaMonitoring`, `TsugaPostgresMonitoring`): cert-manager and the OpenTelemetry Operator v0.159.0, plus an OTLP ingestion key and endpoint. See the [operator getting-started guide](https://tsuga-dev.github.io/tsuga-operator/getting-started/). If you install them after this chart, restart the operator so it discovers their CRDs.
+
+## Install
+
+Install into `tsuga-operator-system`: `TsugaCollectorConfig.spec.collectorNamespace` defaults to it.
+
+```bash
+helm repo add tsuga-charts https://tsuga-dev.github.io/helm-charts/
+helm install tsuga-operator tsuga-charts/tsuga-operator \
+  --namespace tsuga-operator-system --create-namespace \
+  --set credentials.apiToken="<OPERATION_KEY>"
+```
+
+### Credentials
+
+By default the chart creates the `tsuga-credentials` Secret the operator docs refer to:
+
+| Value | Secret key | Used by |
+| --- | --- | --- |
+| `credentials.apiToken` (required) | `api-token` | Operator (Dashboard, Monitor, SLO API calls) |
+| `credentials.apiKey` | `api-key` | Collectors, via `TsugaCollectorConfig.spec.export.tokenSecretRef` |
+| `credentials.otlpEndpoint` | `otlp-endpoint` | Collectors, via `TsugaCollectorConfig.spec.export.endpointSecretRef` |
+
+To manage the Secret yourself (External Secrets, sealed secrets, GitOps), set `credentials.create=false` and create a Secret named `credentials.secretName` with the same keys.
+
+## CRDs
+
+CRDs are rendered from `conf/crds/` when `crds.create=true` (the default), so `helm upgrade` updates them. They are annotated with `helm.sh/resource-policy: keep`: `helm uninstall` leaves the CRDs and your custom resources in place. Deleting a Dashboard, Monitor or SLO CR deletes the remote Tsuga object, so remove CRDs deliberately, with the operator still running:
+
+```bash
+kubectl delete crd dashboards.observability.tsuga.com monitors.observability.tsuga.com slos.observability.tsuga.com \
+  tsugacollectorconfigs.observability.tsuga.com tsugamonitorings.observability.tsuga.com tsugapostgresmonitorings.observability.tsuga.com
+```
+
+To bump the CRDs to a new operator release, copy `config/crd/bases/*.yaml` from the matching `tsuga-operator` tag into `conf/crds/`.
+
+## Metrics
+
+The manager serves metrics on `:8443` over HTTPS with Kubernetes authn/authz. Scrapers must be bound to the `<fullname>-metrics-reader` ClusterRole. Set `manager.serviceMonitor.enabled=true` to create a Prometheus Operator ServiceMonitor.
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "helm-docs.versionFooter" . }}

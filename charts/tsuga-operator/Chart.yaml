@@ -1,0 +1,23 @@
+---
+apiVersion: v2
+name: tsuga-operator
+description: Helm chart for the Tsuga Operator, which manages Tsuga dashboards, monitors, SLOs and Kubernetes telemetry collection as code.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - tsuga
+  - operator
+  - observability
+  - opentelemetry
+
+home: https://tsuga-dev.github.io/tsuga-operator/
+
+maintainers:
+  - name: Tsuga
+    email: hello@tsuga.com
+
+sources:
+  - https://github.com/tsuga-dev/helm-charts
+  - https://github.com/tsuga-dev/tsuga-operator

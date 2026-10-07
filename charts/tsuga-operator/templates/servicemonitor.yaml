@@ -1,0 +1,26 @@
+{{- if and .Values.manager.metrics.enabled .Values.manager.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "tsuga-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tsuga-operator.labels" . | nindent 4 }}
+    {{- with .Values.manager.serviceMonitor.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      {{- if .Values.manager.metrics.secure }}
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        # ponytail: the operator serves a self-signed cert; wire cert-manager certs before turning verification on.
+        insecureSkipVerify: true
+      {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tsuga-operator.selectorLabels" . | nindent 6 }}
+{{- end }}

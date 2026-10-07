@@ -1,0 +1,17 @@
+{{- if .Values.manager.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tsuga-operator.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tsuga-operator.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: metrics
+      port: {{ .Values.manager.ports.metricsPort }}
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    {{- include "tsuga-operator.selectorLabels" . | nindent 4 }}
+{{- end }}

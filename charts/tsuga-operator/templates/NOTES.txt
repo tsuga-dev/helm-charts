@@ -1,0 +1,16 @@
+Tsuga Operator {{ .Chart.AppVersion }} is installed in namespace {{ .Release.Namespace }}.
+
+Check it is running:
+  kubectl -n {{ .Release.Namespace }} rollout status deployment/{{ include "tsuga-operator.fullname" . }}
+  kubectl -n {{ .Release.Namespace }} logs deployment/{{ include "tsuga-operator.fullname" . }} --tail=50
+{{- if ne .Release.Namespace "tsuga-operator-system" }}
+
+Note: TsugaCollectorConfig.spec.collectorNamespace defaults to tsuga-operator-system.
+Set it explicitly (and create that namespace) when collecting telemetry.
+{{- end }}
+
+Collection (TsugaCollectorConfig, TsugaMonitoring) also needs cert-manager and the
+OpenTelemetry Operator. If you install those after this chart, restart the operator so it
+discovers their CRDs.
+
+Docs: https://tsuga-dev.github.io/tsuga-operator/

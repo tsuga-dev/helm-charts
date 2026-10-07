@@ -1,0 +1,10 @@
+{{- if .Values.crds.create }}
+{{- range $path, $_ := .Files.Glob "conf/crds/*.yaml" }}
+{{- $crd := $.Files.Get $path | fromYaml }}
+{{- $annotations := merge (dict "helm.sh/resource-policy" "keep") $.Values.crds.annotations (default dict $crd.metadata.annotations) }}
+{{- $_ := set $crd.metadata "annotations" $annotations }}
+{{- $_ := set $crd.metadata "labels" (include "tsuga-operator.labels" $ | fromYaml) }}
+---
+{{ toYaml $crd }}
+{{- end }}
+{{- end }}
