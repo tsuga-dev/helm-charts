@@ -1,4 +1,4 @@
-{{- if .Values.clusterRole.create }}
+{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -177,7 +177,7 @@ rules:
   verbs:
   - delete
   - patch
-{{- if include "tsuga-operator.metricsSecure" . }}
+{{- if .Values.manager.metrics.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

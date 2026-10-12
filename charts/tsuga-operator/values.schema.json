@@ -5,20 +5,9 @@
         "affinity": {
             "type": "object"
         },
-        "clusterRole": {
-            "type": "object",
-            "properties": {
-                "create": {
-                    "type": "boolean"
-                }
-            }
-        },
         "crds": {
             "type": "object",
             "properties": {
-                "annotations": {
-                    "type": "object"
-                },
                 "create": {
                     "type": "boolean"
                 }
@@ -73,21 +62,10 @@
                         }
                     }
                 },
-                "leaderElection": {
-                    "type": "object",
-                    "properties": {
-                        "enabled": {
-                            "type": "boolean"
-                        }
-                    }
-                },
                 "metrics": {
                     "type": "object",
                     "properties": {
                         "enabled": {
-                            "type": "boolean"
-                        },
-                        "secure": {
                             "type": "boolean"
                         }
                     }
@@ -97,17 +75,6 @@
                 },
                 "podLabels": {
                     "type": "object"
-                },
-                "ports": {
-                    "type": "object",
-                    "properties": {
-                        "healthzPort": {
-                            "type": "integer"
-                        },
-                        "metricsPort": {
-                            "type": "integer"
-                        }
-                    }
                 },
                 "resources": {
                     "type": "object",
@@ -172,17 +139,6 @@
                         }
                     }
                 },
-                "serviceMonitor": {
-                    "type": "object",
-                    "properties": {
-                        "enabled": {
-                            "type": "boolean"
-                        },
-                        "extraLabels": {
-                            "type": "object"
-                        }
-                    }
-                },
                 "tsugaBaseUrl": {
                     "type": "string",
                     "pattern": "^https://"
@@ -203,10 +159,7 @@
         "priorityClassName": {
             "type": "string"
         },
-        "replicaCount": {
-            "type": "integer"
-        },
-        "role": {
+        "rbac": {
             "type": "object",
             "properties": {
                 "create": {
@@ -214,20 +167,14 @@
                 }
             }
         },
+        "replicaCount": {
+            "type": "integer"
+        },
         "securityContext": {
             "type": "object",
             "properties": {
-                "fsGroup": {
-                    "type": "integer"
-                },
-                "runAsGroup": {
-                    "type": "integer"
-                },
                 "runAsNonRoot": {
                     "type": "boolean"
-                },
-                "runAsUser": {
-                    "type": "integer"
                 },
                 "seccompProfile": {
                     "type": "object",
@@ -240,9 +187,6 @@
             }
         },
         "tolerations": {
-            "type": "array"
-        },
-        "topologySpreadConstraints": {
             "type": "array"
         }
     }

@@ -47,7 +47,7 @@ To bump the CRDs to a new operator release, copy `config/crd/bases/*.yaml` from 
 
 ## Metrics
 
-The manager serves metrics on `:8443` over HTTPS with Kubernetes authn/authz. Scrapers must be bound to the `<fullname>-metrics-reader` ClusterRole. Set `manager.serviceMonitor.enabled=true` to create a Prometheus Operator ServiceMonitor.
+The manager serves metrics on `:8443` over HTTPS with Kubernetes authn/authz. Scrapers must be bound to the `<fullname>-metrics-reader` ClusterRole.
 
 {{ template "chart.maintainersSection" . }}
 

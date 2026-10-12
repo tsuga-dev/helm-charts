@@ -86,3 +86,11 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: fails instead of falling back to the default ServiceAccount
+    template: deployment.yaml
+    set:
+      manager.serviceAccount.create: false
+    asserts:
+      - failedTemplate:
+          errorMessage: manager.serviceAccount.name is required when manager.serviceAccount.create is false

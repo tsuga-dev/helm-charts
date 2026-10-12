@@ -44,10 +44,6 @@ app.kubernetes.io/component: controller-manager
 {{- if .Values.manager.serviceAccount.create -}}
 {{- default (include "tsuga-operator.fullname" .) .Values.manager.serviceAccount.name -}}
 {{- else -}}
-{{- default "default" .Values.manager.serviceAccount.name -}}
+{{- required "manager.serviceAccount.name is required when manager.serviceAccount.create is false" .Values.manager.serviceAccount.name -}}
 {{- end -}}
-{{- end -}}
-
-{{- define "tsuga-operator.metricsSecure" -}}
-{{- if and .Values.manager.metrics.enabled .Values.manager.metrics.secure -}}true{{- end -}}
 {{- end -}}

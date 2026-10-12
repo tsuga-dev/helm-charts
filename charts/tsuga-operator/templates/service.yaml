@@ -9,7 +9,7 @@ metadata:
 spec:
   ports:
     - name: metrics
-      port: {{ .Values.manager.ports.metricsPort }}
+      port: 8443
       protocol: TCP
       targetPort: metrics
   selector:

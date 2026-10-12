@@ -22,7 +22,6 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: manager
         checksum/credentials: 39d4d50312624322a0dfa3ee6afbce5e80d7e5a20bd369d184fc9a34d8bbd723
       labels:
         helm.sh/chart: tsuga-operator-0.1.0
@@ -34,23 +33,17 @@ spec:
     spec:
       serviceAccountName: example-tsuga-operator
       securityContext:
-        fsGroup: 65532
-        runAsGroup: 65532
         runAsNonRoot: true
-        runAsUser: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: manager
           image: "ghcr.io/tsuga-dev/tsuga-operator:0.1.0"
           imagePullPolicy: IfNotPresent
-          command:
-            - /manager
           args:
             - --leader-elect
             - --health-probe-bind-address=:8081
             - --metrics-bind-address=:8443
-            - --metrics-secure=true
           env:
             - name: TSUGA_API_TOKEN
               valueFrom:

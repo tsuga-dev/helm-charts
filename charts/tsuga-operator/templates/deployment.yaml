@@ -13,7 +13,6 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: manager
         {{- if .Values.credentials.create }}
         checksum/credentials: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- end }}
@@ -40,16 +39,11 @@ spec:
         - name: manager
           image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.manager.image.pullPolicy }}
-          command:
-            - /manager
           args:
-            {{- if .Values.manager.leaderElection.enabled }}
             - --leader-elect
-            {{- end }}
-            - --health-probe-bind-address=:{{ .Values.manager.ports.healthzPort }}
+            - --health-probe-bind-address=:8081
             {{- if .Values.manager.metrics.enabled }}
-            - --metrics-bind-address=:{{ .Values.manager.ports.metricsPort }}
-            - --metrics-secure={{ .Values.manager.metrics.secure }}
+            - --metrics-bind-address=:8443
             {{- end }}
             {{- with .Values.manager.extraArgs }}
             {{- toYaml . | nindent 12 }}
@@ -67,11 +61,11 @@ spec:
             {{- end }}
           ports:
             - name: healthz
-              containerPort: {{ .Values.manager.ports.healthzPort }}
+              containerPort: 8081
               protocol: TCP
             {{- if .Values.manager.metrics.enabled }}
             - name: metrics
-              containerPort: {{ .Values.manager.ports.metricsPort }}
+              containerPort: 8443
               protocol: TCP
             {{- end }}
           livenessProbe:
@@ -100,10 +94,6 @@ spec:
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.topologySpreadConstraints }}
-      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: 10

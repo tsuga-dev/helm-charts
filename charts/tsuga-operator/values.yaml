@@ -5,14 +5,12 @@ nameOverride: ""
 fullnameOverride: ""
 # -- Image pull secrets for the manager pod.
 imagePullSecrets: []
-# -- Number of manager replicas. Only the leader reconciles when leader election is on.
+# -- Number of manager replicas. Only the leader reconciles.
 replicaCount: 1
 
 crds:
   # -- Install the observability.tsuga.com CRDs. They carry `helm.sh/resource-policy: keep`, so uninstalling the chart leaves them (and your CRs) in place.
   create: true
-  # -- Extra annotations on every CRD.
-  annotations: {}
 
 credentials:
   # -- Create the credentials Secret from the values below. Set to false to reference a Secret you manage yourself (same name and keys).
@@ -38,32 +36,14 @@ manager:
   # -- Tsuga management API base URL. Must be https.
   tsugaBaseUrl: https://api.tsuga.com # @schema pattern: ^https://
 
-  leaderElection:
-    # -- Run with `--leader-elect`.
-    enabled: true
-
-  ports:
-    # -- Metrics port.
-    metricsPort: 8443
-    # -- Health probe port.
-    healthzPort: 8081
-
   metrics:
-    # -- Expose the metrics endpoint and its Service.
+    # -- Expose the metrics endpoint (HTTPS with Kubernetes authn/authz) and its Service. Scrapers need the `<fullname>-metrics-reader` ClusterRole.
     enabled: true
-    # -- Serve metrics over HTTPS with Kubernetes authn/authz (`--metrics-secure`). Scrapers need the `<fullname>-metrics-reader` ClusterRole.
-    secure: true
-
-  serviceMonitor:
-    # -- Create a Prometheus Operator ServiceMonitor for the metrics Service.
-    enabled: false
-    # -- Extra labels on the ServiceMonitor.
-    extraLabels: {}
 
   serviceAccount:
     # -- Create the manager ServiceAccount.
     create: true
-    # -- ServiceAccount name. Defaults to the full name.
+    # -- ServiceAccount name. Defaults to the full name. Required when `create` is false.
     name: ""
     # -- ServiceAccount annotations.
     annotations: {}
@@ -93,20 +73,13 @@ manager:
   # -- Pod labels.
   podLabels: {}
 
-role:
-  # -- Create the leader-election Role and RoleBinding.
+rbac:
+  # -- Create the manager's Roles, ClusterRoles and their bindings. Set to false only if you supply equivalent RBAC yourself.
   create: true
 
-clusterRole:
-  # -- Create the manager and metrics ClusterRoles and ClusterRoleBindings.
-  create: true
-
-# -- Pod security context.
+# -- Pod security context. The image already runs as 65532:65532, so no UID is pinned (OpenShift assigns its own).
 securityContext:
   runAsNonRoot: true
-  runAsUser: 65532
-  runAsGroup: 65532
-  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 
@@ -116,4 +89,3 @@ affinity: {}
 tolerations: []
 nodeSelector:
   kubernetes.io/os: linux
-topologySpreadConstraints: []
