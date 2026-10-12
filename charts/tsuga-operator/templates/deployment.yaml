@@ -12,6 +12,7 @@ spec:
       {{- include "tsuga-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if or .Values.credentials.create .Values.manager.podAnnotations }}
       annotations:
         {{- if .Values.credentials.create }}
         checksum/credentials: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
@@ -19,6 +20,7 @@ spec:
         {{- with .Values.manager.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- end }}
       labels:
         {{- include "tsuga-operator.labels" . | nindent 8 }}
         {{- with .Values.manager.podLabels }}

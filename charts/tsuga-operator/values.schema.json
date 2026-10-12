@@ -11,7 +11,8 @@
                 "create": {
                     "type": "boolean"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "credentials": {
             "type": "object",
@@ -31,7 +32,8 @@
                 "secretName": {
                     "type": "string"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "fullnameOverride": {
             "type": "string"
@@ -60,7 +62,8 @@
                         "tag": {
                             "type": "string"
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "metrics": {
                     "type": "object",
@@ -68,7 +71,8 @@
                         "enabled": {
                             "type": "boolean"
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "podAnnotations": {
                     "type": "object"
@@ -137,13 +141,15 @@
                         "name": {
                             "type": "string"
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "tsugaBaseUrl": {
                     "type": "string",
                     "pattern": "^https://"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "nameOverride": {
             "type": "string"
@@ -165,7 +171,8 @@
                 "create": {
                     "type": "boolean"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "replicaCount": {
             "type": "integer"
@@ -188,6 +195,10 @@
         },
         "tolerations": {
             "type": "array"
+        },
+        "global": {
+            "type": "object"
         }
-    }
+    },
+    "additionalProperties": false
 }

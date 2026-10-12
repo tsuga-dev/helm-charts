@@ -45,6 +45,16 @@ tests:
             name: my-creds
             key: api-token
         template: deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: deployment.yaml
+
+  - it: rejects removed or misspelled values keys
+    template: deployment.yaml
+    set:
+      clusterRole.create: false
+    asserts:
+      - failedTemplate: {}
 
   - it: defaults the image tag to appVersion
     template: deployment.yaml
