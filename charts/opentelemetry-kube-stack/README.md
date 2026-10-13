@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.13.2](https://img.shields.io/badge/Version-0.13.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.14.0](https://img.shields.io/badge/Version-0.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -22,7 +22,7 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 | Repository | Name | Version |
 |------------|------|---------|
 |  | otel-crds | 0.0.0 |
-| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-operator | 0.114.1 |
+| https://open-telemetry.github.io/opentelemetry-helm-charts | opentelemetry-operator | 0.124.1 |
 
 ## Features
 
@@ -332,7 +332,7 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 If you prefer to manage the operator separately or it's already installed:
 
 ```bash
-kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.160.0/opentelemetry-operator.yaml
 ```
 
 Verify the operator is running:

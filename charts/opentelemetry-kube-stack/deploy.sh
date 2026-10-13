@@ -400,7 +400,7 @@ check_otel_operator() {
     print_status $BLUE "Installing OpenTelemetry operator..."
     
     # Install OpenTelemetry operator
-    kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+    kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.160.0/opentelemetry-operator.yaml
     
     print_status $BLUE "Waiting for OpenTelemetry operator to be ready..."
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=opentelemetry-operator -n "$OTEL_OPERATOR_NAMESPACE" --timeout=300s

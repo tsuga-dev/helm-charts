@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.14.0] - 2026-10-13
+
+### Changed
+- The bundled OpenTelemetry Operator subchart is 0.124.1, which runs operator v0.160.0 (was 0.114.1, operator v0.152.0). The otel-crds CRDs are taken from operator v0.160.0
+- The README and `deploy.sh` install the OpenTelemetry Operator at v0.160.0 instead of `latest`
+
 ## [opentelemetry-kube-stack-0.13.2] - 2026-09-23
 
 ### Changed
