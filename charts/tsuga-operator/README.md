@@ -9,7 +9,7 @@ Operator documentation: <https://tsuga-dev.github.io/tsuga-operator/>
 ## Prerequisites
 
 - A Tsuga **operation key** (Settings in the Tsuga app). The operator needs it to start, even for collection-only use.
-- For telemetry collection only (`TsugaCollectorConfig`, `TsugaMonitoring`, `TsugaPostgresMonitoring`): cert-manager and the OpenTelemetry Operator v0.159.0, plus an OTLP ingestion key and endpoint. See the [operator getting-started guide](https://tsuga-dev.github.io/tsuga-operator/getting-started/). If you install them after this chart, restart the operator so it discovers their CRDs.
+- For telemetry collection only (`TsugaCollectorConfig`, `TsugaMonitoring`, `TsugaPostgresMonitoring`): cert-manager and the OpenTelemetry Operator v0.160.0, plus an OTLP ingestion key and endpoint. See the [operator getting-started guide](https://tsuga-dev.github.io/tsuga-operator/getting-started/). If you install them after this chart, restart the operator so it discovers their CRDs.
 
 ## Install
 
