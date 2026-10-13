@@ -108,6 +108,7 @@ Each chart has its own README with full configuration and values reference:
 - **[opentelemetry-kube-stack](./charts/opentelemetry-kube-stack/README.md)**: OpenTelemetry Kubernetes operator with Tsuga integration — dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready telemetry collection.
 - **[opentelemetry-database-monitoring](./charts/opentelemetry-database-monitoring/README.md)**: Deep monitoring for PostgreSQL via an OpenTelemetry sidecar collector — installs stored functions, a dedicated monitoring user, and emits metrics over OTLP.
 - **[tsuga-spicy-gremlin](./charts/tsuga-spicy-gremlin/README.md)**: A minimal chart to run spicy-gremlin against OpenTelemetry Demo feature flags.
+- **[tsuga-operator](./charts/tsuga-operator/README.md)**: The Tsuga Operator, which manages Tsuga dashboards, monitors, SLOs and Kubernetes telemetry collection as code.
 
 ## Changelog
 
