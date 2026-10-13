@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The bundled OpenTelemetry Operator subchart is 0.124.1, which runs operator v0.160.0 (was 0.114.1, operator v0.152.0). The otel-crds CRDs are taken from operator v0.160.0
 - The README and `deploy.sh` install the OpenTelemetry Operator at v0.160.0 instead of `latest`
 
+### Upgrade notes
+- With `opentelemetry-operator.enabled=true`, `helm upgrade` does not update the CRDs: Helm only installs CRDs from `crds/` and never upgrades them. Existing releases keep the v0.152.0 schemas while the operator moves to v0.160.0, so fields added since then are rejected or pruned. Apply the v0.160.0 CRDs before upgrading:
+  ```bash
+  for crd in opentelemetrycollectors opampbridges instrumentations targetallocators; do
+    kubectl apply --server-side --force-conflicts \
+      -f "https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/v0.160.0/config/crd/bases/opentelemetry.io_${crd}.yaml"
+  done
+  ```
+  `--server-side` is required because the OpenTelemetryCollector CRD is too large for a client-side apply. `--force-conflicts` takes field ownership from Helm, which created the CRDs.
+
 ## [opentelemetry-kube-stack-0.13.2] - 2026-09-23
 
 ### Changed

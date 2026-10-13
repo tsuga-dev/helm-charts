@@ -317,6 +317,17 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
   --set opentelemetry-operator.enabled=true
 ```
 
+Helm installs the operator CRDs but never upgrades them. Before a `helm upgrade` that moves to a new operator version, apply that version's CRDs yourself:
+
+```bash
+for crd in opentelemetrycollectors opampbridges instrumentations targetallocators; do
+  kubectl apply --server-side --force-conflicts \
+    -f "https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/v0.160.0/config/crd/bases/opentelemetry.io_${crd}.yaml"
+done
+```
+
+`--server-side` is required because the OpenTelemetryCollector CRD is too large for a client-side apply.
+
 #### Option B: Install separately
 
 If you prefer to manage the operator separately or it's already installed:
