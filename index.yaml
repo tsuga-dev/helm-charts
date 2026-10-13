@@ -2447,6 +2447,30 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/opentelemetry-kube-stack-0.2.0/opentelemetry-kube-stack-0.2.0.tgz
     version: 0.2.0
+  tsuga-operator:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-10-13T08:28:28.605874786Z"
+    description: Helm chart for the Tsuga Operator, which manages Tsuga dashboards,
+      monitors, SLOs and Kubernetes telemetry collection as code.
+    digest: a26d48daa4d54eafab81897f333589555ac3f0fa35a8b81c59b525f8435b74e9
+    home: https://tsuga-dev.github.io/tsuga-operator/
+    keywords:
+    - tsuga
+    - operator
+    - observability
+    - opentelemetry
+    maintainers:
+    - email: hello@tsuga.com
+      name: Tsuga
+    name: tsuga-operator
+    sources:
+    - https://github.com/tsuga-dev/helm-charts
+    - https://github.com/tsuga-dev/tsuga-operator
+    type: application
+    urls:
+    - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-operator-0.1.0/tsuga-operator-0.1.0.tgz
+    version: 0.1.0
   tsuga-spicy-gremlin:
   - apiVersion: v2
     appVersion: 0.1.3
@@ -2490,4 +2514,4 @@ entries:
     urls:
     - https://github.com/tsuga-dev/helm-charts/releases/download/tsuga-spicy-gremlin-0.1.1/tsuga-spicy-gremlin-0.1.1.tgz
     version: 0.1.1
-generated: "2026-09-23T09:47:46.956984242Z"
+generated: "2026-10-13T08:28:28.606132679Z"
