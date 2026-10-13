@@ -1,0 +1,231 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: tsugapostgresmonitorings.observability.tsuga.com
+spec:
+  group: observability.tsuga.com
+  names:
+    kind: TsugaPostgresMonitoring
+    listKind: TsugaPostgresMonitoringList
+    plural: tsugapostgresmonitorings
+    shortNames:
+    - tspg
+    singular: tsugapostgresmonitoring
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.host
+      name: Host
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          The 43 character cap keeps the setup Job name, <name>-pg-setup-<10 hex>,
+          within the 63 characters of the job-name label Kubernetes puts on its pods.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              TsugaPostgresMonitoringSpec points a dedicated collector at one Postgres
+              server, in-cluster or managed.
+            properties:
+              database:
+                default: postgres
+                description: |-
+                  Database that holds the otel schema. pg_stat_statements is server-wide,
+                  so this only picks where the functions live.
+                pattern: ^[A-Za-z_][A-Za-z0-9_$-]*$
+                type: string
+              host:
+                description: |-
+                  DNS name or IPv4 address of the server: a Service in-cluster, or the
+                  managed endpoint. It is spliced into libpq DSNs, so the pattern keeps
+                  out spaces, '=' and newlines, and requires dot-separated RFC 1123
+                  labels (a dotted-decimal IPv4 address is a valid label sequence).
+                maxLength: 253
+                pattern: ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$
+                type: string
+              port:
+                default: 5432
+                format: int32
+                maximum: 65535
+                minimum: 1
+                type: integer
+              provisioning:
+                description: |-
+                  PostgresProvisioningSpec controls who creates the otel_monitor role, the
+                  pg_stat_statements extension and the otel schema functions.
+
+                  A CR that omits this block, or gives mode: managed without a non-empty
+                  adminSecretRef, is rejected: it must either name an admin Secret or opt out
+                  with mode: manual. That rule is enforced via CEL rule on
+                  TsugaPostgresMonitoringSpec, since structural defaulting does not descend
+                  into an absent object.
+                properties:
+                  adminSecretRef:
+                    description: |-
+                      Secret in this namespace with `username` and `password` keys for a role
+                      able to create roles and extensions (superuser, rds_superuser,
+                      cloudsqlsuperuser, azure_pg_admin). Only the setup Job pod reads it. The Secret must
+                      carry the label observability.tsuga.com/postgres-admin=true, so creating
+                      this resource cannot hand another Secret in the namespace to spec.host.
+                    properties:
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  mode:
+                    default: managed
+                    description: |-
+                      managed runs a setup Job with the admin credentials; manual leaves the
+                      setup SQL to a DBA, who reads the generated monitor password Secret.
+                    enum:
+                    - managed
+                    - manual
+                    type: string
+                type: object
+              sslMode:
+                default: require
+                description: require encrypts without verifying the server certificate.
+                enum:
+                - disable
+                - require
+                type: string
+            required:
+            - host
+            type: object
+            x-kubernetes-validations:
+            - message: provisioning.adminSecretRef is required when provisioning.mode
+                is managed
+              rule: has(self.provisioning) && (self.provisioning.mode != 'managed'
+                || (has(self.provisioning.adminSecretRef) && size(self.provisioning.adminSecretRef.name)
+                > 0))
+          status:
+            description: CollectionStatus is the observed state shared by collection
+              CRDs.
+            properties:
+              conditions:
+                description: |-
+                  Conditions carries the standard Kubernetes condition set. Both
+                  collection controllers publish a single "Ready" condition whose reason
+                  names the reconcile stage that failed.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastSyncedAt:
+                format: date-time
+                type: string
+              managedResources:
+                description: Names of the OTel resources this CR currently owns.
+                items:
+                  type: string
+                type: array
+              message:
+                type: string
+              observedGeneration:
+                format: int64
+                type: integer
+              phase:
+                enum:
+                - Ready
+                - Pending
+                - Error
+                - Deleting
+                type: string
+            type: object
+        type: object
+        x-kubernetes-validations:
+        - message: metadata.name must be at most 43 characters
+          rule: size(self.metadata.name) <= 43
+    served: true
+    storage: true
+    subresources:
+      status: {}

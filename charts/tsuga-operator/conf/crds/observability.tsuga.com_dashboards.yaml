@@ -1,0 +1,175 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: dashboards.observability.tsuga.com
+spec:
+  group: observability.tsuga.com
+  names:
+    kind: Dashboard
+    listKind: DashboardList
+    plural: dashboards
+    shortNames:
+    - tdb
+    singular: dashboard
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.owner
+      name: Owner
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.id
+      name: TsugaID
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DashboardSpec is the desired state of a Tsuga dashboard.
+            properties:
+              filters:
+                description: Filters applied to every widget on the dashboard.
+                items:
+                  properties:
+                    key:
+                      minLength: 1
+                      type: string
+                    values:
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                  required:
+                  - key
+                  - values
+                  type: object
+                type: array
+              graphs:
+                description: Ordered widgets that compose the dashboard.
+                items:
+                  properties:
+                    description:
+                      type: string
+                    id:
+                      description: Unique widget id sent to Tsuga (required).
+                      minLength: 1
+                      type: string
+                    layout:
+                      properties:
+                        h:
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        w:
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        x:
+                          format: int32
+                          type: integer
+                        "y":
+                          format: int32
+                          type: integer
+                      required:
+                      - h
+                      - w
+                      - x
+                      - "y"
+                      type: object
+                    name:
+                      type: string
+                    visualization:
+                      description: |-
+                        Visualization is kept schemaless because the Tsuga API models this field as a discriminator-based union.
+                        The operator passes it through as opaque JSON; drift against the OpenAPI contract is gated by oasdiff in CI
+                        (see the openapi-drift-check make target) rather than encoding the full union in Go types.
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - id
+                  - visualization
+                  type: object
+                minItems: 1
+                type: array
+              name:
+                minLength: 1
+                type: string
+              owner:
+                description: Team ID that owns and manages the dashboard.
+                minLength: 1
+                type: string
+              tags:
+                description: Tags applied to the dashboard.
+                items:
+                  properties:
+                    key:
+                      maxLength: 128
+                      type: string
+                    value:
+                      maxLength: 256
+                      type: string
+                  required:
+                  - key
+                  - value
+                  type: object
+                type: array
+              timePreset:
+                description: 'Example: "last_1h"'
+                type: string
+            required:
+            - graphs
+            - name
+            - owner
+            type: object
+          status:
+            description: SyncStatus is the observed state of a resource synced to
+              the Tsuga API.
+            properties:
+              id:
+                description: Tsuga resource ID
+                type: string
+              lastSyncedAt:
+                description: Last successful sync time
+                format: date-time
+                type: string
+              message:
+                description: Last error or status message
+                type: string
+              observedGeneration:
+                description: Last generation successfully reconciled
+                format: int64
+                type: integer
+              phase:
+                description: 'Human-readable phase: Ready, Error, Deleting'
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

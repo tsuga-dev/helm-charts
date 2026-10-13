@@ -1,0 +1,34 @@
+---
+# Source: tsuga-operator/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: example-tsuga-operator-leader-election
+  namespace: default
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch

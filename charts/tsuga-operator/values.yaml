@@ -1,0 +1,91 @@
+---
+# -- Override chart name.
+nameOverride: ""
+# -- Override full chart release name.
+fullnameOverride: ""
+# -- Image pull secrets for the manager pod.
+imagePullSecrets: []
+# -- Number of manager replicas. Only the leader reconciles.
+replicaCount: 1
+
+crds:
+  # -- Install the observability.tsuga.com CRDs. They carry `helm.sh/resource-policy: keep`, so uninstalling the chart leaves them (and your CRs) in place.
+  create: true
+
+credentials:
+  # -- Create the credentials Secret from the values below. Set to false to reference a Secret you manage yourself (same name and keys).
+  create: true
+  # -- Secret name. The operator docs and examples use `tsuga-credentials`.
+  secretName: tsuga-credentials
+  # -- Tsuga operation key, stored under `api-token`. Required when `credentials.create` is true. Raw key, no `Bearer ` prefix.
+  apiToken: ""
+  # -- Optional OTLP ingestion key for collectors, stored under `api-key`. Reference it from `TsugaCollectorConfig.spec.export.tokenSecretRef`.
+  apiKey: ""
+  # -- Optional OTLP endpoint for collectors, stored under `otlp-endpoint`. Reference it from `TsugaCollectorConfig.spec.export.endpointSecretRef`.
+  otlpEndpoint: ""
+
+manager:
+  image:
+    # -- Operator image repository.
+    repository: ghcr.io/tsuga-dev/tsuga-operator
+    # -- Operator image tag. Defaults to the chart appVersion.
+    tag: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent
+
+  # -- Tsuga management API base URL. Must be https.
+  tsugaBaseUrl: https://api.tsuga.com # @schema pattern: ^https://
+
+  metrics:
+    # -- Expose the metrics endpoint (HTTPS with Kubernetes authn/authz) and its Service. Scrapers need the `<fullname>-metrics-reader` ClusterRole.
+    enabled: true
+
+  serviceAccount:
+    # -- Create the manager ServiceAccount.
+    create: true
+    # -- ServiceAccount name. Defaults to the full name. Required when `create` is false.
+    name: ""
+    # -- ServiceAccount annotations.
+    annotations: {}
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+  # -- Container security context.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  # -- Extra manager arguments.
+  extraArgs: []
+  # -- Extra environment variables.
+  extraEnvs: []
+  # -- Pod annotations.
+  podAnnotations: {}
+  # -- Pod labels.
+  podLabels: {}
+
+rbac:
+  # -- Create the manager's Roles, ClusterRoles and their bindings. Set to false only if you supply equivalent RBAC yourself.
+  create: true
+
+# -- Pod security context. The image already runs as 65532:65532, so no UID is pinned (OpenShift assigns its own).
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Priority class for the manager pod.
+priorityClassName: ""
+affinity: {}
+tolerations: []
+nodeSelector:
+  kubernetes.io/os: linux

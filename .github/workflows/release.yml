@@ -44,6 +44,15 @@ jobs:
           OUTPUT: charts/tsuga-spicy-gremlin/release-notes.md
           GITHUB_REPO: ${{ github.repository }}
 
+      - name: Generate release notes (tsuga-operator)
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
+        with:
+          config: charts/tsuga-operator/cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: charts/tsuga-operator/release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: Install Helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:

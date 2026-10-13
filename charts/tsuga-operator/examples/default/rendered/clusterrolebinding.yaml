@@ -1,0 +1,43 @@
+---
+# Source: tsuga-operator/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: example-tsuga-operator-manager
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: example-tsuga-operator-manager
+subjects:
+  - kind: ServiceAccount
+    name: example-tsuga-operator
+    namespace: default
+
+---
+# Source: tsuga-operator/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: example-tsuga-operator-metrics-auth
+  labels:
+    helm.sh/chart: tsuga-operator-0.1.0
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: example-tsuga-operator-metrics-auth
+subjects:
+  - kind: ServiceAccount
+    name: example-tsuga-operator
+    namespace: default

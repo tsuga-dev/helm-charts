@@ -1,0 +1,106 @@
+---
+suite: tsuga-operator
+templates:
+  - deployment.yaml
+  - secret.yaml
+  - service.yaml
+  - clusterrole.yaml
+  - crds.yaml
+set:
+  credentials.apiToken: test-token
+tests:
+  - it: fails without an API token when the chart creates the Secret
+    template: secret.yaml
+    set:
+      credentials.apiToken: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: credentials.apiToken is required when credentials.create is true
+
+  - it: stores optional collector keys in the same Secret
+    template: secret.yaml
+    set:
+      credentials.apiKey: ingest-key
+      credentials.otlpEndpoint: https://otlp.example
+    asserts:
+      - equal:
+          path: stringData
+          value:
+            api-token: test-token
+            api-key: ingest-key
+            otlp-endpoint: https://otlp.example
+
+  - it: references an existing Secret without creating one
+    set:
+      credentials.create: false
+      credentials.apiToken: ""
+      credentials.secretName: my-creds
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: secret.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef
+          value:
+            name: my-creds
+            key: api-token
+        template: deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: deployment.yaml
+
+  - it: rejects removed or misspelled values keys
+    template: deployment.yaml
+    set:
+      clusterRole.create: false
+    asserts:
+      - failedTemplate: {}
+
+  - it: defaults the image tag to appVersion
+    template: deployment.yaml
+    chart:
+      appVersion: 9.9.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/tsuga-dev/tsuga-operator:9.9.9
+
+  - it: drops metrics args, Service and metrics RBAC when metrics are off
+    set:
+      manager.metrics.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --metrics-bind-address=:8443
+        template: deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: service.yaml
+      - hasDocuments:
+          count: 1
+        template: clusterrole.yaml
+
+  - it: keeps CRDs on uninstall
+    template: crds.yaml
+    asserts:
+      - hasDocuments:
+          count: 6
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: skips CRDs when crds.create is false
+    template: crds.yaml
+    set:
+      crds.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: fails instead of falling back to the default ServiceAccount
+    template: deployment.yaml
+    set:
+      manager.serviceAccount.create: false
+    asserts:
+      - failedTemplate:
+          errorMessage: manager.serviceAccount.name is required when manager.serviceAccount.create is false

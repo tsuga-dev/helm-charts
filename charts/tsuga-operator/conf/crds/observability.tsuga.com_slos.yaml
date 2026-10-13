@@ -1,0 +1,185 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: slos.observability.tsuga.com
+spec:
+  group: observability.tsuga.com
+  names:
+    kind: SLO
+    listKind: SLOList
+    plural: slos
+    shortNames:
+    - tslo
+    singular: slo
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.owner
+      name: Owner
+      type: string
+    - jsonPath: .spec.target
+      name: Target
+      type: number
+    - jsonPath: .spec.timeframeDays
+      name: Timeframe
+      type: number
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.id
+      name: TsugaID
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SLOSpec is the desired state of a Tsuga SLO.
+            properties:
+              alerts:
+                description: |-
+                  Alerts to create on this SLO. Omit for none; the operator sends an empty array, which the Tsuga
+                  API requires the key to carry.
+                items:
+                  description: SLOAlert is an alert created on an SLO.
+                  properties:
+                    configuration:
+                      description: |-
+                        Configuration is kept schemaless because the Tsuga API models alert configuration as a
+                        discriminator-based union (burn-rate or threshold). The operator passes it through as opaque JSON;
+                        drift against the OpenAPI contract is gated by oasdiff in CI (see the openapi-drift-check make
+                        target) rather than encoding the union in Go types.
+                      x-kubernetes-preserve-unknown-fields: true
+                    priority:
+                      description: Alert priority; 1 is highest, 5 is lowest.
+                      format: int32
+                      maximum: 5
+                      minimum: 1
+                      type: integer
+                  required:
+                  - configuration
+                  - priority
+                  type: object
+                type: array
+              clusterIds:
+                description: Cluster IDs this SLO is evaluated on. Omit to evaluate
+                  on all clusters.
+                items:
+                  type: string
+                type: array
+              configuration:
+                description: |-
+                  Configuration is the SLI configuration. It is kept schemaless because the Tsuga API models it as a
+                  discriminator-based union (event or time). The operator passes it through as opaque JSON; drift
+                  against the OpenAPI contract is gated by oasdiff in CI (see the openapi-drift-check make target)
+                  rather than encoding the full union in Go types.
+                x-kubernetes-preserve-unknown-fields: true
+              description:
+                maxLength: 50000
+                type: string
+              name:
+                maxLength: 250
+                minLength: 1
+                type: string
+              owner:
+                description: Team ID that owns and manages the SLO.
+                maxLength: 250
+                minLength: 1
+                type: string
+              permissions:
+                description: This controls which data the resource can see.
+                enum:
+                - all
+                - owning-team-and-public
+                - owning-team-only
+                type: string
+              tags:
+                description: Tags applied to the SLO.
+                items:
+                  properties:
+                    key:
+                      maxLength: 128
+                      type: string
+                    value:
+                      maxLength: 256
+                      type: string
+                  required:
+                  - key
+                  - value
+                  type: object
+                maxItems: 50
+                type: array
+              target:
+                description: 'Target percentage the SLO must meet, exclusive of both
+                  bounds. Example: 99.9'
+                exclusiveMaximum: true
+                exclusiveMinimum: true
+                maximum: 100
+                minimum: 0
+                type: number
+              timeframeDays:
+                description: Rolling evaluation window in days.
+                enum:
+                - 7
+                - 30
+                - 90
+                format: int32
+                type: integer
+            required:
+            - configuration
+            - name
+            - owner
+            - permissions
+            - target
+            - timeframeDays
+            type: object
+          status:
+            description: SyncStatus is the observed state of a resource synced to
+              the Tsuga API.
+            properties:
+              id:
+                description: Tsuga resource ID
+                type: string
+              lastSyncedAt:
+                description: Last successful sync time
+                format: date-time
+                type: string
+              message:
+                description: Last error or status message
+                type: string
+              observedGeneration:
+                description: Last generation successfully reconciled
+                format: int64
+                type: integer
+              phase:
+                description: 'Human-readable phase: Ready, Error, Deleting'
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
