@@ -47,56 +47,47 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 
 ### OpenTelemetry Operator
 
-You can pre-install the OpenTelemetry Operator or install it with this chart.
+The chart needs the OpenTelemetry Operator. Install it with this chart or separately.
 
-**Option A: Pre-Install**
+**Option A: Install with this chart (recommended)** by setting `opentelemetry-operator.enabled=true` in your `values.yaml` file or on the command line, as in the install commands below.
+
+**Option B: Install separately**, or skip this if it is already in the cluster, and leave `opentelemetry-operator.enabled` false:
 ```bash
-kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.160.0/opentelemetry-operator.yaml
 ```
 
-**Option B: Install with this chart** by setting `opentelemetry-operator.enabled=true` in your `values.yaml` file or on the command line when installing:
-```bash
-helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
-  --set opentelemetry-operator.enabled=true
-```
+### Installation
 
-### Tsuga Secret
+`clusterName` is required. The collectors read the Tsuga credentials from a Kubernetes secret, so either let the chart create it or point it at an existing one. Without one, the pods stay in `CreateContainerConfigError`.
 
-It is recommended to create a secret for the Tsuga API key and use it in the `values.yaml` file or on the command line when installing:
-
-**Option A: Generate new secret (default)**
+**Option A: Let the chart create the secret**
 
 ```bash
-helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
   --set clusterName="<CLUSTER_NAME>" \
+  --set opentelemetry-operator.enabled=true \
+  --set secret.create=true \
   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
-**Option B: Use existing secret**
+**Option B: Use an existing secret**
 ```bash
-helm install my-otel-stack ./charts/opentelemetry-kube-stack \
+helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
   --set clusterName="<CLUSTER_NAME>" \
+  --set opentelemetry-operator.enabled=true \
   --set secret.create=false \
   --set secret.name="my-existing-secret" \
   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
   --set secret.keyMapping.TSUGA_OTLP_ENDPOINT="<OTLP_ENDPOINT_SECRET_KEY>"
 ```
 
-### Basic Installation
-
-To install the opentelemetry-kube-stack chart:
-
-```bash
-helm install my-opentelemetry-kube-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>"
-```
+Drop `--set opentelemetry-operator.enabled=true` if you installed the operator separately.
 
 To uninstall the chart:
 
 ```bash
-helm uninstall my-opentelemetry-kube-stack
+helm uninstall my-otel-stack
 ```
 
 You can check the [examples](https://github.com/tsuga-dev/helm-charts/tree/main/charts/opentelemetry-kube-stack/examples) folder for more details.
