@@ -229,3 +229,4 @@ spec:
         resource:
           k8s.cluster.name: test-cluster
           service.instance.id: ${POD_UID}
+          service.name: otel-collector-cluster-receiver

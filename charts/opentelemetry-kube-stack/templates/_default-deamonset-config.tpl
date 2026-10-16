@@ -279,5 +279,5 @@ service:
       receivers:
         - otlp
   telemetry:
-    {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
+    {{- include "opentelemetry-kube-stack.otelTelemetry" (dict "root" . "component" "agent") | nindent 4 }}
 {{- end}}

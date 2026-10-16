@@ -846,8 +846,9 @@ cluster:
   #
   # Object count drives memory more than node count does, so a cluster dense in
   # pods, jobs or events needs the next tier up. Watch this pod's
-  # container_memory_working_set_bytes and otelcol_processor_refused_* counters,
-  # and raise the limit until both settle.
+  # container_memory_working_set_bytes and
+  # otelcol_processor_memory_limiter_refused_* counters, and raise the limit
+  # until both settle.
   # -- Resource limits and requests for the cluster receiver. Replaces the top-level
   # resources block wholesale rather than merging, so a partial override drops
   # whatever it does not restate.
