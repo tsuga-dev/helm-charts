@@ -380,4 +380,8 @@ Queries run by the collector itself are excluded via the `/* otel-collector-igno
 | postgres.databases[0].sidecar-name | string | `"postgres-dbm-sidecar"` |  |
 | postgres.databases[0].user | string | `""` |  |
 | postgres.enabled | bool | `false` |  |
-| postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"` |  |
+| postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"` |  |
+| postgres.resources.limits.cpu | string | `"200m"` |  |
+| postgres.resources.limits.memory | string | `"256Mi"` |  |
+| postgres.resources.requests.cpu | string | `"50m"` |  |
+| postgres.resources.requests.memory | string | `"64Mi"` |  |

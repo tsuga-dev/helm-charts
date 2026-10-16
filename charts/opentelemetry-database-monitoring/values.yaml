@@ -1,7 +1,16 @@
 ---
 postgres:
   enabled: false
-  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib"
+  image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"
+  # The sidecar shares the Postgres pod, so bound it explicitly: memory_limiter
+  # percentages and the operator-set GOMEMLIMIT both derive from this limit.
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
   databases:
     - name: postgresql
       # Namespace where the annotated Postgres pod runs. Replicates the monitor secret there and
