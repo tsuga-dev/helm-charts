@@ -7,7 +7,7 @@ tests:
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -21,7 +21,7 @@ tests:
       targetAllocator.enabled: true
       serviceAccount.create: true
       serviceAccount.name: ""
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -43,7 +43,7 @@ tests:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
       serviceAccount.create: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -59,7 +59,7 @@ tests:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
       statefulset.replicas: 3
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -72,7 +72,7 @@ tests:
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
       tsuga.enabledForStatefulset: false
     release:
@@ -88,7 +88,7 @@ tests:
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -102,7 +102,7 @@ tests:
   - it: should fail to render when clusterName is not set
     set:
       targetAllocator.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"

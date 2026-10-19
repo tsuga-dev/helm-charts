@@ -26,14 +26,14 @@ kubectl create namespace "$NAMESPACE"
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
     --set clusterName="$RELEASE_NAME" \
-    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --wait --timeout=300s
 
 # Get rendered manifests
 helm template "$RELEASE_NAME" "$CHART_PATH" \
     --set clusterName="$RELEASE_NAME" \
-    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" > /tmp/otel-manifests.yaml
 
 echo "Running security scans..."

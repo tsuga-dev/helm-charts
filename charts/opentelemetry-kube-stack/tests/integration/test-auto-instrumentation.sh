@@ -111,7 +111,7 @@ install_chart() {
         --set autoInstrumentation.spec.java.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest" \
         --set autoInstrumentation.spec.nodejs.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest" \
         --set autoInstrumentation.spec.python.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest" \
-        --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+        --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
         --set tsuga.apiKey="<TSUGA_API_KEY>" \
         --wait \
         --timeout 5m
@@ -325,7 +325,7 @@ test_chart_upgrade() {
         --set autoInstrumentation.spec.propagators[0]=tracecontext \
         --set autoInstrumentation.spec.java.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest" \
         --set autoInstrumentation.labels.environment=test \
-        --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+        --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
         --set tsuga.apiKey="<TSUGA_API_KEY>" \
         --wait \
         --timeout 5m
@@ -359,7 +359,7 @@ test_disable_instrumentation() {
         --namespace "$TEST_NAMESPACE" \
         --set clusterName="$RELEASE_NAME" \
         --set autoInstrumentation.enabled=false \
-        --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+        --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
         --set tsuga.apiKey="<TSUGA_API_KEY>" \
         --wait \
         --timeout 5m

@@ -323,7 +323,7 @@ opentelemetry-operator:
 Or via command line:
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true
 ```
 
@@ -419,9 +419,9 @@ helm repo update
 
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -430,9 +430,9 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -441,9 +441,9 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 ```bash
 # Create a values file
 cat > my-values.yaml << EOF
-clusterName: "<CLUSTER_NAME>"
+clusterName: "<K8S_CLUSTER_NAME>"
 tsuga:
-  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
   apiKey: "<TSUGA_API_KEY>"
 secret:
   create: true
@@ -661,7 +661,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | tsuga.enabledForProfiling | bool | true | Enable the Tsuga OTLP exporter in the profiling collector's default config. Only read when profiling.enabled is true. |
 | tsuga.enabledForStatefulset | bool | true | Enable the Tsuga OTLP exporter in the StatefulSet collector's default config. |
 | tsuga.encoding | string | "json" | Payload encoding for the OTLP exporter. One of `json`, `proto`. |
-| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
+| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
 | validation.enabled | bool | true | Fail the render when a generated resource name would not meet Kubernetes requirements. |
 | validation.enforceNamingConventions | bool | true | Require generated names to be lowercase alphanumeric with hyphens. Only applies while validation.enabled is true. |
 | validation.maxNameLength | int | 63 | Maximum length for the release fullname. The fullname is already truncated to 63 characters before this check runs, so at the default of 63 the check never fires; lower it to enforce a tighter bound. Note the operator truncates the Deployment and Service names it derives to 63 as well, which is where two releases sharing a long prefix would collide. |
@@ -731,7 +731,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set clusterName="<CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
+helm template test . --set clusterName="<K8S_CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation

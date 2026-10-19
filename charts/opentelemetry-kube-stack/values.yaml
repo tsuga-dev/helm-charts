@@ -15,14 +15,14 @@
 #
 # Option 1: Let the chart create the secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set clusterName="<CLUSTER_NAME>" \
+#   --set clusterName="<K8S_CLUSTER_NAME>" \
 #   --set secret.create=true \
-#   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+#   --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
 #   --set tsuga.apiKey="<TSUGA_API_KEY>"
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set clusterName="<CLUSTER_NAME>" \
+#   --set clusterName="<K8S_CLUSTER_NAME>" \
 #   --set secret.create=false \
 #   --set secret.name="my-existing-secret" \
 #   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
@@ -65,7 +65,7 @@
 # visible during an incident, which is the worst time to discover it. Any
 # collector rendering the chart's default config fails the install when this is
 # empty.
-# Set via: --set clusterName="<CLUSTER_NAME>"
+# Set via: --set clusterName="<K8S_CLUSTER_NAME>"
 # -- REQUIRED. Name of the cluster, attached to all telemetry as
 # k8s.cluster.name. The install fails while this is empty and any collector is
 # rendering the chart's default config.
@@ -96,8 +96,8 @@ image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-col
 # SECURITY WARNING: Never commit sensitive credentials to version control
 # Provide these values via --set flags or external secrets management
 tsuga:
-  # Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
-  # -- Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`.
+  # Set via: --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
+  # -- Tsuga OTLP endpoint, e.g. `https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp`.
   # Give the base path with no signal suffix; the exporter appends `/v1/traces`,
   # `/v1/metrics` and `/v1/logs` itself.
   # @default -- ""
