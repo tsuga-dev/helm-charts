@@ -45,7 +45,7 @@ tests:
           path: rules
           content:
             apiGroups: ["monitoring.coreos.com"]
-            resources: ["servicemonitors", "podmonitors"]
+            resources: ["servicemonitors", "podmonitors", "probes", "scrapeconfigs"]
             verbs: ["get", "list", "watch"]
         documentIndex: 0
 
