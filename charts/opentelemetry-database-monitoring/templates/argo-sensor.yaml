@@ -37,7 +37,8 @@ spec:
           - path: body.metadata.annotations.{{ $annotationPath }}
             type: string
             value:
-              - {{ $sidecarInjectValue | quote }}
+              {{- /* Argo matches string filters as unanchored regexes, so "x" would also match "x-app". */}}
+              - {{ printf "^%s$" (regexQuoteMeta $sidecarInjectValue) | quote }}
   triggers:
     - template:
         name: create-{{ $db.name }}-monitoring-setup-job

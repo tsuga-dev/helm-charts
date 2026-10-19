@@ -25,7 +25,7 @@ spec:
           - path: body.metadata.annotations.sidecar\.opentelemetry\.io\/inject
             type: string
             value:
-              - "postgres-dbm-sidecar"
+              - "^postgres-dbm-sidecar$"
   triggers:
     - template:
         name: create-postgresql-monitoring-setup-job
