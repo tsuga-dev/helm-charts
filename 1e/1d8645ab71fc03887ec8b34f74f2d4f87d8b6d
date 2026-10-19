@@ -1,0 +1,75 @@
+README.md
+  s_f21899aa5cde80::t_273d015e49de2b 67,70,77
+charts/opentelemetry-kube-stack/Makefile
+  s_f21899aa5cde80::t_4926d8f4dfc20d 75,89,97
+charts/opentelemetry-kube-stack/README.md
+  s_f21899aa5cde80::t_c10c5ed8c56c83 326,422,424,433,435,444,446,664,734
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_f21899aa5cde80::t_88bc5478130ecd 316,413,415,424,426,435,437,531
+charts/opentelemetry-kube-stack/deploy.sh
+  s_f21899aa5cde80::t_4f95497bdc0d80 160
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/rendered/secret.yaml
+  s_f21899aa5cde80::t_f9e80a019e61c7 21
+charts/opentelemetry-kube-stack/examples/auto-instrumentation/values.yaml
+  s_f21899aa5cde80::t_0fb74a5651237c 5
+charts/opentelemetry-kube-stack/examples/create-secret/rendered/secret.yaml
+  s_f21899aa5cde80::t_e64faa861274e5 21
+charts/opentelemetry-kube-stack/examples/create-secret/values.yaml
+  s_f21899aa5cde80::t_8ea8dfe0adf949 4
+charts/opentelemetry-kube-stack/run-tests.sh
+  s_f21899aa5cde80::t_48975fb6be1bb4 133
+charts/opentelemetry-kube-stack/tests/AUTO_INSTRUMENTATION_TESTING.md
+  s_f21899aa5cde80::t_5471d1cfb6c858 88,106,110,232,240,248,253
+charts/opentelemetry-kube-stack/tests/AUTO_INSTRUMENTATION_TEST_SUMMARY.md
+  s_f21899aa5cde80::t_ff5c38c20c0bc2 87,180
+charts/opentelemetry-kube-stack/tests/README.md
+  s_f21899aa5cde80::t_cc23cb0bbb9e2e 84,156,182
+charts/opentelemetry-kube-stack/tests/cluster-receiver_test.yaml
+  s_f21899aa5cde80::t_28d985e8daed46 12,31,47,65,82,102,117,134
+charts/opentelemetry-kube-stack/tests/daemonset_test.yaml
+  s_f21899aa5cde80::t_c7c5fbfce3c17d 13,42,58,121,178
+charts/opentelemetry-kube-stack/tests/instrumentation_test.yaml
+  s_f21899aa5cde80::t_862171b6a60357 10,22,50,64,80,99,126,170,197,216,238,265
+charts/opentelemetry-kube-stack/tests/integration/test-auto-instrumentation.sh
+  s_f21899aa5cde80::t_9ee55c1d19a59c 114,328,362
+charts/opentelemetry-kube-stack/tests/integration/test-deployment.sh
+  s_f21899aa5cde80::t_50c3dd7feb0008 30,48,65
+charts/opentelemetry-kube-stack/tests/profiling_test.yaml
+  s_f21899aa5cde80::t_4b0628e3bd82f9 9,21,59,88,102,128,144,166,179,205,234,257,273,287,304,316
+charts/opentelemetry-kube-stack/tests/rbac_test.yaml
+  s_f21899aa5cde80::t_f4b00fe87e290e 22,39,56,73,88
+charts/opentelemetry-kube-stack/tests/secret_test.yaml
+  s_f21899aa5cde80::t_4539c19d2ebe20 11,23
+charts/opentelemetry-kube-stack/tests/security/security-scan.sh
+  s_f21899aa5cde80::t_0630306b376cec 29,36
+charts/opentelemetry-kube-stack/tests/statefulset_test.yaml
+  s_f21899aa5cde80::t_3ecfdb28fd08a4 10,24,46,62,75,91,105
+charts/opentelemetry-kube-stack/tests/target-allocator_test.yaml
+  s_f21899aa5cde80::t_a99aab67033f22 10,25,44,63,78,94
+charts/opentelemetry-kube-stack/tests/values/agent-only.yaml
+  s_f21899aa5cde80::t_c68c50ff3bdbd2 5
+charts/opentelemetry-kube-stack/tests/values/cluster-only.yaml
+  s_f21899aa5cde80::t_bb2f7be43cb01d 5
+charts/opentelemetry-kube-stack/tests/values/minimal.yaml
+  s_f21899aa5cde80::t_617c8198a82ef4 5
+charts/opentelemetry-kube-stack/tests/values/production.yaml
+  s_f21899aa5cde80::t_460124bdb9bed8 5
+charts/opentelemetry-kube-stack/values.yaml
+  s_f21899aa5cde80::t_362296f51f158f 18,20,25,68,99-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1e1d8645ab71fc03887ec8b34f74f2d4f87d8b6d",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
