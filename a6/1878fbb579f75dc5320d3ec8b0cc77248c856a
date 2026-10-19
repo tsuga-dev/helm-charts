@@ -1,0 +1,65 @@
+charts/opentelemetry-database-monitoring/Chart.yaml
+  s_f21899aa5cde80::t_30fb1d5f94e2f8 19
+charts/opentelemetry-database-monitoring/README.md
+  s_f21899aa5cde80::t_b9dbc2de8a0559 3,139
+charts/opentelemetry-database-monitoring/README.md.gotmpl
+  s_f21899aa5cde80::t_4bd3d55edee8ca 143
+charts/opentelemetry-database-monitoring/assets/pg-monitoring-setup.sql
+  s_f21899aa5cde80::t_9142cf340d931b 2-3
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-eventbus.yaml
+  s_f21899aa5cde80::t_4afebbf9cd66bc 8
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-events-rbac.yaml
+  s_f21899aa5cde80::t_9781722e0c4304 8,21,35,52,70,91
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-eventsource.yaml
+  s_f21899aa5cde80::t_dadcadab52fc9f 8
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-sensor.yaml
+  s_f21899aa5cde80::t_28b8165ec5f16c 8,42,95,129
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/configmap-pg-monitoring.yaml
+  s_f21899aa5cde80::t_51037f9262fe7a 10-11
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/postgres-dbm-sidecar.yaml
+  s_f21899aa5cde80::t_b4ef5e7e2d6556 11,466
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/secret-pg-monitoring.yaml
+  s_f21899aa5cde80::t_0dae880bb2b17f 9,27
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-eventbus.yaml
+  s_f21899aa5cde80::t_08460eb5474059 8
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-events-rbac.yaml
+  s_f21899aa5cde80::t_9a83790334a815 8,21,35,52,70,91
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-eventsource.yaml
+  s_f21899aa5cde80::t_2da816627ce95b 8
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-sensor.yaml
+  s_f21899aa5cde80::t_456f082d3c8764 8,42
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/configmap-pg-monitoring.yaml
+  s_f21899aa5cde80::t_42b3369bce21e0 10-11
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/postgres-dbm-sidecar.yaml
+  s_f21899aa5cde80::t_aa8ac486e31cdb 11
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/secret-pg-monitoring.yaml
+  s_f21899aa5cde80::t_a70f93c9f4af1a 9
+charts/opentelemetry-database-monitoring/templates/NOTES.txt
+  s_f21899aa5cde80::t_e3ef4113f69840 5
+charts/opentelemetry-database-monitoring/templates/_helpers.tpl
+  s_f21899aa5cde80::t_3fc3b397569e80 97-103
+charts/opentelemetry-database-monitoring/templates/_job.tpl
+  s_f21899aa5cde80::t_a0a5930115055b 15,47-49,52
+charts/opentelemetry-database-monitoring/templates/argo-eventsource.yaml
+  s_f21899aa5cde80::t_d3c636525a8bd5 2
+charts/opentelemetry-database-monitoring/templates/argo-sensor.yaml
+  s_f21899aa5cde80::t_509cde3a4e5cd3 3,11-15,20
+charts/opentelemetry-database-monitoring/templates/job-pg-monitoring-setup.yaml
+  s_f21899aa5cde80::t_12c9506d07c39c 6,38-40,43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a61878fbb579f75dc5320d3ec8b0cc77248c856a",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
