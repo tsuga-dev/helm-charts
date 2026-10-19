@@ -1,0 +1,38 @@
+charts/opentelemetry-kube-stack/templates/_default-statefulset-config.tpl
+  s_f21899aa5cde80::t_fda4bb63b79563 11-17
+  s_f21899aa5cde80::t_55b3c65def0e91 18-19,25
+charts/opentelemetry-kube-stack/templates/rbac.yaml
+  s_f21899aa5cde80::t_716a72cbb65101 92-130
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_f21899aa5cde80::t_81e6e776359e3b 8-14
+charts/opentelemetry-kube-stack/Chart.yaml
+  s_f21899aa5cde80::t_21d62400fc6e36 21
+charts/opentelemetry-kube-stack/README.md
+  s_f21899aa5cde80::t_a6873004dd9ba8 3,155,612
+charts/opentelemetry-kube-stack/README.md.gotmpl
+  s_f21899aa5cde80::t_d89b35fafbb33c 145
+charts/opentelemetry-kube-stack/docs/collector-internal-metrics.md
+  s_f21899aa5cde80::t_f175ca992d05eb 38-43
+charts/opentelemetry-kube-stack/tests/rbac_test.yaml
+  s_f21899aa5cde80::t_4f577ba58104d9 100-147
+charts/opentelemetry-kube-stack/tests/statefulset_test.yaml
+  s_f21899aa5cde80::t_f2deaaf897c62c 154-167
+charts/opentelemetry-kube-stack/values.yaml
+  s_f21899aa5cde80::t_d176d8af9673c0 1467-1468
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bab424bfc0c4e35ec64c4acac6c8a2d1bbaabff5",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
