@@ -1350,13 +1350,16 @@ batch:
 # cloud.account.id, host.id) so telemetry can be traced back to a specific
 # account, region and instance.
 #
-# Off by default: a detector that fails stops the collector from starting, and
-# no feature gate suppresses that at this chart's collector floor.
+# Off by default: a detector that returns an error stops the collector from
+# starting, and no feature gate suppresses that at this chart's collector floor.
+# Running outside its platform is not an error: the detector adds nothing.
 resourceDetection:
   # -- Add cloud and host attributes such as cloud.provider, cloud.region,
   # cloud.account.id and host.id, via the resource_detection processor. Off by
-  # default because a detector that fails stops the collector from starting, so
-  # match the detectors below to where you actually run.
+  # default because a detector that returns an error stops the collector from
+  # starting. Outside its platform a detector adds nothing, but aks and azure
+  # delay startup by up to `timeout`, so match the detectors below to where you
+  # actually run.
   # @default -- false
   enabled: false
   # Set the detectors that match where you actually run:
@@ -1388,8 +1391,9 @@ resourceDetection:
   # -- Detectors to run, in order. The first detector to supply an attribute wins;
   # attributes already on the telemetry are never replaced. Use [env, eks, ec2] on
   # EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep
-  # ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty
-  # list, stops the collector from starting.
+  # ec2 after eks so cloud.platform stays aws_eks. Outside its platform a detector
+  # adds nothing. A misspelled name, an empty list, or a detector that returns an
+  # error stops the collector from starting.
   # @default -- ["env"]
   detectors:
     - env
