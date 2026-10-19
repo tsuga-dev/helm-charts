@@ -35,11 +35,12 @@ defining `endpoint` as "including the signal specific path". Making them consist
 self-telemetry.
 
 **Nothing is served on `:8888`.** Supplying a reader replaces the collector's default Prometheus one
-rather than adding to it. This is also why the statefulset collector logs `Failed to scrape
-Prometheus endpoint` for its placeholder scrape config, which targets `localhost:8888` until the
-Target Allocator replaces it with real targets. Adding a pull reader back through
-`<collector>.config.service.extraTelemetry` does not work — that merge is destination-wins and
-`metrics` already exists — so it means editing the default config instead.
+rather than adding to it. So the statefulset collector's `localhost:8888` self-scrape job is dropped
+when Tsuga is enabled and `prometheusCR` supplies the Target Allocator's jobs. Without `prometheusCR`
+it stays and logs `Failed to scrape Prometheus endpoint`: the allocator refuses to start with no
+scrape config. Adding a pull reader back through `<collector>.config.service.extraTelemetry` does
+not work — that merge is destination-wins and `metrics` already exists — so it means editing the
+default config instead.
 
 **Self-telemetry bypasses the pipelines deliberately.** `service::telemetry` configures the
 collector's embedded SDK, which sits outside the pipeline graph. That is the point: these metrics

@@ -97,3 +97,51 @@ tests:
             apiGroups: ["discovery.k8s.io"]
             resources: ["endpointslices"]
             verbs: ["get", "list", "watch"]
+
+  - it: should not grant secrets access without prometheusCR
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should grant the Target Allocator secrets access in its namespace when prometheusCR enabled
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+    release:
+      name: "test-release"
+      namespace: "monitoring"
+    asserts:
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: Role
+        documentIndex: 2
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+        documentIndex: 2
+      - equal:
+          path: rules
+          value:
+            - apiGroups: [""]
+              resources: ["secrets"]
+              verbs: ["get", "list", "watch"]
+        documentIndex: 2
+      - equal:
+          path: roleRef.name
+          value: test-release-opentelemetry-kube-stack-ta-secrets
+        documentIndex: 3
+      - notContains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["secrets"]
+        documentIndex: 0

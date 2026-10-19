@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.14.0](https://img.shields.io/badge/Version-0.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.14.1](https://img.shields.io/badge/Version-0.14.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -152,7 +152,7 @@ Components in [brackets] are conditional, as above.
 
 Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Prometheus scraping, where the Target Allocator shards scrape jobs across collector replicas so no two replicas scrape the same target.
 
-- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. The static config in the chart is a placeholder the allocator replaces.
+- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. With Tsuga enabled, self-metrics are pushed and nothing serves `:8888`, so the chart's `localhost:8888` self-scrape job is dropped once `targetAllocator.spec.prometheusCR.enabled` supplies the jobs. Without prometheusCR it stays, failing, because the allocator will not start with no scrape config.
 - **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
@@ -609,7 +609,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | resourceDetection.timeout | string | "15s" | Deadline for the whole detection pass, and the HTTP client timeout the detectors use. Not per detector. |
 | resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits. |
 | resources.limits.cpu | string | "500m" | CPU limit. |
-| resources.limits.memory | string | "512Mi" | Memory limit. Also what memory_limiter is scaled from: it starts refusing data at 80% of this. With no limit set it reads the node's total memory instead, so the pod is OOMKilled before it ever sheds load. |
+| resources.limits.memory | string | "512Mi" | Memory limit. Also what memory_limiter is scaled from: it starts refusing data at 55% of this (80% limit minus 25% spike), and forces garbage collection at 80%. With no limit set it reads the node's total memory instead, so the pod is OOMKilled before it ever sheds load. |
 | resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Resource requests. |
 | resources.requests.cpu | string | "100m" | CPU request. |
 | resources.requests.memory | string | "128Mi" | Memory request. |

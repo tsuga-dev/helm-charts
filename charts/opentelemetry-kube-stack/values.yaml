@@ -1464,7 +1464,8 @@ resources:
     # @default -- "500m"
     cpu: 500m
     # -- Memory limit. Also what memory_limiter is scaled from: it starts refusing
-    # data at 80% of this. With no limit set it reads the node's total memory
+    # data at 55% of this (80% limit minus 25% spike), and forces garbage
+    # collection at 80%. With no limit set it reads the node's total memory
     # instead, so the pod is OOMKilled before it ever sheds load.
     # @default -- "512Mi"
     memory: 512Mi

@@ -8,15 +8,21 @@ extensions:
 receivers:
   prometheus:
     config:
+      # No target_allocator block here: the operator writes it from the
+      # opentelemetry.io/target-allocator label.
+{{- if and (include "opentelemetry-kube-stack.tsugaEnabled" .) .Values.targetAllocator.spec.prometheusCR.enabled }}
+      # The Tsuga telemetry reader replaces the collector's default one, so
+      # nothing serves :8888 to self-scrape. Self-metrics are pushed instead.
+      scrape_configs: []
+{{- else }}
+      # Without prometheusCR the Target Allocator refuses to start with no
+      # scrape config, so this job stays even when nothing serves :8888.
       scrape_configs:
-        # This placeholder config is required but the Target Allocator
-        # will override it with dynamically discovered targets. No
-        # target_allocator block here: the operator writes it from the
-        # opentelemetry.io/target-allocator label.
         - job_name: 'otel-collector'
           scrape_interval: {{ .Values.statefulset.scrapeInterval | default "30s" }}
           static_configs:
             - targets: ['localhost:8888']
+{{- end }}
 
 processors:
   memory_limiter:

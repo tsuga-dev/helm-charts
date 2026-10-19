@@ -151,6 +151,20 @@ tests:
           path: spec.config.receivers.prometheus.config.scrape_configs[0].scrape_interval
           value: 60s
 
+  # The Tsuga telemetry reader replaces the one that serves :8888, and without
+  # prometheusCR the Target Allocator needs this job to start.
+  - it: should not self-scrape localhost:8888 when Tsuga telemetry and prometheusCR are enabled
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.prometheus.config.scrape_configs
+          value: []
+
   # The operator writes it from the label, overwriting whatever the chart sets.
   - it: should not set a target_allocator block on the prometheus receiver
     set:

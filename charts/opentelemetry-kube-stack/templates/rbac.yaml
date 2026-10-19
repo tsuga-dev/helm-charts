@@ -89,4 +89,43 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "opentelemetry-kube-stack.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+{{- if and .Values.targetAllocator.enabled .Values.targetAllocator.spec.prometheusCR.enabled }}
+---
+# With prometheusCR on, the Target Allocator always watches secrets in its own
+# namespace, for ServiceMonitor/PodMonitor auth and TLS references. A Role, not
+# the ClusterRole, so collectors cannot read secrets cluster-wide.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-ta-secrets
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "rbac" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-ta-secrets
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opentelemetry-kube-stack.componentLabels" (dict "component" "rbac" "Values" .Values "Release" .Release "Chart" .Chart) | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name | quote }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "opentelemetry-kube-stack.fullname" . }}-ta-secrets
+subjects:
+- kind: ServiceAccount
+  name: {{ include "opentelemetry-kube-stack.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

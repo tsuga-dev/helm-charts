@@ -142,7 +142,7 @@ Components in [brackets] are conditional, as above.
 
 Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Prometheus scraping, where the Target Allocator shards scrape jobs across collector replicas so no two replicas scrape the same target.
 
-- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. The static config in the chart is a placeholder the allocator replaces.
+- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. With Tsuga enabled, self-metrics are pushed and nothing serves `:8888`, so the chart's `localhost:8888` self-scrape job is dropped once `targetAllocator.spec.prometheusCR.enabled` supplies the jobs. Without prometheusCR it stays, failing, because the allocator will not start with no scrape config.
 - **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
