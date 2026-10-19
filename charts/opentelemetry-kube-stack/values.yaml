@@ -896,7 +896,9 @@ targetAllocator:
     # Both are added automatically with `rbac.create`.
     # Other TargetAllocator prometheusCR fields pass through, e.g.
     # `scrapeInterval` (operator default `30s`) for ServiceMonitors and PodMonitors
-    # that set no interval.
+    # that set no interval, and `probeSelector` / `scrapeConfigSelector` to discover
+    # Probe and ScrapeConfig resources. Those two are unset by default, so no Probe
+    # or ScrapeConfig is discovered; `{}` matches all of them.
     prometheusCR:
       # -- Enable ServiceMonitor/PodMonitor discovery.
       # @default -- false
