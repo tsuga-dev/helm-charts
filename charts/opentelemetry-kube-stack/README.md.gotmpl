@@ -146,8 +146,8 @@ Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Pr
 - **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
-- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
-- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets the per-target scrape interval. The allocator poll interval is written by the operator and is not configurable from the chart.
+- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator. The Target Allocator also reads secrets referenced by those monitors, in `targetAllocator.spec.prometheusCR.secretNamespaces` or by default the release namespace; `rbac.create` adds a Role and RoleBinding granting get/list/watch on secrets in each of them.
+- **Scrape interval**: a `ServiceMonitor` or `PodMonitor` sets its own interval; one that does not uses `targetAllocator.spec.prometheusCR.scrapeInterval` (operator default `30s`). `statefulset.scrapeInterval` only sets the chart's `otel-collector` self-scrape job. The allocator poll interval is written by the operator and is not configurable from the chart.
 
 ### Profiling collector (optional, privileged DaemonSet)
 

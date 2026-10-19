@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The statefulset collector no longer logs `Failed to scrape Prometheus endpoint ... localhost:8888: connection refused` every scrape interval. The Tsuga telemetry reader replaces the collector's default one, so nothing served `:8888`. With Tsuga and `targetAllocator.spec.prometheusCR.enabled`, the `otel-collector` self-scrape job is no longer rendered; self-metrics are pushed as before. Without prometheusCR the job stays, because the Target Allocator refuses to start with no scrape config
-- With `targetAllocator.spec.prometheusCR.enabled`, the Target Allocator no longer logs `secrets is forbidden`. It always watches secrets in its own namespace for ServiceMonitor/PodMonitor auth and TLS references, so the chart adds a Role and RoleBinding granting get/list/watch on secrets in the release namespace only
+- With `targetAllocator.spec.prometheusCR.enabled`, the Target Allocator no longer logs `secrets is forbidden`. It watches secrets for ServiceMonitor/PodMonitor auth and TLS references in `targetAllocator.spec.prometheusCR.secretNamespaces`, by default its own namespace, so the chart adds a Role and RoleBinding granting get/list/watch on secrets in each of those namespaces only. They bind the Target Allocator's service account, `targetAllocator.spec.serviceAccount` when set, which the ClusterRoleBinding now also includes
 - The `resources.limits.memory` description: memory_limiter starts refusing data at 55% of the limit (80% limit minus 25% spike), not 80%. 80% is where it also forces garbage collection
 
 ## [opentelemetry-kube-stack-0.14.0] - 2026-10-13

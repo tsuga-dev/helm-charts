@@ -890,7 +890,13 @@ targetAllocator:
     allocationStrategy: consistent-hashing
     # -- PrometheusCR configuration.
     # When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs.
-    # Requires monitoring.coreos.com RBAC rules (added automatically when enabled).
+    # Requires monitoring.coreos.com RBAC rules, and get/list/watch on secrets in
+    # `secretNamespaces` (by default the release namespace), which the
+    # Target Allocator reads for ServiceMonitor/PodMonitor auth and TLS references.
+    # Both are added automatically with `rbac.create`.
+    # Other TargetAllocator prometheusCR fields pass through, e.g.
+    # `scrapeInterval` (operator default `30s`) for ServiceMonitors and PodMonitors
+    # that set no interval.
     prometheusCR:
       # -- Enable ServiceMonitor/PodMonitor discovery.
       # @default -- false
@@ -928,9 +934,11 @@ statefulset:
   # Set to "" to omit the extension, and the liveness probe with it.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- How often to scrape Prometheus targets, e.g. `60s`. Does not affect how
-  # often the collector refreshes its target list from the Target Allocator:
-  # the operator writes that interval itself and pins it to 30s.
+  # -- Interval of the chart's `otel-collector` self-scrape job. Not rendered
+  # when Tsuga and prometheusCR are both enabled. ServiceMonitor and PodMonitor
+  # intervals come from the CR or `targetAllocator.spec.prometheusCR.scrapeInterval`.
+  # Does not affect how often the collector refreshes its target list from the
+  # Target Allocator: the operator writes that interval itself and pins it to 30s.
   # @default -- "30s"
   scrapeInterval: 30s
   # -- Replace default config with complete custom configuration.
@@ -1548,7 +1556,11 @@ serviceAccount:
 rbac:
   # -- Create the ClusterRole and ClusterRoleBinding the collectors need to read
   # Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and
-  # k8s_attributes are all denied by the API server.
+  # k8s_attributes are all denied by the API server. With
+  # `targetAllocator.spec.prometheusCR.enabled`, also creates a Role and
+  # RoleBinding per secret namespace for the Target Allocator. With
+  # `rbac.create=false`, grant get/list/watch on secrets in those namespaces
+  # yourself.
   # @default -- true
   create: true
 

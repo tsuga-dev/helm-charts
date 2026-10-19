@@ -165,6 +165,21 @@ tests:
           path: spec.config.receivers.prometheus.config.scrape_configs
           value: []
 
+  - it: should keep the otel-collector self-scrape job when Tsuga is off and prometheusCR is enabled
+    set:
+      clusterName: "test-cluster"
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+      tsuga.enabledForClusterReceiver: false
+      tsuga.enabledForDaemonset: false
+      tsuga.enabledForStatefulset: false
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.prometheus.config.scrape_configs[0].job_name
+          value: otel-collector
+
   # The operator writes it from the label, overwriting whatever the chart sets.
   - it: should not set a target_allocator block on the prometheus receiver
     set:
