@@ -1,0 +1,23 @@
+charts/opentelemetry-database-monitoring/templates/argo-sensor.yaml
+  s_f21899aa5cde80::t_01b5e78008519f 40-41
+charts/opentelemetry-database-monitoring/examples/pg-multiple-db/rendered/argo-sensor.yaml
+  s_f21899aa5cde80::t_87d10934d58baa 28,115
+charts/opentelemetry-database-monitoring/examples/pg-single-db/rendered/argo-sensor.yaml
+  s_f21899aa5cde80::t_559b929da6bc53 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b8a770fc2eeba052833f2c0ee4eb679691bd567b",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
