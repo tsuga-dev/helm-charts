@@ -1,0 +1,21 @@
+charts/opentelemetry-database-monitoring/README.md
+  s_f21899aa5cde80::t_4f763cdea39b39 38,140-141,252,320-323,338
+charts/opentelemetry-database-monitoring/README.md.gotmpl
+  s_f21899aa5cde80::t_07f61fa0bfdab4 42,144-145,256,324-327,342
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "124306e5758854bff92aa53919e461ebb2f8abc7",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
