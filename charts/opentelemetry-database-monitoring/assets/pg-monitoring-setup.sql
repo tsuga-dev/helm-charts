@@ -1,5 +1,6 @@
 -- PostgreSQL monitoring setup for OpenTelemetry
--- Run this as a superuser (or a role with CREATEROLE and CREATEDB).
+-- Run this as a superuser (or the cloud provider's admin role, e.g. rds_superuser,
+-- cloudsqlsuperuser or azure_pg_admin).
 -- Safe to re-run (all statements are idempotent).
 
 -- ---------------------------------------------------------------------------

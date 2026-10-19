@@ -1,6 +1,6 @@
 # opentelemetry-database-monitoring
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
 
 A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL using a sidecar collector pattern. It installs stored functions on the target database, creates a dedicated monitoring user, and runs an `OpenTelemetryCollector` sidecar that emits metrics via OTLP.
 
@@ -136,7 +136,7 @@ Argo Events CRDs are bundled under `crds/` and installed before other chart reso
 - Kubernetes 1.21+
 - [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator) installed in the cluster (provides the `OpenTelemetryCollector` CRD and injects sidecars)
 - PostgreSQL 10+ (for `pg_stat_progress_vacuum`)
-- A superuser (or a role with `CREATEROLE` and `CREATEDB`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
+- A superuser (or the cloud provider's admin role, e.g. `rds_superuser`, `cloudsqlsuperuser` or `azure_pg_admin`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
 - An `otel` database must exist on each target PostgreSQL instance before install (the Job connects to it: `psql … -d otel`)
 - When using Argo Events (`argoEvents.enabled=true`): Argo Events CRDs must be available (installed from this chart's `crds/` directory on first install)
 

@@ -94,6 +94,13 @@ functions. Defaults to "otel" so existing installs are unaffected.
 {{- .database | default "otel" -}}
 {{- end }}
 
+{{/*
+Postgres port. Defaults here because a databases list override drops the values.yaml default.
+*/}}
+{{- define "opentelemetry-database-monitoring.databasePort" -}}
+{{- .port | default 5432 -}}
+{{- end }}
+
 {{- define "opentelemetry-database-monitoring.databaseHost" -}}
 {{- $root := .root -}}
 {{- $db := .db -}}
