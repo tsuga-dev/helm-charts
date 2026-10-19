@@ -1,0 +1,23 @@
+charts/opentelemetry-kube-stack/CHANGELOG.md
+  s_f21899aa5cde80::t_c983bc39c62959 13
+charts/opentelemetry-kube-stack/templates/rbac.yaml
+  s_f21899aa5cde80::t_e7528b587d9937 73
+charts/opentelemetry-kube-stack/tests/rbac_test.yaml
+  s_f21899aa5cde80::t_362218731f7a42 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "25f6f484a516e504c0745eed30aaad98462ab6c1",
+  "prompts": {},
+  "sessions": {
+    "s_f21899aa5cde80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04021fda-cf84-46bb-9927-02d22ee92ce7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
