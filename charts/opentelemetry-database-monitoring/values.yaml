@@ -11,6 +11,12 @@ postgres:
     requests:
       cpu: 50m
       memory: 64Mi
+  # Where the sidecar sends its own metrics. Defaults to the node agent's OTLP/gRPC
+  # receiver, like the database metrics. The scheme picks TLS: http:// is plaintext.
+  # With http/protobuf, include the path, e.g. http://$(K8S_NODE_IP):4318/v1/metrics.
+  selfTelemetry:
+    protocol: grpc
+    endpoint: "http://$(K8S_NODE_IP):4317"
   databases:
     - name: postgresql
       # Namespace where the annotated Postgres pod runs. Replicates the monitor secret there and
