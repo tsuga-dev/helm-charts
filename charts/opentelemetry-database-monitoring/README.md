@@ -385,3 +385,5 @@ Queries run by the collector itself are excluded via the `/* otel-collector-igno
 | postgres.resources.limits.memory | string | `"256Mi"` |  |
 | postgres.resources.requests.cpu | string | `"50m"` |  |
 | postgres.resources.requests.memory | string | `"64Mi"` |  |
+| postgres.selfTelemetry.endpoint | string | `"http://$(K8S_NODE_IP):4317"` |  |
+| postgres.selfTelemetry.protocol | string | `"grpc"` |  |
