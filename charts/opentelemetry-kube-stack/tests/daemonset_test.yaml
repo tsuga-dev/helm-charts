@@ -568,10 +568,11 @@ tests:
       # Deliberately the legacy form. The collector prefers a resource.attributes
       # array, but the operator types resource as map[string]*string, so the array
       # form fails to unmarshal and the whole telemetry block gets replaced with
-      # an empty map — losing both attributes instead of just the format.
+      # an empty map — losing every attribute instead of just the format.
       - equal:
           path: spec.config.service.telemetry.resource
           value:
+            service.name: otel-collector-agent
             k8s.cluster.name: test-cluster
             service.instance.id: ${POD_UID}
 

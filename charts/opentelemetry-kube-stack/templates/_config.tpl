@@ -174,12 +174,17 @@ expects it already present. Harmonising them breaks self-telemetry.
 An inline map, not the resource.attributes array the collector prefers. The
 operator types resource as map[string]*string, so the array form fails to
 unmarshal and it replaces the whole telemetry block with an empty map, dropping
-both attributes. Migrate this with the operator bump, not before.
+every attribute. Migrate this with the operator bump, not before.
+
+service.name is per component: left unset, every collector reports as
+otelcol-contrib and the agent, cluster receiver, statefulset and profiling
+collectors cannot be told apart in their own metrics.
 */}}
 resource:
-  k8s.cluster.name: {{ include "opentelemetry-kube-stack.clusterName" . }}
+  service.name: otel-collector-{{ .component }}
+  k8s.cluster.name: {{ include "opentelemetry-kube-stack.clusterName" .root }}
   service.instance.id: ${POD_UID}
-{{- if include "opentelemetry-kube-stack.tsugaEnabled" . }}
+{{- if include "opentelemetry-kube-stack.tsugaEnabled" .root }}
 metrics:
     readers:
     - periodic:

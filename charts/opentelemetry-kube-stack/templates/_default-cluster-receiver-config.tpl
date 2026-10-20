@@ -198,5 +198,5 @@ service:
         - otlp_http/tsuga
         {{- end }}
   telemetry:
-    {{- include "opentelemetry-kube-stack.otelTelemetry" . | nindent 4 }}
+    {{- include "opentelemetry-kube-stack.otelTelemetry" (dict "root" . "component" "cluster-receiver") | nindent 4 }}
 {{- end}}

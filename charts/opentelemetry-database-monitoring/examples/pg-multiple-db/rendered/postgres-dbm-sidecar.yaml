@@ -16,7 +16,14 @@ metadata:
     opentelemetry-database-monitoring/database: postgresql
 spec:
   mode: sidecar
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
   env:
     - name: K8S_NODE_IP
       valueFrom:
@@ -426,6 +433,10 @@ spec:
                 value_type: int
             sql: SELECT * FROM otel.pg_top_queries()
     processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
       batch:
         send_batch_max_size: 5000
         send_batch_size: 5000
@@ -436,11 +447,24 @@ spec:
         tls:
           insecure: true
     service:
+      # Self-metrics go to the node agent like the database metrics, so the sidecar
+      # needs no Tsuga credentials.
+      telemetry:
+        resource:
+          service.name: otel-collector-postgres-sidecar
+        metrics:
+          readers:
+            - periodic:
+                exporter:
+                  otlp:
+                    protocol: http/protobuf
+                    endpoint: http://${env:K8S_NODE_IP}:4318/v1/metrics
       pipelines:
         metrics:
           exporters:
             - otlp
           processors:
+            - memory_limiter
             - batch
           receivers:
             - postgresql
@@ -471,7 +495,14 @@ metadata:
     opentelemetry-database-monitoring/database: postgresql2
 spec:
   mode: sidecar
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
   env:
     - name: K8S_NODE_IP
       valueFrom:
@@ -881,6 +912,10 @@ spec:
                 value_type: int
             sql: SELECT * FROM otel.pg_top_queries()
     processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
       batch:
         send_batch_max_size: 5000
         send_batch_size: 5000
@@ -891,11 +926,24 @@ spec:
         tls:
           insecure: true
     service:
+      # Self-metrics go to the node agent like the database metrics, so the sidecar
+      # needs no Tsuga credentials.
+      telemetry:
+        resource:
+          service.name: otel-collector-postgres-sidecar
+        metrics:
+          readers:
+            - periodic:
+                exporter:
+                  otlp:
+                    protocol: http/protobuf
+                    endpoint: http://${env:K8S_NODE_IP}:4318/v1/metrics
       pipelines:
         metrics:
           exporters:
             - otlp
           processors:
+            - memory_limiter
             - batch
           receivers:
             - postgresql
