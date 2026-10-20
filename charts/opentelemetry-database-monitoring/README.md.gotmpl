@@ -39,7 +39,7 @@ When `argoEvents.enabled=true`, the chart also installs [Argo Events](https://ar
 The chart creates a single shared **ConfigMap** (`postgresql-monitoring-setup`) that embeds `pg-monitoring-setup.sql` (the stored functions), and then for each database entry in `values.yaml`:
 
 1. **Secret** — a `<name>-pg-monitor-credentials` Secret holding the auto-generated (or idempotently preserved) password for the `otel_monitor` user. When `postgres.databases[*].namespace` differs from the Helm release namespace, the same Secret is replicated into the target namespace so the injected sidecar can resolve `secretKeyRef` in the Pod's namespace.
-2. **Setup Job** — waits for PostgreSQL to be ready, runs the setup SQL on the `otel` database, and rotates the `otel_monitor` password to match the Secret. See [Argo Events setup](#argo-events-setup) below for when and how this Job is created.
+2. **Setup Job** — waits for PostgreSQL to be ready, runs the setup SQL on the database set in `postgres.databases[*].database` (default `otel`), and rotates the `otel_monitor` password to match the Secret. See [Argo Events setup](#argo-events-setup) below for when and how this Job is created.
 3. **OpenTelemetryCollector** (sidecar) — an `opentelemetry.io/v1beta1` CR in the **Helm release namespace** that configures the contrib collector with all receivers and exports metrics to `$K8S_NODE_IP:4317`.
 
 ### Argo Events setup
@@ -140,8 +140,9 @@ Argo Events CRDs are bundled under `crds/` and installed before other chart reso
 - Kubernetes 1.21+
 - [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator) installed in the cluster (provides the `OpenTelemetryCollector` CRD and injects sidecars)
 - PostgreSQL 10+ (for `pg_stat_progress_vacuum`)
-- A superuser (or a role with `CREATEROLE` and `CREATEDB`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
-- An `otel` database must exist on each target PostgreSQL instance before install (the Job connects to it: `psql … -d otel`)
+- A superuser (or the cloud provider's admin role, e.g. `rds_superuser`, `cloudsqlsuperuser` or `azure_pg_admin`) available to run the setup Job — credentials are passed via `postgres.databases[*].user` / `postgres.databases[*].pwd`
+- The database set in `postgres.databases[*].database` (default `otel`) must exist on each target PostgreSQL instance before install. The setup Job installs the `otel` schema there and the sidecar connects to it. Per-table metrics (`pg_table_stats`, `pg_vacuum_progress`) only cover tables of that database, so set it to your application database to monitor its tables
+- PostgreSQL listening on port 5432. The sidecar collector always connects to port 5432 (`assets/pg-monitoring-config.yaml`); `postgres.databases[*].port` only applies to the setup Job
 - When using Argo Events (`argoEvents.enabled=true`): Argo Events CRDs must be available (installed from this chart's `crds/` directory on first install)
 
 ## Installation
@@ -252,7 +253,7 @@ The setup Job runs `assets/pg-monitoring-setup.sql` idempotently. It:
 5. Grants `EXECUTE` on all `otel` functions to `otel_monitor`.
 6. Rotates the `otel_monitor` password to match the value in the Secret.
 
-> **Note:** The Job connects to the `otel` database (`-d otel`). This database must exist before the chart is installed.
+> **Note:** The Job connects to the database set in `postgres.databases[*].database` (default `otel`). This database must exist before the chart is installed.
 
 ## Metrics
 
@@ -320,6 +321,10 @@ All SQL statements are idempotent and the password rotation uses the existing Se
    ```bash
    kubectl get eventbus,eventsource,sensor -n <release-namespace>
    ```
+   A Sensor name longer than 63 characters is shortened with a hash and may not contain the database name. Find the Sensor of a `postgres.databases[*].name` by label:
+   ```bash
+   kubectl get sensor -n <release-namespace> -l opentelemetry-database-monitoring/database=<name>
+   ```
 2. Verify the Sensor filter matches the Pod annotation (same namespace → `sidecar-name`; cross-namespace → `<releaseNamespace>/<sidecar-name>`):
    ```bash
    kubectl get sensor -n <release-namespace> -o yaml | rg 'value:|eventName:'
@@ -334,7 +339,7 @@ All SQL statements are idempotent and the password rotation uses the existing Se
 
 **Job fails immediately**
 
-Check that the `otel` database exists and the superuser credentials are correct:
+Check that the database set in `postgres.databases[*].database` (default `otel`) exists and the superuser credentials are correct:
 ```bash
 kubectl logs -l app.kubernetes.io/component=db-monitoring-setup -n <release-namespace>
 ```

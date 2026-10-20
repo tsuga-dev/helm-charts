@@ -1,6 +1,6 @@
 {{- if and .Values.postgres.enabled .Values.argoEvents.enabled .Values.argoEvents.triggerSetupJob }}
 {{- $root := . }}
-{{- $eventSourceName := default (printf "%s-pod-created" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.eventSource.name }}
+{{- $eventSourceName := default (printf "%s-pod-created" (include "opentelemetry-database-monitoring.fullname" .) | trunc 63 | trimSuffix "-") .Values.argoEvents.eventSource.name }}
 {{- $sensorSa := default (printf "%s-argo-sensor" (include "opentelemetry-database-monitoring.fullname" .)) .Values.argoEvents.sensor.serviceAccount.name }}
 {{- $annotationKey := .Values.argoEvents.sidecarInjectAnnotation }}
 {{- $annotationPath := $annotationKey | replace "." "\\." | replace "/" "\\/" }}
@@ -8,11 +8,16 @@
 {{- $sidecarInjectValue := include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $root "db" $db) }}
 {{- $targetNamespace := include "opentelemetry-database-monitoring.databaseNamespace" (merge (dict) $db (dict "Release" $root.Release)) }}
 {{- $eventName := printf "target-pod-created-%s" (include "opentelemetry-database-monitoring.argoResourceSuffix" $targetNamespace) }}
+{{- /* Argo copies the Sensor name into a label (63 chars max). A plain trunc 63 would give every database the same name. */}}
+{{- $sensorName := printf "%s-%s-setup" (include "opentelemetry-database-monitoring.fullname" $root) $db.name }}
+{{- if gt (len $sensorName) 63 }}
+{{- $sensorName = printf "%s-%s" ($sensorName | trunc 54 | trimSuffix "-") ($sensorName | sha256sum | trunc 8) }}
+{{- end }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: {{ include "opentelemetry-database-monitoring.fullname" $root }}-{{ $db.name }}-setup
+  name: {{ $sensorName }}
   labels:
     {{- include "opentelemetry-database-monitoring.labels" $root | nindent 4 }}
     app.kubernetes.io/component: argo-sensor
@@ -32,7 +37,8 @@ spec:
           - path: body.metadata.annotations.{{ $annotationPath }}
             type: string
             value:
-              - {{ $sidecarInjectValue | quote }}
+              {{- /* Argo matches string filters as unanchored regexes, so "x" would also match "x-app". */}}
+              - {{ printf "^%s$" (regexQuoteMeta $sidecarInjectValue) | quote }}
   triggers:
     - template:
         name: create-{{ $db.name }}-monitoring-setup-job
