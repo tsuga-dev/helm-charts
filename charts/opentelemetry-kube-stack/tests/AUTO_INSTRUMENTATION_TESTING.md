@@ -85,7 +85,7 @@ A comprehensive values file for manual testing and validation:
 # Test with auto-instrumentation values
 helm install my-test . \
   -f tests/values/auto-instrumentation.yaml \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 
 # Verify the Instrumentation resource
@@ -103,11 +103,11 @@ Install the chart with auto-instrumentation enabled:
 
 ```bash
 helm install otel-test . \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.exporter.endpoint="http://otel-test-opentelemetry-kube-stack-agent:4317" \
   --set autoInstrumentation.spec.java.image="ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest" \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -229,7 +229,7 @@ annotations:
 
 ```bash
 helm install otel-test . \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.exporter.endpoint="http://custom-collector:4317" \
   --set autoInstrumentation.spec.propagators[0]=tracecontext \
@@ -237,7 +237,7 @@ helm install otel-test . \
   --set autoInstrumentation.spec.propagators[2]=b3 \
   --set autoInstrumentation.spec.sampler.type="parentbased_traceidratio" \
   --set autoInstrumentation.spec.sampler.argument="0.5" \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -245,12 +245,12 @@ helm install otel-test . \
 
 ```bash
 helm install otel-test . \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set autoInstrumentation.enabled=true \
   --set autoInstrumentation.spec.resource.addK8sUIDAttributes=true \
   --set "autoInstrumentation.spec.resource.resourceAttributes.service\.namespace=production" \
   --set "autoInstrumentation.spec.resource.resourceAttributes.deployment\.environment=staging" \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 

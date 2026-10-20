@@ -27,7 +27,7 @@ echo "Test 1: Deploying with minimal configuration..."
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
     --set clusterName="$RELEASE_NAME" \
-    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --wait --timeout=300s
 
@@ -45,7 +45,7 @@ echo "Test 2: Testing upgrade..."
 helm upgrade "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \
     --set clusterName="$RELEASE_NAME" \
-    --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+    --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
     --set tsuga.apiKey="<TSUGA_API_KEY>" \
     --set resources.limits.memory="1Gi" \
     --wait --timeout=300s
@@ -62,7 +62,7 @@ helm uninstall "$RELEASE_NAME" -n "$NAMESPACE" || true
 kubectl create secret generic existing-otel-secret \
     -n "$NAMESPACE" \
     --from-literal=tsuga-api-key="<TSUGA_API_KEY>" \
-    --from-literal=tsuga-otlp-endpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+    --from-literal=tsuga-otlp-endpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
 
 helm install "$RELEASE_NAME" "$CHART_PATH" \
     -n "$NAMESPACE" \

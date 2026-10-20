@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.14.0](https://img.shields.io/badge/Version-0.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.14.1](https://img.shields.io/badge/Version-0.14.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -152,12 +152,12 @@ Components in [brackets] are conditional, as above.
 
 Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Prometheus scraping, where the Target Allocator shards scrape jobs across collector replicas so no two replicas scrape the same target.
 
-- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. The static config in the chart is a placeholder the allocator replaces.
+- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. With Tsuga enabled, self-metrics are pushed and nothing serves `:8888`, so the chart's `localhost:8888` self-scrape job is dropped once `targetAllocator.spec.prometheusCR.enabled` supplies the jobs. Without prometheusCR it stays, failing, because the allocator will not start with no scrape config.
 - **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
-- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
-- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets the per-target scrape interval. The allocator poll interval is written by the operator and is not configurable from the chart.
+- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator. The Target Allocator also reads secrets referenced by those monitors, in `targetAllocator.spec.prometheusCR.secretNamespaces` or by default the release namespace; `rbac.create` adds a Role and RoleBinding granting get/list/watch on secrets in each of them. Probe and ScrapeConfig resources are discovered only when you set `targetAllocator.spec.prometheusCR.probeSelector` / `scrapeConfigSelector` (`{}` matches all). The collectors share the Target Allocator's ServiceAccount, so they can read those secrets too: install the chart in a dedicated namespace.
+- **Scrape interval**: a `ServiceMonitor` or `PodMonitor` sets its own interval; one that does not uses `targetAllocator.spec.prometheusCR.scrapeInterval` (operator default `30s`). `statefulset.scrapeInterval` only sets the chart's `otel-collector` self-scrape job. The allocator poll interval is written by the operator and is not configurable from the chart.
 
 ### Profiling collector (optional, privileged DaemonSet)
 
@@ -323,7 +323,7 @@ opentelemetry-operator:
 Or via command line:
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true
 ```
 
@@ -419,9 +419,9 @@ helm repo update
 
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -430,9 +430,9 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -441,9 +441,9 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 ```bash
 # Create a values file
 cat > my-values.yaml << EOF
-clusterName: "<CLUSTER_NAME>"
+clusterName: "<K8S_CLUSTER_NAME>"
 tsuga:
-  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
   apiKey: "<TSUGA_API_KEY>"
 secret:
   create: true
@@ -601,15 +601,15 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | profiling.samplesPerSecond | int | 20 | Sampling frequency in Hz. Leave at 20: Tsuga converts samples to CPU time assuming 20 Hz. |
 | profiling.serviceNameEnvVar | string | "" | Environment variable, other than OTEL_SERVICE_NAME, read from each profiled process and promoted to service.name. OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES are read without it. |
 | profiling.tolerations | list | [] | Profiling-specific tolerations. If not set, inherits from global tolerations configuration. A node the profiler does not tolerate is simply not profiled. |
-| rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. |
+| rbac.create | bool | true | Create the ClusterRole and ClusterRoleBinding the collectors need to read Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and k8s_attributes are all denied by the API server. With `targetAllocator.spec.prometheusCR.enabled`, also creates a Role and RoleBinding per secret namespace for the Target Allocator. With `rbac.create=false`, grant get/list/watch on secrets in those namespaces yourself. |
 | redaction.config | object | see values.yaml | Redaction processor configuration, passed to the collector as-is. Covers credentials, not PII. Applies to attributes at every level and to log bodies, including nested maps and slices. Maps merge with these defaults but lists replace them, so overriding `blocked_key_patterns` must repeat the entries you want to keep. An empty config fails the render, because the processor's own default deletes every attribute. |
 | redaction.enabled | bool | false | Mask credentials in the agent's logs, metrics and traces pipelines, via the redaction processor. Off by default: the rules have to match your own key and secret formats, and an over-broad one silently masks data you need. |
-| resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. Use [env, eks, ec2] on EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty list, stops the collector from starting. |
-| resourceDetection.enabled | bool | false | Add cloud and host attributes such as cloud.provider, cloud.region, cloud.account.id and host.id, via the resource_detection processor. Off by default because a detector that fails stops the collector from starting, so match the detectors below to where you actually run. |
+| resourceDetection.detectors | list | ["env"] | Detectors to run, in order. The first detector to supply an attribute wins; attributes already on the telemetry are never replaced. Use [env, eks, ec2] on EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep ec2 after eks so cloud.platform stays aws_eks. Outside its platform a detector adds nothing. A misspelled name, an empty list, or a detector that returns an error stops the collector from starting. |
+| resourceDetection.enabled | bool | false | Add cloud and host attributes such as cloud.provider, cloud.region, cloud.account.id and host.id, via the resource_detection processor. Off by default because a detector that returns an error stops the collector from starting. Outside its platform a detector adds nothing, but aks and azure delay startup by up to `timeout`, so match the detectors below to where you actually run. |
 | resourceDetection.timeout | string | "15s" | Deadline for the whole detection pass, and the HTTP client timeout the detectors use. Not per detector. |
 | resources.limits | object | `{"cpu":"500m","memory":"512Mi"}` | Resource limits. |
 | resources.limits.cpu | string | "500m" | CPU limit. |
-| resources.limits.memory | string | "512Mi" | Memory limit. Also what memory_limiter is scaled from: it starts refusing data at 80% of this. With no limit set it reads the node's total memory instead, so the pod is OOMKilled before it ever sheds load. |
+| resources.limits.memory | string | "512Mi" | Memory limit. Also what memory_limiter is scaled from: it starts refusing data at 55% of this (80% limit minus 25% spike), and forces garbage collection at 80%. With no limit set it reads the node's total memory instead, so the pod is OOMKilled before it ever sheds load. |
 | resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Resource requests. |
 | resources.requests.cpu | string | "100m" | CPU request. |
 | resources.requests.memory | string | "128Mi" | Memory request. |
@@ -644,12 +644,12 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | statefulset.nodeSelector | object | {} | StatefulSet-specific node selector. If not set, inherits from global nodeSelector configuration. |
 | statefulset.replicas | int | 1 | Number of StatefulSet collector replicas The Target Allocator distributes targets across replicas according to targetAllocator.spec.allocationStrategy. |
 | statefulset.resources | object | {} | Resource limits and requests for the StatefulSet collector. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
-| statefulset.scrapeInterval | string | "30s" | How often to scrape Prometheus targets, e.g. `60s`. Does not affect how often the collector refreshes its target list from the Target Allocator: the operator writes that interval itself and pins it to 30s. |
+| statefulset.scrapeInterval | string | "30s" | Interval of the chart's `otel-collector` self-scrape job. Not rendered when Tsuga and prometheusCR are both enabled. ServiceMonitor and PodMonitor intervals come from the CR or `targetAllocator.spec.prometheusCR.scrapeInterval`. Does not affect how often the collector refreshes its target list from the Target Allocator: the operator writes that interval itself and pins it to 30s. |
 | statefulset.tolerations | list | [] | StatefulSet-specific tolerations. If not set, inherits from global tolerations configuration. |
 | targetAllocator.enabled | bool | false | Enable Target Allocator and paired StatefulSet collector. |
 | targetAllocator.spec | object | {} | TargetAllocator CR spec (full passthrough) All fields are passed directly to the TargetAllocator CR spec. Setting spec.serviceAccount here overrides the account the chart would otherwise set. Ref: https://github.com/open-telemetry/opentelemetry-operator/blob/main/docs/api.md#targetallocator |
 | targetAllocator.spec.allocationStrategy | string | "consistent-hashing" | How the Target Allocator spreads targets across collector replicas. One of `consistent-hashing`, `least-weighted`, `per-node`. per-node assigns only targets that resolve to a node, so anything else is left unscraped. |
-| targetAllocator.spec.prometheusCR | object | `{"enabled":false,"podMonitorSelector":{},"serviceMonitorSelector":{}}` | PrometheusCR configuration. When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs. Requires monitoring.coreos.com RBAC rules (added automatically when enabled). |
+| targetAllocator.spec.prometheusCR | object | `{"enabled":false,"podMonitorSelector":{},"serviceMonitorSelector":{}}` | PrometheusCR configuration. When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs. Requires monitoring.coreos.com RBAC rules, and get/list/watch on secrets in `secretNamespaces` (by default the release namespace), which the Target Allocator reads for ServiceMonitor/PodMonitor auth and TLS references. Both are added automatically with `rbac.create`. Other TargetAllocator prometheusCR fields pass through, e.g. `scrapeInterval` (operator default `30s`) for ServiceMonitors and PodMonitors that set no interval, and `probeSelector` / `scrapeConfigSelector` to discover Probe and ScrapeConfig resources. Those two are unset by default, so no Probe or ScrapeConfig is discovered; `{}` matches all of them. |
 | targetAllocator.spec.prometheusCR.enabled | bool | false | Enable ServiceMonitor/PodMonitor discovery. |
 | targetAllocator.spec.prometheusCR.podMonitorSelector | object | {} | Selector for PodMonitor resources An empty selector ({}) matches all PodMonitors in all namespaces. |
 | targetAllocator.spec.prometheusCR.serviceMonitorSelector | object | {} | Selector for ServiceMonitor resources An empty selector ({}) matches all ServiceMonitors in all namespaces. |
@@ -661,7 +661,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | tsuga.enabledForProfiling | bool | true | Enable the Tsuga OTLP exporter in the profiling collector's default config. Only read when profiling.enabled is true. |
 | tsuga.enabledForStatefulset | bool | true | Enable the Tsuga OTLP exporter in the StatefulSet collector's default config. |
 | tsuga.encoding | string | "json" | Payload encoding for the OTLP exporter. One of `json`, `proto`. |
-| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
+| tsuga.otlpEndpoint | string | "" | Tsuga OTLP endpoint, e.g. `https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp`. Give the base path with no signal suffix; the exporter appends `/v1/traces`, `/v1/metrics` and `/v1/logs` itself. |
 | validation.enabled | bool | true | Fail the render when a generated resource name would not meet Kubernetes requirements. |
 | validation.enforceNamingConventions | bool | true | Require generated names to be lowercase alphanumeric with hyphens. Only applies while validation.enabled is true. |
 | validation.maxNameLength | int | 63 | Maximum length for the release fullname. The fullname is already truncated to 63 characters before this check runs, so at the default of 63 the check never fires; lower it to enforce a tighter bound. Note the operator truncates the Deployment and Service names it derives to 63 as well, which is where two releases sharing a long prefix would collide. |
@@ -731,7 +731,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set clusterName="<CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
+helm template test . --set clusterName="<K8S_CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation

@@ -64,17 +64,17 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 **Option B: Use an existing secret**
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true \
   --set secret.create=false \
   --set secret.name="my-existing-secret" \

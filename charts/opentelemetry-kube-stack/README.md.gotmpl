@@ -142,12 +142,12 @@ Components in [brackets] are conditional, as above.
 
 Disabled by default; enable with `targetAllocator.enabled=true`. Intended for Prometheus scraping, where the Target Allocator shards scrape jobs across collector replicas so no two replicas scrape the same target.
 
-- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. The static config in the chart is a placeholder the allocator replaces.
+- **Receiver**: `prometheus`, with its scrape config supplied by the Target Allocator at runtime. With Tsuga enabled, self-metrics are pushed and nothing serves `:8888`, so the chart's `localhost:8888` self-scrape job is dropped once `targetAllocator.spec.prometheusCR.enabled` supplies the jobs. Without prometheusCR it stays, failing, because the allocator will not start with no scrape config.
 - **Processors**: `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `batch`
 - **Exporter**: `otlp_http/tsuga` (unless `tsuga.enabledForStatefulset=false`)
 - **Replicas**: `statefulset.replicas` (default 1). Unlike the cluster receiver this is safe to scale, because the allocator partitions the targets.
-- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator.
-- **Scrape interval**: `statefulset.scrapeInterval` (default `30s`) sets the per-target scrape interval. The allocator poll interval is written by the operator and is not configurable from the chart.
+- **Discovery**: set `targetAllocator.spec.prometheusCR.enabled=true` to pick up `ServiceMonitor`/`PodMonitor` resources. This requires those CRDs to exist in the cluster, i.e. prometheus-operator. The Target Allocator also reads secrets referenced by those monitors, in `targetAllocator.spec.prometheusCR.secretNamespaces` or by default the release namespace; `rbac.create` adds a Role and RoleBinding granting get/list/watch on secrets in each of them. Probe and ScrapeConfig resources are discovered only when you set `targetAllocator.spec.prometheusCR.probeSelector` / `scrapeConfigSelector` (`{}` matches all). The collectors share the Target Allocator's ServiceAccount, so they can read those secrets too: install the chart in a dedicated namespace.
+- **Scrape interval**: a `ServiceMonitor` or `PodMonitor` sets its own interval; one that does not uses `targetAllocator.spec.prometheusCR.scrapeInterval` (operator default `30s`). `statefulset.scrapeInterval` only sets the chart's `otel-collector` self-scrape job. The allocator poll interval is written by the operator and is not configurable from the chart.
 
 ### Profiling collector (optional, privileged DaemonSet)
 
@@ -313,7 +313,7 @@ opentelemetry-operator:
 Or via command line:
 ```bash
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set opentelemetry-operator.enabled=true
 ```
 
@@ -410,9 +410,9 @@ helm repo update
 
 # Install with Tsuga configuration
 helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -421,9 +421,9 @@ helm install my-otel-stack tsuga-charts/opentelemetry-kube-stack \
 ```bash
 # Install directly from the chart directory
 helm install my-otel-stack ./opentelemetry-kube-stack \
-  --set clusterName="<CLUSTER_NAME>" \
+  --set clusterName="<K8S_CLUSTER_NAME>" \
   --set secret.create=true \
-  --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+  --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
   --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
@@ -432,9 +432,9 @@ helm install my-otel-stack ./opentelemetry-kube-stack \
 ```bash
 # Create a values file
 cat > my-values.yaml << EOF
-clusterName: "<CLUSTER_NAME>"
+clusterName: "<K8S_CLUSTER_NAME>"
 tsuga:
-  otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+  otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
   apiKey: "<TSUGA_API_KEY>"
 secret:
   create: true
@@ -528,7 +528,7 @@ helm lint .
 # Test rendering
 make template
 # or
-helm template test . --set clusterName="<CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
+helm template test . --set clusterName="<K8S_CLUSTER_NAME>" --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" --set tsuga.apiKey="<TSUGA_API_KEY>"
 ```
 
 ### Documentation

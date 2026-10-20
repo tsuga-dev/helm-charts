@@ -9,7 +9,7 @@ tests:
       cluster.enabled: true
       serviceAccount.create: true
       serviceAccount.name: ""
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -28,7 +28,7 @@ tests:
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
       tsuga.enabledForClusterReceiver: false
     release:
@@ -44,7 +44,7 @@ tests:
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -62,7 +62,7 @@ tests:
       clusterName: "test-cluster"
       cluster.enabled: true
       cluster.collectk8sobjects: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -79,7 +79,7 @@ tests:
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -99,7 +99,7 @@ tests:
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -114,7 +114,7 @@ tests:
     set:
       clusterName: "test-cluster"
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -131,7 +131,7 @@ tests:
   - it: should fail to render when clusterName is not set
     set:
       cluster.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"

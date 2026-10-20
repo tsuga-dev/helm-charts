@@ -7,7 +7,7 @@ tests:
     set:
       clusterName: "test-cluster"
       targetAllocator.enabled: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -22,7 +22,7 @@ tests:
       targetAllocator.spec.allocationStrategy: "consistent-hashing"
       serviceAccount.create: true
       serviceAccount.name: ""
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -41,7 +41,7 @@ tests:
       clusterName: "test-cluster"
       targetAllocator.enabled: true
       serviceAccount.create: false
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -60,7 +60,7 @@ tests:
       targetAllocator.enabled: true
       serviceAccount.create: false
       serviceAccount.name: "my-sa"
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -75,7 +75,7 @@ tests:
       targetAllocator.enabled: true
       targetAllocator.spec.serviceAccount: "mine"
       serviceAccount.create: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -91,7 +91,7 @@ tests:
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
       targetAllocator.spec.prometheusCR.serviceMonitorSelector.matchLabels.release: "test"
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"

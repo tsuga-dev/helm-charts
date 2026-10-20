@@ -15,14 +15,14 @@
 #
 # Option 1: Let the chart create the secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set clusterName="<CLUSTER_NAME>" \
+#   --set clusterName="<K8S_CLUSTER_NAME>" \
 #   --set secret.create=true \
-#   --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp" \
+#   --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp" \
 #   --set tsuga.apiKey="<TSUGA_API_KEY>"
 #
 # Option 2: Use existing secret
 # helm install my-otel-stack ./charts/opentelemetry-kube-stack \
-#   --set clusterName="<CLUSTER_NAME>" \
+#   --set clusterName="<K8S_CLUSTER_NAME>" \
 #   --set secret.create=false \
 #   --set secret.name="my-existing-secret" \
 #   --set secret.keyMapping.TSUGA_API_KEY="<API_KEY_SECRET_KEY>" \
@@ -65,7 +65,7 @@
 # visible during an incident, which is the worst time to discover it. Any
 # collector rendering the chart's default config fails the install when this is
 # empty.
-# Set via: --set clusterName="<CLUSTER_NAME>"
+# Set via: --set clusterName="<K8S_CLUSTER_NAME>"
 # -- REQUIRED. Name of the cluster, attached to all telemetry as
 # k8s.cluster.name. The install fails while this is empty and any collector is
 # rendering the chart's default config.
@@ -96,8 +96,8 @@ image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-col
 # SECURITY WARNING: Never commit sensitive credentials to version control
 # Provide these values via --set flags or external secrets management
 tsuga:
-  # Set via: --set tsuga.otlpEndpoint="https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
-  # -- Tsuga OTLP endpoint, e.g. `https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp`.
+  # Set via: --set tsuga.otlpEndpoint="https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
+  # -- Tsuga OTLP endpoint, e.g. `https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp`.
   # Give the base path with no signal suffix; the exporter appends `/v1/traces`,
   # `/v1/metrics` and `/v1/logs` itself.
   # @default -- ""
@@ -891,7 +891,15 @@ targetAllocator:
     allocationStrategy: consistent-hashing
     # -- PrometheusCR configuration.
     # When enabled, the Target Allocator discovers ServiceMonitor and PodMonitor CRs.
-    # Requires monitoring.coreos.com RBAC rules (added automatically when enabled).
+    # Requires monitoring.coreos.com RBAC rules, and get/list/watch on secrets in
+    # `secretNamespaces` (by default the release namespace), which the
+    # Target Allocator reads for ServiceMonitor/PodMonitor auth and TLS references.
+    # Both are added automatically with `rbac.create`.
+    # Other TargetAllocator prometheusCR fields pass through, e.g.
+    # `scrapeInterval` (operator default `30s`) for ServiceMonitors and PodMonitors
+    # that set no interval, and `probeSelector` / `scrapeConfigSelector` to discover
+    # Probe and ScrapeConfig resources. Those two are unset by default, so no Probe
+    # or ScrapeConfig is discovered; `{}` matches all of them.
     prometheusCR:
       # -- Enable ServiceMonitor/PodMonitor discovery.
       # @default -- false
@@ -929,9 +937,11 @@ statefulset:
   # Set to "" to omit the extension, and the liveness probe with it.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- How often to scrape Prometheus targets, e.g. `60s`. Does not affect how
-  # often the collector refreshes its target list from the Target Allocator:
-  # the operator writes that interval itself and pins it to 30s.
+  # -- Interval of the chart's `otel-collector` self-scrape job. Not rendered
+  # when Tsuga and prometheusCR are both enabled. ServiceMonitor and PodMonitor
+  # intervals come from the CR or `targetAllocator.spec.prometheusCR.scrapeInterval`.
+  # Does not affect how often the collector refreshes its target list from the
+  # Target Allocator: the operator writes that interval itself and pins it to 30s.
   # @default -- "30s"
   scrapeInterval: 30s
   # -- Replace default config with complete custom configuration.
@@ -1343,13 +1353,16 @@ batch:
 # cloud.account.id, host.id) so telemetry can be traced back to a specific
 # account, region and instance.
 #
-# Off by default: a detector that fails stops the collector from starting, and
-# no feature gate suppresses that at this chart's collector floor.
+# Off by default: a detector that returns an error stops the collector from
+# starting, and no feature gate suppresses that at this chart's collector floor.
+# Running outside its platform is not an error: the detector adds nothing.
 resourceDetection:
   # -- Add cloud and host attributes such as cloud.provider, cloud.region,
   # cloud.account.id and host.id, via the resource_detection processor. Off by
-  # default because a detector that fails stops the collector from starting, so
-  # match the detectors below to where you actually run.
+  # default because a detector that returns an error stops the collector from
+  # starting. Outside its platform a detector adds nothing, but aks and azure
+  # delay startup by up to `timeout`, so match the detectors below to where you
+  # actually run.
   # @default -- false
   enabled: false
   # Set the detectors that match where you actually run:
@@ -1381,8 +1394,9 @@ resourceDetection:
   # -- Detectors to run, in order. The first detector to supply an attribute wins;
   # attributes already on the telemetry are never replaced. Use [env, eks, ec2] on
   # EKS, [env, gcp] on GKE, [env, aks, azure] on AKS, [env] anywhere else, and keep
-  # ec2 after eks so cloud.platform stays aws_eks. A detector that fails, or an empty
-  # list, stops the collector from starting.
+  # ec2 after eks so cloud.platform stays aws_eks. Outside its platform a detector
+  # adds nothing. A misspelled name, an empty list, or a detector that returns an
+  # error stops the collector from starting.
   # @default -- ["env"]
   detectors:
     - env
@@ -1465,7 +1479,8 @@ resources:
     # @default -- "500m"
     cpu: 500m
     # -- Memory limit. Also what memory_limiter is scaled from: it starts refusing
-    # data at 80% of this. With no limit set it reads the node's total memory
+    # data at 55% of this (80% limit minus 25% spike), and forces garbage
+    # collection at 80%. With no limit set it reads the node's total memory
     # instead, so the pod is OOMKilled before it ever sheds load.
     # @default -- "512Mi"
     memory: 512Mi
@@ -1548,7 +1563,11 @@ serviceAccount:
 rbac:
   # -- Create the ClusterRole and ClusterRoleBinding the collectors need to read
   # Kubernetes state. Without them kubelet_stats, k8s_cluster, k8s_objects and
-  # k8s_attributes are all denied by the API server.
+  # k8s_attributes are all denied by the API server. With
+  # `targetAllocator.spec.prometheusCR.enabled`, also creates a Role and
+  # RoleBinding per secret namespace for the Target Allocator. With
+  # `rbac.create=false`, grant get/list/watch on secrets in those namespaces
+  # yourself.
   # @default -- true
   create: true
 

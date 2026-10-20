@@ -19,7 +19,7 @@ tests:
     set:
       clusterName: "test-cluster"
       rbac.create: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -36,7 +36,7 @@ tests:
       rbac.create: true
       targetAllocator.enabled: true
       targetAllocator.spec.prometheusCR.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -45,7 +45,7 @@ tests:
           path: rules
           content:
             apiGroups: ["monitoring.coreos.com"]
-            resources: ["servicemonitors", "podmonitors"]
+            resources: ["servicemonitors", "podmonitors", "probes", "scrapeconfigs"]
             verbs: ["get", "list", "watch"]
         documentIndex: 0
 
@@ -53,7 +53,7 @@ tests:
     set:
       clusterName: "test-cluster"
       rbac.create: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -70,7 +70,7 @@ tests:
       rbac.create: true
       serviceAccount.create: false
       serviceAccount.name: "my-sa"
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -85,7 +85,7 @@ tests:
       clusterName: "test-cluster"
       rbac.create: true
       targetAllocator.enabled: true
-      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.otlpEndpoint: "https://intake.<TSUGA_CLUSTER_NAME>.tsuga.com:443/api/v1/otlp"
       tsuga.apiKey: "<TSUGA_API_KEY>"
     release:
       name: "test-release"
@@ -97,3 +97,119 @@ tests:
             apiGroups: ["discovery.k8s.io"]
             resources: ["endpointslices"]
             verbs: ["get", "list", "watch"]
+
+  - it: should not grant secrets access without prometheusCR
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should grant the Target Allocator secrets access in its namespace when prometheusCR enabled
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+    release:
+      name: "test-release"
+      namespace: "monitoring"
+    asserts:
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: Role
+        documentIndex: 2
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+        documentIndex: 2
+      - equal:
+          path: rules
+          value:
+            - apiGroups: [""]
+              resources: ["secrets"]
+              verbs: ["get", "list", "watch"]
+        documentIndex: 2
+      - equal:
+          path: roleRef.name
+          value: test-release-opentelemetry-kube-stack-ta-secrets
+        documentIndex: 3
+      - notContains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: ["secrets"]
+        documentIndex: 0
+
+  - it: should grant secrets access in each prometheusCR.secretNamespaces namespace
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+      targetAllocator.spec.prometheusCR.secretNamespaces: [monitoring, apps]
+    release:
+      name: "test-release"
+      namespace: "monitoring"
+    asserts:
+      - hasDocuments:
+          count: 6
+      - isKind:
+          of: Role
+        documentIndex: 4
+      - equal:
+          path: metadata.namespace
+          value: apps
+        documentIndex: 4
+      - equal:
+          path: metadata.namespace
+          value: apps
+        documentIndex: 5
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: test-release-opentelemetry-kube-stack
+              namespace: monitoring
+        documentIndex: 5
+
+  - it: should bind the Target Allocator's own service account when spec.serviceAccount is set
+    set:
+      clusterName: "test-cluster"
+      rbac.create: true
+      targetAllocator.enabled: true
+      targetAllocator.spec.serviceAccount: "ta-sa"
+      targetAllocator.spec.prometheusCR.enabled: true
+    release:
+      name: "test-release"
+      namespace: "monitoring"
+    asserts:
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: ta-sa
+            namespace: monitoring
+        documentIndex: 1
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: ta-sa
+              namespace: monitoring
+        documentIndex: 3
+
+  - it: should not create the secrets Role when rbac.create is false
+    set:
+      clusterName: "test-cluster"
+      rbac.create: false
+      targetAllocator.enabled: true
+      targetAllocator.spec.prometheusCR.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
