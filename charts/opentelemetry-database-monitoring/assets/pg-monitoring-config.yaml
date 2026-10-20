@@ -418,8 +418,8 @@ service:
         - periodic:
             exporter:
               otlp:
-                protocol: http/protobuf
-                endpoint: http://${env:K8S_NODE_IP}:4318/v1/metrics
+                protocol: ${env:OTEL_SELF_TELEMETRY_PROTOCOL}
+                endpoint: ${env:OTEL_SELF_TELEMETRY_ENDPOINT}
   pipelines:
     metrics:
       exporters:

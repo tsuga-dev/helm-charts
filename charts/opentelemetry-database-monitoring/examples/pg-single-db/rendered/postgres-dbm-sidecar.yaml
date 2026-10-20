@@ -36,6 +36,10 @@ spec:
           key: password
     - name: OTEL_MONITOR_DB
       value: "otel"
+    - name: OTEL_SELF_TELEMETRY_PROTOCOL
+      value: "grpc"
+    - name: OTEL_SELF_TELEMETRY_ENDPOINT
+      value: "http://$(K8S_NODE_IP):4317"
   config:
     receivers:
       postgresql:
@@ -457,8 +461,8 @@ spec:
             - periodic:
                 exporter:
                   otlp:
-                    protocol: http/protobuf
-                    endpoint: http://${env:K8S_NODE_IP}:4318/v1/metrics
+                    protocol: ${env:OTEL_SELF_TELEMETRY_PROTOCOL}
+                    endpoint: ${env:OTEL_SELF_TELEMETRY_ENDPOINT}
       pipelines:
         metrics:
           exporters:

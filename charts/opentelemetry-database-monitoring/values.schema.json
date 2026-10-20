@@ -162,6 +162,17 @@
                             }
                         }
                     }
+                },
+                "selfTelemetry": {
+                    "type": "object",
+                    "properties": {
+                        "endpoint": {
+                            "type": "string"
+                        },
+                        "protocol": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         }
