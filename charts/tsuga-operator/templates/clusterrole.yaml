@@ -19,6 +19,7 @@ rules:
   - ""
   resources:
   - endpoints
+  - events
   - namespaces
   - nodes
   - persistentvolumeclaims
@@ -45,6 +46,29 @@ rules:
   verbs:
   - create
   - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resourceNames:
+  - tsuga-agent
+  - tsuga-gateway
+  - tsuga-profiler
+  - tsuga-scraper
+  resources:
+  - serviceaccounts
+  verbs:
+  - delete
+  - get
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -100,6 +124,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - probes
+  - scrapeconfigs
+  - servicemonitors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - observability.tsuga.com
   resources:
   - dashboards
@@ -149,15 +184,6 @@ rules:
   - watch
 - apiGroups:
   - rbac.authorization.k8s.io
-  resources:
-  - clusterrolebindings
-  - clusterroles
-  verbs:
-  - create
-  - list
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
   resourceNames:
   - tsuga-operator-collector
   resources:
@@ -170,10 +196,32 @@ rules:
   resourceNames:
   - tsuga-operator-collector-tsuga-agent
   - tsuga-operator-collector-tsuga-gateway
+  - tsuga-operator-collector-tsuga-profiler
   - tsuga-operator-collector-tsuga-scraper
   resources:
   - clusterrolebindings
   - clusterroles
+  verbs:
+  - delete
+  - patch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - tsuga-operator-collector-tsuga-scraper
+  resources:
+  - rolebindings
+  - roles
   verbs:
   - delete
   - patch
