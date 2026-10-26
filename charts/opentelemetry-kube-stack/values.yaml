@@ -637,8 +637,8 @@ agent:
 # Recommended: Deploy both agent (DaemonSet) and cluster receiver (Deployment)
 cluster:
   # -- Deploy the cluster receiver, a single-replica Deployment that reads
-  # cluster-level metrics, pod objects and Warning events from the API server. The
-  # agent collects none of those, so turning it off loses them.
+  # cluster-level metrics, Kubernetes objects and Warning events from the API
+  # server. The agent collects none of those, so turning it off loses them.
   # @default -- true
   enabled: true
   # -- Overrides the top-level image for the cluster receiver only.
@@ -657,9 +657,15 @@ cluster:
   # Set to "" to omit the extension, and the liveness probe with it.
   # @default -- "${env:MY_POD_IP}:13133"
   healthCheckEndpoint: "${env:MY_POD_IP}:13133"
-  # -- Watch pod objects and send them as logs. Powers the Kubernetes view, which
-  # uses them to show pod configuration. Costs one log record per pod change, plus a
-  # full snapshot of every pod on each collector restart.
+  # ReplicaSets dominate the restart snapshot: Kubernetes keeps up to 10 old
+  # ReplicaSets per Deployment by default (revisionHistoryLimit), and each one is
+  # re-sent. The workload kinds cannot be turned off separately from pods.
+  #
+  # -- Watch pod, Deployment, ReplicaSet, StatefulSet and DaemonSet objects and
+  # send them as logs. Powers the Kubernetes view, which uses pods to show their
+  # configuration, and faulty-deployment detection, which reads revisions and
+  # rollout status from the workload objects. Costs one log record per object
+  # change, plus a full snapshot of every watched object on each collector restart.
   # @default -- true
   collectk8sobjects: true
   # Only Warning events are collected, filtered by field_selector at the API
@@ -1289,11 +1295,10 @@ k8sAttributes:
   # Dropping `k8s.pod.name` and `k8s.pod.uid` cuts metric cardinality noticeably,
   # because both change on every pod restart and so churn the series on each
   # rollout — at the cost of not being able to identify individual pods.
-  # `k8s.replicaset.name` is left out for the same reason: it churns on every
-  # rollout too, and (unlike pod name/uid) adds little beyond what
-  # `k8s.deployment.name` + `k8s.pod.name` already give. It is not needed for
-  # `service.name` below to resolve a bare-ReplicaSet ancestor either — that
-  # tier of the processor's precedence chain resolves regardless.
+  # `k8s.replicaset.name` identifies a Deployment's revision, which is what
+  # faulty-deployment detection keys on, so removing it breaks that detection
+  # for Deployments. While `k8s.pod.name` or `k8s.pod.uid` is in the list it adds
+  # no series: each pod belongs to exactly one ReplicaSet for its whole life.
   # `service.name` and `service.version` switch on the processor's own
   # implementation of the OTel k8s service.name/service.version precedence
   # (https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/),
@@ -1310,6 +1315,7 @@ k8sAttributes:
   metadata:
     - k8s.namespace.name
     - k8s.deployment.name
+    - k8s.replicaset.name
     - k8s.statefulset.name
     - k8s.daemonset.name
     - k8s.cronjob.name

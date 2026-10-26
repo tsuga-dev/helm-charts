@@ -56,6 +56,42 @@ tests:
       - contains:
           path: spec.config.service.pipelines.logs.receivers
           content: k8s_objects
+      # Faulty-deployment detection reads workload snapshots, searched by
+      # event.name, which only watch mode sets.
+      - equal:
+          path: spec.config.receivers.k8s_objects.objects
+          value:
+            - group: ""
+              name: pods
+              mode: watch
+            - group: apps
+              name: deployments
+              mode: watch
+            - group: apps
+              name: replicasets
+              mode: watch
+            - group: apps
+              name: statefulsets
+              mode: watch
+            - group: apps
+              name: daemonsets
+              mode: watch
+
+  - it: should report container status reasons for faulty-deployment detection
+    set:
+      clusterName: "test-cluster"
+      cluster.enabled: true
+      tsuga.otlpEndpoint: "https://intake.<CLUSTER_ID>.tsuga.com:443/api/v1/otlp"
+      tsuga.apiKey: "<TSUGA_API_KEY>"
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.receivers.k8s_cluster.metrics["k8s.container.status.reason"].enabled
+          value: true
+      - contains:
+          path: spec.config.processors.k8s_attributes.extract.metadata
+          content: k8s.replicaset.name
 
   - it: should not collect k8s objects when disabled
     set:

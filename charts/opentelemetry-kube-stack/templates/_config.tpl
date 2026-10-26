@@ -98,11 +98,10 @@ defines those only as pod annotations, and a same-named labels rule runs
 before the app.kubernetes.io/instance/name copy above, so it would silently
 lose precedence to them.
 
-k8s.replicaset.name itself is left out: it churns on every rollout the same
-as k8s.pod.name/k8s.pod.uid, but adds little identification value beyond what
-k8s.deployment.name + k8s.pod.name already give. The ReplicaSet ancestor tier
-of the chain above resolves regardless of whether k8s.replicaset.name is in
-this list.
+k8s.replicaset.name identifies a Deployment's revision, which is what
+faulty-deployment detection keys on. While k8s.pod.name or k8s.pod.uid is
+in the list it adds no series: each pod belongs to exactly one ReplicaSet for
+its whole life.
 
 k8s.container.name, container.id, container.image.name and
 container.image.tags are added for direct container-image visibility, and
@@ -114,7 +113,7 @@ association the processor needs — see its README, "Additional container level
 attributes").
 */}}
 {{- define "opentelemetry-kube-stack.k8sAttributesMetadata" -}}
-{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time" "service.name" "service.version" "k8s.container.name" "container.id" "container.image.name" "container.image.tags")) }}
+{{ toYaml (.Values.k8sAttributes.metadata | default (list "k8s.namespace.name" "k8s.deployment.name" "k8s.replicaset.name" "k8s.statefulset.name" "k8s.daemonset.name" "k8s.cronjob.name" "k8s.job.name" "k8s.node.name" "k8s.pod.name" "k8s.pod.uid" "k8s.pod.start_time" "service.name" "service.version" "k8s.container.name" "container.id" "container.image.name" "container.image.tags")) }}
 {{- end }}
 
 {{/*

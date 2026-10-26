@@ -13,7 +13,12 @@ receivers:
     metrics:
       k8s.pod.status_reason:
         enabled: true
+      k8s.container.status.reason:
+        enabled: true
 {{- if .Values.cluster.collectk8sobjects }}
+  # Workload objects must use mode: watch, which is what sets event.name to the
+  # object's name. Faulty-deployment detection reads revisions and rollout status
+  # from these snapshots, searching by object.kind and event.name.
   k8s_objects:
     auth_type: serviceAccount
     include_initial_state: true
@@ -21,13 +26,25 @@ receivers:
       - group: ""
         name: pods
         mode: watch
+      - group: apps
+        name: deployments
+        mode: watch
+      - group: apps
+        name: replicasets
+        mode: watch
+      - group: apps
+        name: statefulsets
+        mode: watch
+      - group: apps
+        name: daemonsets
+        mode: watch
 {{- end }}
 {{- if .Values.cluster.collectk8sevents }}
   # Core/v1, not events.k8s.io/v1: Tsuga's Kubernetes Events view reads message,
   # involvedObject and count, which events.k8s.io/v1 renames.
   #
   # A separate receiver instance, only so events can set
-  # include_initial_state: false — the field is receiver-wide and the pods stream
+  # include_initial_state: false — the field is receiver-wide and the objects stream
   # above needs its snapshot. Sharing one would re-emit the API server's entire
   # retained event window (an hour by default) on every collector restart, and a
   # helm upgrade restarts this collector by design.
