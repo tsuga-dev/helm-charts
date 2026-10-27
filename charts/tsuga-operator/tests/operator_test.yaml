@@ -80,6 +80,17 @@ tests:
           count: 1
         template: clusterrole.yaml
 
+  - it: lets the manager patch namespaces for Namespace-mode injection
+    template: clusterrole.yaml
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups: [""]
+            resources: [namespaces]
+            verbs: [get, list, patch, watch]
+
   - it: keeps CRDs on uninstall
     template: crds.yaml
     asserts:
