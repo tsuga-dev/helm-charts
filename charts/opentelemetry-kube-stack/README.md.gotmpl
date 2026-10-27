@@ -18,14 +18,14 @@
 
 - **Dual Deployment Pattern**: Implements the recommended OpenTelemetry architecture with an agent (DaemonSet) and a cluster receiver (Deployment)
 - **Agent (DaemonSet)**: Collects host metrics, kubelet metrics, container logs and application telemetry from each node
-- **Cluster Receiver (Deployment)**: Collects cluster metrics, pod objects and Kubernetes Warning events from the API server
+- **Cluster Receiver (Deployment)**: Collects cluster metrics, Kubernetes objects and Warning events from the API server
 - **StatefulSet Collector + Target Allocator (optional)**: Scrapes Prometheus targets, sharded across replicas (`targetAllocator.enabled`)
 - **eBPF Profiling (optional)**: Whole-cluster CPU profiles with no application changes, via a privileged DaemonSet running the OpenTelemetry eBPF profiler (`profiling.enabled`)
 - **Secret Management**: Configurable secrets for OpenTelemetry configuration with external secret support
 - **RBAC Support**: Comprehensive service account and role-based access control
 - **Resource Management**: Configurable resource limits and requests for both components
 - **Host Metrics Collection**: Built-in support for node-level metrics collection
-- **Kubernetes Objects Monitoring**: Watches pod objects, and optionally Warning events
+- **Kubernetes Objects Monitoring**: Watches pod and workload objects (Deployments, ReplicaSets, StatefulSets, DaemonSets), and Warning events
 - **Comprehensive Observability**: Logs, metrics, and traces collection with intelligent defaults
 - **Security First**: Built-in security best practices and credential management
 - **Production Ready**: Optimized configurations for production environments
@@ -115,8 +115,8 @@ agent:
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pod objects only (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. Enabled by default, disable with `cluster.collectk8sevents=false`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
+- **Kubernetes Objects** (`k8s_objects`): Watches pods, Deployments, ReplicaSets, StatefulSets and DaemonSets (enabled by default, disable with `cluster.collectk8sobjects=false`). The workload objects carry the revisions and rollout status faulty-deployment detection reads
+- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. Enabled by default, disable with `cluster.collectk8sevents=false`. A second receiver instance, so events can set `include_initial_state: false` while the objects stream keeps its snapshot.
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.

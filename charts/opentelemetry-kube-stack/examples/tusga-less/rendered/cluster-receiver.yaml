@@ -69,6 +69,8 @@ spec:
         - pods
         collection_interval: 10s
         metrics:
+          k8s.container.status.reason:
+            enabled: true
           k8s.pod.status_reason:
             enabled: true
         node_conditions_to_report:
@@ -83,6 +85,18 @@ spec:
         - group: ""
           mode: watch
           name: pods
+        - group: apps
+          mode: watch
+          name: deployments
+        - group: apps
+          mode: watch
+          name: replicasets
+        - group: apps
+          mode: watch
+          name: statefulsets
+        - group: apps
+          mode: watch
+          name: daemonsets
       k8s_objects/events:
         auth_type: serviceAccount
         include_initial_state: false
@@ -122,6 +136,7 @@ spec:
           metadata:
           - k8s.namespace.name
           - k8s.deployment.name
+          - k8s.replicaset.name
           - k8s.statefulset.name
           - k8s.daemonset.name
           - k8s.cronjob.name

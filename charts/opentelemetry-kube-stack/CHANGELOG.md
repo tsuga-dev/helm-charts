@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.15.0] - 2026-10-26
+
+### Added
+- The cluster receiver reports `k8s.container.status.reason`
+- `cluster.collectk8sobjects` also watches Deployments, ReplicaSets, StatefulSets and DaemonSets, in the same `k8s_objects` receiver as pods. Faulty-deployment detection reads revisions and rollout status from them
+- `k8s.replicaset.name` is in the default `k8sAttributes.metadata`, so metrics, logs and traces from all three collectors carry it. It identifies a Deployment's revision. `profiling.k8sAttributesMetadata` is unchanged
+
+### Upgrade notes
+- More object logs: one record per workload object change, plus a snapshot of every Deployment, ReplicaSet, StatefulSet and DaemonSet on each collector restart. Kubernetes keeps up to 10 old ReplicaSets per Deployment, so ReplicaSets dominate that snapshot. The workload kinds cannot be turned off without also turning off pods (`cluster.collectk8sobjects=false`)
+- If you already watch these kinds through your own `extraReceivers` entry (for example a `k8s_objects/inventory` receiver), remove them from it, or every object is ingested twice
+- A custom `k8sAttributes.metadata` replaces the default list, so add `k8s.replicaset.name` to it yourself to get the attribute
+
 ## [opentelemetry-kube-stack-0.14.0] - 2026-10-13
 
 ### Changed
