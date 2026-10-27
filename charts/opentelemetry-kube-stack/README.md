@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.14.0](https://img.shields.io/badge/Version-0.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.15.0](https://img.shields.io/badge/Version-0.15.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -28,14 +28,14 @@ A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga inte
 
 - **Dual Deployment Pattern**: Implements the recommended OpenTelemetry architecture with an agent (DaemonSet) and a cluster receiver (Deployment)
 - **Agent (DaemonSet)**: Collects host metrics, kubelet metrics, container logs and application telemetry from each node
-- **Cluster Receiver (Deployment)**: Collects cluster metrics, pod objects and Kubernetes Warning events from the API server
+- **Cluster Receiver (Deployment)**: Collects cluster metrics, Kubernetes objects and Warning events from the API server
 - **StatefulSet Collector + Target Allocator (optional)**: Scrapes Prometheus targets, sharded across replicas (`targetAllocator.enabled`)
 - **eBPF Profiling (optional)**: Whole-cluster CPU profiles with no application changes, via a privileged DaemonSet running the OpenTelemetry eBPF profiler (`profiling.enabled`)
 - **Secret Management**: Configurable secrets for OpenTelemetry configuration with external secret support
 - **RBAC Support**: Comprehensive service account and role-based access control
 - **Resource Management**: Configurable resource limits and requests for both components
 - **Host Metrics Collection**: Built-in support for node-level metrics collection
-- **Kubernetes Objects Monitoring**: Watches pod objects, and optionally Warning events
+- **Kubernetes Objects Monitoring**: Watches pod and workload objects (Deployments, ReplicaSets, StatefulSets, DaemonSets), and Warning events
 - **Comprehensive Observability**: Logs, metrics, and traces collection with intelligent defaults
 - **Security First**: Built-in security best practices and credential management
 - **Production Ready**: Optimized configurations for production environments
@@ -125,8 +125,8 @@ agent:
 
 **Default Receivers:**
 - **Kubernetes Cluster** (`k8s_cluster`): Collects cluster-level metrics and entity events
-- **Kubernetes Objects** (`k8s_objects`): Watches pod objects only (enabled by default, disable with `cluster.collectk8sobjects=false`)
-- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. Enabled by default, disable with `cluster.collectk8sevents=false`. A second receiver instance, so events can set `include_initial_state: false` while the pods stream keeps its snapshot.
+- **Kubernetes Objects** (`k8s_objects`): Watches pods, Deployments, ReplicaSets, StatefulSets and DaemonSets (enabled by default, disable with `cluster.collectk8sobjects=false`). The workload objects carry the revisions and rollout status faulty-deployment detection reads
+- **Kubernetes Warning Events** (`k8s_objects/events`): Watches core/v1 `events` filtered to `type=Warning` at the API server. Enabled by default, disable with `cluster.collectk8sevents=false`. A second receiver instance, so events can set `include_initial_state: false` while the objects stream keeps its snapshot.
 
 **Default Processors:**
 - **Memory Limiter**: Prevents memory issues (80% limit, 25% spike limit). First in every default pipeline.
@@ -542,7 +542,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.allocatableTypesToReport | list | [cpu, memory, ephemeral-storage, pods] | Names from the node's `status.allocatable`, such as `cpu`, `memory`, `ephemeral-storage` and `pods`. A name the node does not report, `storage` for example, is skipped silently. |
 | cluster.collectionInterval | string | "10s" | How often to collect cluster metrics, e.g. `30s`. Datapoint volume scales inversely, so 60s costs a sixth of 10s. |
 | cluster.collectk8sevents | bool | true | Collect Kubernetes Warning events as logs. Events are the only source for OOMKilled, FailedScheduling, Evicted, ErrImagePull, FailedMount and failing probes, since no metric receiver reports them. The log volume follows cluster health. Only Warning events are collected, filtered at the API server, so Normal events are never transferred. |
-| cluster.collectk8sobjects | bool | true | Watch pod objects and send them as logs. Powers the Kubernetes view, which uses them to show pod configuration. Costs one log record per pod change, plus a full snapshot of every pod on each collector restart. |
+| cluster.collectk8sobjects | bool | true | Watch pod, Deployment, ReplicaSet, StatefulSet and DaemonSet objects and send them as logs. Powers the Kubernetes view, which uses pods to show their configuration, and faulty-deployment detection, which reads revisions and rollout status from the workload objects. Costs one log record per object change, plus a full snapshot of every watched object on each collector restart. |
 | cluster.config | object | `{"extraConnectors":{},"extraExporters":{},"extraProcessors":{},"extraReceivers":{},"service":{"extraExtensions":[],"pipelines":{"extraPipelines":{},"logs":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]},"metrics":{"extraExporters":[],"extraProcessors":[],"extraReceivers":[]}}}}` | Cluster receiver configuration (merge-based approach). Use this to extend the default configuration. Default receivers: k8s_cluster, k8s_objects (when cluster.collectk8sobjects), k8s_objects/events (when cluster.collectk8sevents). Default processors: memory_limiter, batch, resource_detection (when resourceDetection.enabled), transform/k8s_event_severity (when cluster.collectk8sevents), k8s_attributes, resource. Default extensions: health_check (when cluster.healthCheckEndpoint is set). |
 | cluster.config.extraConnectors | object | {} | Additional connectors to merge into the collector configuration. These are merged with default connectors. |
 | cluster.config.extraExporters | object | {} | Additional exporters to merge into the collector configuration. These are merged with default exporters (otlp_http/tsuga). |
@@ -558,7 +558,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.config.service.pipelines.metrics.extraProcessors | list | [] | Additional processors to add to the metrics pipeline. Added to default processors (memory_limiter, k8s_attributes, resource, batch). |
 | cluster.config.service.pipelines.metrics.extraReceivers | list | [] | Additional receivers to add to the metrics pipeline. Added to default receiver (k8s_cluster). |
 | cluster.customConfig | object | {} | Replace default config with complete custom configuration. When set, this completely replaces the default collector configuration. Use this for full control over the OpenTelemetry Collector config. |
-| cluster.enabled | bool | true | Deploy the cluster receiver, a single-replica Deployment that reads cluster-level metrics, pod objects and Warning events from the API server. The agent collects none of those, so turning it off loses them. |
+| cluster.enabled | bool | true | Deploy the cluster receiver, a single-replica Deployment that reads cluster-level metrics, Kubernetes objects and Warning events from the API server. The agent collects none of those, so turning it off loses them. |
 | cluster.extraAnnotationsMapping | list | [] | Annotations mapping configuration for the cluster receiver. Maps Kubernetes pod annotations to OpenTelemetry resource attributes. These are appended to default annotation mappings. Same shape as agent.extraLabelMapping. |
 | cluster.extraEnvs | list | [] | Extra environment variables for the cluster receiver. Added after the variables the chart injects automatically: MY_POD_IP, NODE_IP, POD_NAME, POD_UID and K8S_NODE_NAME, plus TSUGA_API_KEY and TSUGA_OTLP_ENDPOINT while any collector exports to Tsuga. |
 | cluster.extraLabelMapping | list | [] | Label mapping configuration for the cluster receiver. Maps Kubernetes pod labels to OpenTelemetry resource attributes. These are appended to default label mappings. Same shape as agent.extraLabelMapping. |
