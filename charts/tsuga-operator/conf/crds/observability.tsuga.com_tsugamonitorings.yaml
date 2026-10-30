@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: tsugamonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -74,7 +74,8 @@ spec:
                     type: boolean
                   languages:
                     description: |-
-                      Languages to inject. Valid: java, nodejs, python, dotnet.
+                      Languages to inject. Valid: java, nodejs, python, dotnet, go,
+                      apache-httpd, nginx.
                       Dropping a language removes the inject annotation the operator added for
                       it; an annotation set by hand for that language is left in place.
                     items:
@@ -83,8 +84,20 @@ spec:
                       - nodejs
                       - python
                       - dotnet
+                      - go
+                      - apache-httpd
+                      - nginx
                       type: string
                     type: array
+                  spec:
+                    description: |-
+                      Instrumentation CR spec settings, deep-merged over what the operator
+                      renders (exporter endpoint, propagators, one block per language), as in
+                      the kube-stack chart: sampler, env, resource, propagators, per-language
+                      image/env/resources, and so on. exporter.endpoint is managed by the
+                      operator, which points it at the node agent, and cannot be set here.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 required:
                 - enabled
                 type: object

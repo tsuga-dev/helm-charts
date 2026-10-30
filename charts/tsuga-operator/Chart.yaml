@@ -3,8 +3,8 @@ apiVersion: v2
 name: tsuga-operator
 description: Helm chart for the Tsuga Operator, which manages Tsuga dashboards, monitors, SLOs and Kubernetes telemetry collection as code.
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.2.0
+appVersion: "0.3.0"
 
 keywords:
   - tsuga
