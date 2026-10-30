@@ -5,11 +5,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-manager
   labels:
-    helm.sh/chart: tsuga-operator-0.1.0
+    helm.sh/chart: tsuga-operator-0.2.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -25,7 +25,7 @@ rules:
   - ""
   resources:
   - endpoints
-  - namespaces
+  - events
   - nodes
   - persistentvolumeclaims
   - persistentvolumes
@@ -36,6 +36,15 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - ""
@@ -51,6 +60,29 @@ rules:
   verbs:
   - create
   - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resourceNames:
+  - tsuga-agent
+  - tsuga-gateway
+  - tsuga-profiler
+  - tsuga-scraper
+  resources:
+  - serviceaccounts
+  verbs:
+  - delete
+  - get
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -106,6 +138,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - probes
+  - scrapeconfigs
+  - servicemonitors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - observability.tsuga.com
   resources:
   - dashboards
@@ -155,15 +198,6 @@ rules:
   - watch
 - apiGroups:
   - rbac.authorization.k8s.io
-  resources:
-  - clusterrolebindings
-  - clusterroles
-  verbs:
-  - create
-  - list
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
   resourceNames:
   - tsuga-operator-collector
   resources:
@@ -176,10 +210,32 @@ rules:
   resourceNames:
   - tsuga-operator-collector-tsuga-agent
   - tsuga-operator-collector-tsuga-gateway
+  - tsuga-operator-collector-tsuga-profiler
   - tsuga-operator-collector-tsuga-scraper
   resources:
   - clusterrolebindings
   - clusterroles
+  verbs:
+  - delete
+  - patch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - tsuga-operator-collector-tsuga-scraper
+  resources:
+  - rolebindings
+  - roles
   verbs:
   - delete
   - patch
@@ -191,11 +247,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-auth
   labels:
-    helm.sh/chart: tsuga-operator-0.1.0
+    helm.sh/chart: tsuga-operator-0.2.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -218,11 +274,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-reader
   labels:
-    helm.sh/chart: tsuga-operator-0.1.0
+    helm.sh/chart: tsuga-operator-0.2.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - nonResourceURLs:
