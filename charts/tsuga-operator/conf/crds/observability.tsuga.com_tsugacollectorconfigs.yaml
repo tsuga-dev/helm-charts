@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: tsugacollectorconfigs.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -52,7 +52,10 @@ spec:
               topology.
             properties:
               affinity:
-                description: Default affinity for every collector.
+                description: |-
+                  Default affinity for every collector. When neither this nor
+                  agent.affinity is set, the agent keeps off Windows, EKS Fargate and
+                  virtual-kubelet nodes.
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -1012,7 +1015,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1217,7 +1222,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1382,8 +1389,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -1697,7 +1704,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1902,7 +1911,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1991,8 +2002,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -2192,7 +2203,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2397,7 +2410,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2482,8 +2497,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -2647,9 +2662,10 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   annotationDiscovery:
-                    default: true
-                    description: Scrape pods carrying prometheus.io/scrape and related
-                      annotations.
+                    description: |-
+                      Scrape pods carrying prometheus.io/scrape and related annotations.
+                      Unset means true, or false when prometheusCR.enabled is on, so a pod
+                      that also has a ServiceMonitor or PodMonitor is not scraped twice.
                     type: boolean
                   customConfig:
                     description: |-
@@ -2672,7 +2688,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2877,7 +2895,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2923,6 +2943,13 @@ spec:
                       health_check listen address. Empty removes the extension and, with it,
                       the liveness probe the OTel Operator derives from it.
                     type: string
+                  nodeLocal:
+                    description: |-
+                      Scrape annotated pods from the tsuga-agent on each pod's own node
+                      instead of from the tsuga-scraper StatefulSet, so each target is
+                      scraped exactly once with no Target Allocator. ServiceMonitors and
+                      PodMonitors still go through tsuga-scraper.
+                    type: boolean
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -2951,8 +2978,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -3290,14 +3317,11 @@ spec:
                     properties:
                       allocationStrategy:
                         default: consistent-hashing
-                        description: |-
-                          How the Target Allocator spreads targets across scraper replicas.
-                          per-node assigns only targets that resolve to a node, so anything else
-                          is left unscraped.
+                        description: How the Target Allocator spreads targets across
+                          scraper replicas.
                         enum:
                         - consistent-hashing
                         - least-weighted
-                        - per-node
                         type: string
                       enabled:
                         default: false
@@ -3358,6 +3382,10 @@ spec:
                     are mutually exclusive
                   rule: '!has(self.prometheusCR) || !has(self.prometheusCR.allowNamespaces)
                     || !has(self.prometheusCR.denyNamespaces)'
+                - message: 'prometheus.nodeLocal scrapes pod annotations, so it cannot
+                    be combined with annotationDiscovery: false'
+                  rule: '!has(self.enabled) || !self.enabled || !has(self.nodeLocal)
+                    || !self.nodeLocal || !has(self.annotationDiscovery) || self.annotationDiscovery'
                 - message: prometheus needs annotationDiscovery or prometheusCR.enabled,
                     or the scraper has no targets
                   rule: '!has(self.enabled) || !self.enabled || !has(self.annotationDiscovery)
@@ -3531,7 +3559,10 @@ spec:
                   rule: '!has(self.create) || self.create || (has(self.name) && size(self.name)
                     > 0)'
               tolerations:
-                description: Default tolerations for every collector.
+                description: |-
+                  Default tolerations for every collector. When neither this,
+                  agent.tolerations nor an affinity is set, the agent tolerates every
+                  taint; an empty list opts out.
                 items:
                   description: |-
                     The pod this Toleration is attached to tolerates any taint that matches
@@ -3575,6 +3606,17 @@ spec:
             - clusterName
             - gateway
             type: object
+            x-kubernetes-validations:
+            - message: 'prometheus.nodeLocal requires agent.enabled and agent.metrics:
+                the agent does the scraping'
+              rule: '!has(self.prometheus) || !has(self.prometheus.enabled) || !self.prometheus.enabled
+                || !has(self.prometheus.nodeLocal) || !self.prometheus.nodeLocal ||
+                ((!has(self.agent.enabled) || self.agent.enabled) && self.agent.metrics)'
+            - message: prometheus.nodeLocal cannot be applied to an agent customConfig;
+                add the prometheus receiver there yourself
+              rule: '!has(self.prometheus) || !has(self.prometheus.enabled) || !self.prometheus.enabled
+                || !has(self.prometheus.nodeLocal) || !self.prometheus.nodeLocal ||
+                !has(self.agent.customConfig)'
           status:
             description: CollectionStatus is the observed state shared by collection
               CRDs.

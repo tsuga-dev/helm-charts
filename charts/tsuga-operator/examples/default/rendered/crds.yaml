@@ -4,15 +4,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: dashboards.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -28,6 +28,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .spec.owner
       name: Owner
+      type: string
+    - jsonPath: .spec.ownerName
+      name: OwnerName
       type: string
     - jsonPath: .status.phase
       name: Phase
@@ -129,7 +132,15 @@ spec:
                 minLength: 1
                 type: string
               owner:
-                description: Team ID that owns and manages the dashboard.
+                description: Team ID that owns and manages the dashboard. Exactly
+                  one of owner and ownerName is required.
+                minLength: 1
+                type: string
+              ownerName:
+                description: |-
+                  Name of the team that owns and manages the dashboard. The operator resolves it to
+                  the team ID on every push to Tsuga.
+                maxLength: 250
                 minLength: 1
                 type: string
               tags:
@@ -153,8 +164,10 @@ spec:
             required:
             - graphs
             - name
-            - owner
             type: object
+            x-kubernetes-validations:
+            - message: exactly one of owner or ownerName is required
+              rule: has(self.owner) != has(self.ownerName)
           status:
             description: SyncStatus is the observed state of a resource synced to
               the Tsuga API.
@@ -173,6 +186,11 @@ spec:
                 description: Last generation successfully reconciled
                 format: int64
                 type: integer
+              ownerId:
+                description: |-
+                  Team ID resolved from spec.ownerName at the last successful push, reused
+                  until the spec changes.
+                type: string
               phase:
                 description: 'Human-readable phase: Ready, Error, Deleting'
                 type: string
@@ -189,15 +207,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: monitors.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -213,6 +231,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .spec.owner
       name: Owner
+      type: string
+    - jsonPath: .spec.ownerName
+      name: OwnerName
       type: string
     - jsonPath: .spec.priority
       name: Priority
@@ -279,7 +300,15 @@ spec:
                 minLength: 1
                 type: string
               owner:
-                description: Team ID that owns and manages the monitor.
+                description: Team ID that owns and manages the monitor. Exactly one
+                  of owner and ownerName is required.
+                minLength: 1
+                type: string
+              ownerName:
+                description: |-
+                  Name of the team that owns and manages the monitor. The operator resolves it to
+                  the team ID on every push to Tsuga.
+                maxLength: 250
                 minLength: 1
                 type: string
               permissions:
@@ -311,10 +340,12 @@ spec:
             required:
             - configuration
             - name
-            - owner
             - permissions
             - priority
             type: object
+            x-kubernetes-validations:
+            - message: exactly one of owner or ownerName is required
+              rule: has(self.owner) != has(self.ownerName)
           status:
             description: MonitorStatus is the observed state of a Tsuga monitor.
             properties:
@@ -336,6 +367,11 @@ spec:
                 description: Last generation successfully reconciled
                 format: int64
                 type: integer
+              ownerId:
+                description: |-
+                  Team ID resolved from spec.ownerName at the last successful push, reused
+                  until the spec changes.
+                type: string
               phase:
                 description: 'Human-readable phase: Ready, Error, Deleting'
                 type: string
@@ -352,15 +388,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: slos.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -376,6 +412,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .spec.owner
       name: Owner
+      type: string
+    - jsonPath: .spec.ownerName
+      name: OwnerName
       type: string
     - jsonPath: .spec.target
       name: Target
@@ -462,7 +501,15 @@ spec:
                 minLength: 1
                 type: string
               owner:
-                description: Team ID that owns and manages the SLO.
+                description: Team ID that owns and manages the SLO. Exactly one of
+                  owner and ownerName is required.
+                maxLength: 250
+                minLength: 1
+                type: string
+              ownerName:
+                description: |-
+                  Name of the team that owns and manages the SLO. The operator resolves it to
+                  the team ID on every push to Tsuga.
                 maxLength: 250
                 minLength: 1
                 type: string
@@ -508,11 +555,13 @@ spec:
             required:
             - configuration
             - name
-            - owner
             - permissions
             - target
             - timeframeDays
             type: object
+            x-kubernetes-validations:
+            - message: exactly one of owner or ownerName is required
+              rule: has(self.owner) != has(self.ownerName)
           status:
             description: SyncStatus is the observed state of a resource synced to
               the Tsuga API.
@@ -531,6 +580,11 @@ spec:
                 description: Last generation successfully reconciled
                 format: int64
                 type: integer
+              ownerId:
+                description: |-
+                  Team ID resolved from spec.ownerName at the last successful push, reused
+                  until the spec changes.
+                type: string
               phase:
                 description: 'Human-readable phase: Ready, Error, Deleting'
                 type: string
@@ -547,15 +601,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: tsugacollectorconfigs.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -604,7 +658,10 @@ spec:
               topology.
             properties:
               affinity:
-                description: Default affinity for every collector.
+                description: |-
+                  Default affinity for every collector. When neither this nor
+                  agent.affinity is set, the agent keeps off Windows, EKS Fargate and
+                  virtual-kubelet nodes.
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -1564,7 +1621,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1769,7 +1828,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -1934,8 +1995,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -2249,7 +2310,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2454,7 +2517,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2543,8 +2608,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -2744,7 +2809,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -2949,7 +3016,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -3034,8 +3103,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -3199,9 +3268,10 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   annotationDiscovery:
-                    default: true
-                    description: Scrape pods carrying prometheus.io/scrape and related
-                      annotations.
+                    description: |-
+                      Scrape pods carrying prometheus.io/scrape and related annotations.
+                      Unset means true, or false when prometheusCR.enabled is on, so a pod
+                      that also has a ServiceMonitor or PodMonitor is not scraped twice.
                     type: boolean
                   customConfig:
                     description: |-
@@ -3224,7 +3294,9 @@ spec:
                       true.
                     type: boolean
                   extraAnnotationsMapping:
-                    description: Appended to the built-in annotation mappings.
+                    description: |-
+                      Appended to the built-in annotation mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -3429,7 +3501,9 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   extraLabelMapping:
-                    description: Appended to the built-in label mappings.
+                    description: |-
+                      Appended to the built-in label mappings. A `resource.opentelemetry.io/<attr>`
+                      annotation wins over a mapping to the same attribute.
                     items:
                       description: AttributeMapping maps a Kubernetes label or annotation
                         onto a resource attribute.
@@ -3475,6 +3549,13 @@ spec:
                       health_check listen address. Empty removes the extension and, with it,
                       the liveness probe the OTel Operator derives from it.
                     type: string
+                  nodeLocal:
+                    description: |-
+                      Scrape annotated pods from the tsuga-agent on each pod's own node
+                      instead of from the tsuga-scraper StatefulSet, so each target is
+                      scraped exactly once with no Target Allocator. ServiceMonitors and
+                      PodMonitors still go through tsuga-scraper.
+                    type: boolean
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -3503,8 +3584,8 @@ spec:
                     type: object
                   pipelineProcessors:
                     description: |-
-                      Extra processor names appended after the existing processors of this
-                      collector's pipelines, per signal.
+                      Extra processor names inserted before batch in this collector's
+                      pipelines (last in a pipeline without batch), per signal.
                     properties:
                       logs:
                         items:
@@ -3842,14 +3923,11 @@ spec:
                     properties:
                       allocationStrategy:
                         default: consistent-hashing
-                        description: |-
-                          How the Target Allocator spreads targets across scraper replicas.
-                          per-node assigns only targets that resolve to a node, so anything else
-                          is left unscraped.
+                        description: How the Target Allocator spreads targets across
+                          scraper replicas.
                         enum:
                         - consistent-hashing
                         - least-weighted
-                        - per-node
                         type: string
                       enabled:
                         default: false
@@ -3910,6 +3988,10 @@ spec:
                     are mutually exclusive
                   rule: '!has(self.prometheusCR) || !has(self.prometheusCR.allowNamespaces)
                     || !has(self.prometheusCR.denyNamespaces)'
+                - message: 'prometheus.nodeLocal scrapes pod annotations, so it cannot
+                    be combined with annotationDiscovery: false'
+                  rule: '!has(self.enabled) || !self.enabled || !has(self.nodeLocal)
+                    || !self.nodeLocal || !has(self.annotationDiscovery) || self.annotationDiscovery'
                 - message: prometheus needs annotationDiscovery or prometheusCR.enabled,
                     or the scraper has no targets
                   rule: '!has(self.enabled) || !self.enabled || !has(self.annotationDiscovery)
@@ -4083,7 +4165,10 @@ spec:
                   rule: '!has(self.create) || self.create || (has(self.name) && size(self.name)
                     > 0)'
               tolerations:
-                description: Default tolerations for every collector.
+                description: |-
+                  Default tolerations for every collector. When neither this,
+                  agent.tolerations nor an affinity is set, the agent tolerates every
+                  taint; an empty list opts out.
                 items:
                   description: |-
                     The pod this Toleration is attached to tolerates any taint that matches
@@ -4127,6 +4212,17 @@ spec:
             - clusterName
             - gateway
             type: object
+            x-kubernetes-validations:
+            - message: 'prometheus.nodeLocal requires agent.enabled and agent.metrics:
+                the agent does the scraping'
+              rule: '!has(self.prometheus) || !has(self.prometheus.enabled) || !self.prometheus.enabled
+                || !has(self.prometheus.nodeLocal) || !self.prometheus.nodeLocal ||
+                ((!has(self.agent.enabled) || self.agent.enabled) && self.agent.metrics)'
+            - message: prometheus.nodeLocal cannot be applied to an agent customConfig;
+                add the prometheus receiver there yourself
+              rule: '!has(self.prometheus) || !has(self.prometheus.enabled) || !self.prometheus.enabled
+                || !has(self.prometheus.nodeLocal) || !self.prometheus.nodeLocal ||
+                !has(self.agent.customConfig)'
           status:
             description: CollectionStatus is the observed state shared by collection
               CRDs.
@@ -4231,15 +4327,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: tsugamonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -4291,12 +4387,24 @@ spec:
               state.
             properties:
               injectExistingWorkloads:
-                default: true
                 description: |-
-                  When true, every eligible workload in the namespace is annotated for
-                  injection. When false, the operator annotates nothing; annotate selected
-                  pod templates manually.
+                  Deprecated: use injection. true is Workloads, false is Manual. Ignored
+                  when injection is set.
                 type: boolean
+              injection:
+                description: |-
+                  How workloads are opted into injection. Namespace annotates the
+                  namespace: new pods are instrumented, running ones on their next
+                  restart, and nothing is rolled. Workloads annotates every Deployment,
+                  StatefulSet and DaemonSet pod template, which rolls them. Manual
+                  annotates nothing; annotate selected pod templates yourself. When
+                  unset, injectExistingWorkloads decides, and Namespace applies when
+                  that is unset too.
+                enum:
+                - Namespace
+                - Workloads
+                - Manual
+                type: string
               instrumentation:
                 description: InstrumentationSpec controls auto-instrumentation for
                   a namespace.
@@ -4448,15 +4556,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/component: controller-manager
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.3.0
-    helm.sh/chart: tsuga-operator-0.2.0
+    app.kubernetes.io/version: 0.5.0
+    helm.sh/chart: tsuga-operator-0.3.0
   name: tsugapostgresmonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com

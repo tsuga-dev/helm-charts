@@ -5,11 +5,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-manager
   labels:
-    helm.sh/chart: tsuga-operator-0.2.0
+    helm.sh/chart: tsuga-operator-0.3.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -26,7 +26,6 @@ rules:
   resources:
   - endpoints
   - events
-  - namespaces
   - nodes
   - persistentvolumeclaims
   - persistentvolumes
@@ -37,6 +36,15 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - ""
@@ -239,11 +247,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-auth
   labels:
-    helm.sh/chart: tsuga-operator-0.2.0
+    helm.sh/chart: tsuga-operator-0.3.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -266,11 +274,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-reader
   labels:
-    helm.sh/chart: tsuga-operator-0.2.0
+    helm.sh/chart: tsuga-operator-0.3.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - nonResourceURLs:

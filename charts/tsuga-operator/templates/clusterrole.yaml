@@ -20,7 +20,6 @@ rules:
   resources:
   - endpoints
   - events
-  - namespaces
   - nodes
   - persistentvolumeclaims
   - persistentvolumes
@@ -31,6 +30,15 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - ""
