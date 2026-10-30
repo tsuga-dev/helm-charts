@@ -2,7 +2,7 @@
 PostgreSQL monitoring deployed for {{ len .Values.postgres.databases }} database(s).
 
 {{- range .Values.postgres.databases }}
-  Database : {{ .name }} ({{ .host }}:{{ .port }})
+  Database : {{ .name }} ({{ .host }}:{{ include "opentelemetry-database-monitoring.databasePort" . }})
   Secret   : {{ .name }}-pg-monitor-credentials
   Sidecar  : {{ index . "sidecar-name" }}
   Inject   : {{ include "opentelemetry-database-monitoring.sidecarInjectValue" (dict "root" $ "db" .) }}
