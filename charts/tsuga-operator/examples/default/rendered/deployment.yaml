@@ -6,7 +6,7 @@ metadata:
   name: example-tsuga-operator
   namespace: default
   labels:
-    helm.sh/chart: tsuga-operator-0.2.0
+    helm.sh/chart: tsuga-operator-0.3.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
@@ -22,9 +22,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/credentials: 0ce6194e2851ddb18e0acdb8179a1a1bfe01eb2b2af78570bc6f70f09d018556
+        checksum/credentials: 45dde7812ded47d0e7b063e68e0c61e66f3041b5ea35924dfd258ce0543b1954
       labels:
-        helm.sh/chart: tsuga-operator-0.2.0
+        helm.sh/chart: tsuga-operator-0.3.0
         app.kubernetes.io/name: tsuga-operator
         app.kubernetes.io/instance: example
         app.kubernetes.io/component: controller-manager

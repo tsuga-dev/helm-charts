@@ -6,7 +6,7 @@ metadata:
   name: example-tsuga-operator-leader-election
   namespace: default
   labels:
-    helm.sh/chart: tsuga-operator-0.2.0
+    helm.sh/chart: tsuga-operator-0.3.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
