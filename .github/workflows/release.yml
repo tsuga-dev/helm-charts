@@ -44,14 +44,16 @@ jobs:
           OUTPUT: charts/tsuga-spicy-gremlin/release-notes.md
           GITHUB_REPO: ${{ github.repository }}
 
+      # The chart's CHANGELOG mirrors the operator's, written by the operator's
+      # release workflow, so notes come from it rather than from git-cliff.
       - name: Generate release notes (tsuga-operator)
-        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
-        with:
-          config: charts/tsuga-operator/cliff.toml
-          args: -vv --latest --strip header
-        env:
-          OUTPUT: charts/tsuga-operator/release-notes.md
-          GITHUB_REPO: ${{ github.repository }}
+        working-directory: charts/tsuga-operator
+        run: |
+          version=$(yq '.version' Chart.yaml)
+          awk -v ver="$version" '
+            /^## \[/ { if (found) exit; if (index($0, "[" ver "]")) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > release-notes.md
 
       - name: Install Helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
