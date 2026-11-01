@@ -88,7 +88,7 @@ fullnameOverride: ""
 # the default config extracts `container.image.tags`, which older collectors
 # accept and never emit, so the chart fails the render on an older tag. Keep the
 # tag, because an untagged image resolves to :latest and skips that check.
-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0
 
 # =============================================================================
 # TSUGA CONFIGURATION
@@ -1079,7 +1079,7 @@ profiling:
   # -- Collector image for the profiling DaemonSet. Must be a distro carrying the
   # `profiling` receiver, which contrib is not.
   # @default -- see values.yaml
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.161.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.164.0
 
   # The exported profile carries the rate as its period, but Tsuga's UI ignores
   # it and assumes 20 Hz when converting samples into CPU time, so any other

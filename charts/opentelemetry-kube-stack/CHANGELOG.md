@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.16.0] - 2026-11-01
+
+### Changed
+- Collectors and the eBPF profiler pinned to 0.164.0, from 0.161.0. 0.164.0 is the newest collector image: 0.164.1 only fixed Go module requirements and shipped no image
+- The version floor stays at 0.161.0. Nothing in the default config needs a newer collector, so an image pinned to 0.161.0 through 0.163.x still renders
+
+### Fixed
+- `cumulative_to_delta` (agent and StatefulSet collectors) recovers correctly when a histogram or exponential histogram resets, so deltas after a reset are no longer computed against the pre-reset point (#50828, #51303)
+- `cumulative_to_delta` no longer turns a NaN sum on an exponential histogram into a NaN delta on the next point (#51965)
+- `cumulative_to_delta` keys a stream on its scope attributes too. Two scopes that differ only in their attributes used to be converted as one stream, producing bogus deltas; they now arrive as separate series (#52162)
+
+### Upgrade notes
+- If you mirror images, make sure 0.164.0 of `opentelemetry-collector-contrib` and `opentelemetry-collector-ebpf-profiler` is in your registry before upgrading
+- `kubelet_stats` no longer has the `aws.volume.id`, `fs.type`, `gce.pd.name`, `glusterfs.endpoints.name`, `glusterfs.path` and `partition` resource attributes. They have been off by default since collector 0.150.0 and this chart never turns them on, but a `customConfig` or `extraReceivers` entry that enables one under `resource_attributes` now fails the collector at startup
+- Feature gates removed upstream make the collector fail at startup if you still pass them: `-pkg.translator.prometheus.PermissiveLabelSanitization`, `processor.filter.defaultErrorModeIgnore`, `processor.transform.defaultErrorModeIgnore`, `ottl.set.allowNil` and `receiver.prometheusreceiver.IgnoreScopeInfoMetric`. Their behaviour was already the default, so only an explicit opt-out is affected. This chart sets none of them
+
 ## [opentelemetry-kube-stack-0.15.0] - 2026-10-26
 
 ### Added
