@@ -1,0 +1,41 @@
+charts/tsuga-operator/CHANGELOG.md
+  s_059c9a4f980a9f::t_6be8bc4fbeca40 7-13
+charts/tsuga-operator/Chart.yaml
+  s_059c9a4f980a9f::t_f5200d45edd9a9 6-7
+charts/tsuga-operator/README.md
+  s_059c9a4f980a9f::t_eaf4c91349e612 3
+charts/tsuga-operator/examples/default/rendered/clusterrole.yaml
+  s_059c9a4f980a9f::t_dcea843b035efa 8,12,250,254,277,281
+charts/tsuga-operator/examples/default/rendered/clusterrolebinding.yaml
+  s_059c9a4f980a9f::t_61cd517d33e061 8,12,30,34
+charts/tsuga-operator/examples/default/rendered/crds.yaml
+  s_059c9a4f980a9f::t_e3d5e12e9aaa0a 14-15,217-218,398-399,611-612,4337-4338,4566-4567
+charts/tsuga-operator/examples/default/rendered/deployment.yaml
+  s_059c9a4f980a9f::t_6e679916cded27 9,13,25,27,31,41
+charts/tsuga-operator/examples/default/rendered/role.yaml
+  s_059c9a4f980a9f::t_9cf36abe09a675 9,13
+charts/tsuga-operator/examples/default/rendered/rolebinding.yaml
+  s_059c9a4f980a9f::t_71e669ab5dc519 9,13
+charts/tsuga-operator/examples/default/rendered/secret.yaml
+  s_059c9a4f980a9f::t_bd76ecc8923944 9,13
+charts/tsuga-operator/examples/default/rendered/service.yaml
+  s_059c9a4f980a9f::t_b8d34421676165 9,13
+charts/tsuga-operator/examples/default/rendered/serviceaccount.yaml
+  s_059c9a4f980a9f::t_2c3be54581e60d 9,13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "262317da3c7ceeff2df14010c214bd7a6841e4fb",
+  "prompts": {},
+  "sessions": {
+    "s_059c9a4f980a9f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59ed0785-721d-4bb0-b5d5-3e5576292f91",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pierre Guceski <pierre.guceski@tsuga.com>"
+    }
+  }
+}
