@@ -1,6 +1,6 @@
 # opentelemetry-database-monitoring
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
 
 A Helm chart that deploys OpenTelemetry-based deep monitoring for PostgreSQL using a sidecar collector pattern. It installs stored functions on the target database, creates a dedicated monitoring user, and runs an `OpenTelemetryCollector` sidecar that emits metrics via OTLP.
 
@@ -277,18 +277,18 @@ Polls the PostgreSQL stats system views directly. Default collection interval.
 | `postgresql.wal.age` | `s` | WAL archiver age |
 | `postgresql.wal.lag` | `s` | Replication WAL lag |
 
-### `sqlquery` receivers (stored functions)
+### `sql_query` receivers (stored functions)
 
 | Receiver | Interval | Metrics |
 |----------|----------|---------|
-| `sqlquery/postgresql_top_queries` | default | `postgresql.query.calls`, `.rows`, `.exec_time`, `.plan_time`, `.blocks.shared.*`, `.blocks.temp.*` — attributed by `db.namespace`, `db.user.name`, `server.address`, `db.query.text`, `db.version` |
-| `sqlquery/pg_table_stats` | 5 min | `postgresql.table.vacuum.age`, `.autovacuum.age`, `.analyze.age`, `.autoanalyze.age`, `.autovacuum.count`, `.analyze.count`, `.autoanalyze.count`, `.rows.modified.since.analyze` |
-| `sqlquery/pg_bloat` | 1 hour | `postgresql.table.bloat.ratio`, `postgresql.table.bloat.bytes` |
-| `sqlquery/pg_connections` | 30 s | `postgresql.backends` (count), `postgresql.backends.age` (max state age) |
-| `sqlquery/pg_locks` | 30 s | `postgresql.lock.count`, `postgresql.lock.blocking_queries`, `postgresql.connection.idle_in_transaction`, `postgresql.connection.idle_in_transaction.age` |
-| `sqlquery/pg_replication` | 30 s | `postgresql.replication.slot.lag` |
-| `sqlquery/pg_wal` | 60 s | `postgresql.wal.file_count`, `postgresql.wal.bytes` |
-| `sqlquery/pg_vacuum_progress` | 60 s | `postgresql.vacuum.heap_blks_total`, `.heap_blks_scanned`, `.heap_blks_vacuumed`, `postgresql.vacuum.age` |
+| `sql_query/postgresql_top_queries` | default | `postgresql.query.calls`, `.rows`, `.exec_time`, `.plan_time`, `.blocks.shared.*`, `.blocks.temp.*` — attributed by `db.namespace`, `db.user.name`, `server.address`, `db.query.text`, `db.version` |
+| `sql_query/pg_table_stats` | 5 min | `postgresql.table.vacuum.age`, `.autovacuum.age`, `.analyze.age`, `.autoanalyze.age`, `.autovacuum.count`, `.analyze.count`, `.autoanalyze.count`, `.rows.modified.since.analyze` |
+| `sql_query/pg_bloat` | 1 hour | `postgresql.table.bloat.ratio`, `postgresql.table.bloat.bytes` |
+| `sql_query/pg_connections` | 30 s | `postgresql.backends` (count), `postgresql.backends.age` (max state age) |
+| `sql_query/pg_locks` | 30 s | `postgresql.lock.count`, `postgresql.lock.blocking_queries`, `postgresql.connection.idle_in_transaction`, `postgresql.connection.idle_in_transaction.age` |
+| `sql_query/pg_replication` | 30 s | `postgresql.replication.slot.lag` |
+| `sql_query/pg_wal` | 60 s | `postgresql.wal.file_count`, `postgresql.wal.bytes` |
+| `sql_query/pg_vacuum_progress` | 60 s | `postgresql.vacuum.heap_blks_total`, `.heap_blks_scanned`, `.heap_blks_vacuumed`, `postgresql.vacuum.age` |
 
 All metrics are batched (max 5000 per batch) and exported via OTLP/gRPC to `$K8S_NODE_IP:4317`.
 
@@ -380,7 +380,7 @@ Queries run by the collector itself are excluded via the `/* otel-collector-igno
 | postgres.databases[0].sidecar-name | string | `"postgres-dbm-sidecar"` |  |
 | postgres.databases[0].user | string | `""` |  |
 | postgres.enabled | bool | `false` |  |
-| postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"` |  |
+| postgres.image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0"` |  |
 | postgres.resources.limits.cpu | string | `"200m"` |  |
 | postgres.resources.limits.memory | string | `"256Mi"` |  |
 | postgres.resources.requests.cpu | string | `"50m"` |  |

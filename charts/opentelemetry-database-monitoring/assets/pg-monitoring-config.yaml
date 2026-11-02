@@ -46,7 +46,7 @@ receivers:
     tls:
       insecure: true
     username: otel_monitor
-  sqlquery/pg_bloat:
+  sql_query/pg_bloat:
     collection_interval: 3600s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -69,7 +69,7 @@ receivers:
             value_column: wastedbytes
             value_type: int
         sql: SELECT * FROM otel.pg_bloat()
-  sqlquery/pg_connections:
+  sql_query/pg_connections:
     collection_interval: 30s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -92,7 +92,7 @@ receivers:
             value_column: max_state_age_seconds
             value_type: int
         sql: SELECT * FROM otel.pg_connections()
-  sqlquery/pg_locks:
+  sql_query/pg_locks:
     collection_interval: 30s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -131,7 +131,7 @@ receivers:
             value_column: max_idle_tx_age_seconds
             value_type: int
         sql: SELECT * FROM otel.pg_idle_in_transaction()
-  sqlquery/pg_replication:
+  sql_query/pg_replication:
     collection_interval: 30s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -147,7 +147,7 @@ receivers:
             value_column: replication_lag_bytes
             value_type: int
         sql: SELECT * FROM otel.pg_replication_slots()
-  sqlquery/pg_table_stats:
+  sql_query/pg_table_stats:
     collection_interval: 300s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -218,7 +218,7 @@ receivers:
             value_column: n_mod_since_analyze
             value_type: int
         sql: SELECT * FROM otel.pg_table_stats()
-  sqlquery/pg_vacuum_progress:
+  sql_query/pg_vacuum_progress:
     collection_interval: 60s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -260,7 +260,7 @@ receivers:
             value_column: vacuum_age_seconds
             value_type: int
         sql: SELECT * FROM otel.pg_vacuum_progress()
-  sqlquery/pg_wal:
+  sql_query/pg_wal:
     collection_interval: 60s
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
@@ -277,7 +277,7 @@ receivers:
             value_column: wal_bytes
             value_type: int
         sql: SELECT * FROM otel.pg_wal()
-  sqlquery/postgresql_top_queries:
+  sql_query/postgresql_top_queries:
     datasource: host=${env:OTEL_RESOURCE_ATTRIBUTES_POD_NAME} port=5432 dbname=${env:OTEL_MONITOR_DB} user=otel_monitor password=${env:OTEL_MONITOR_PASSWORD} sslmode=disable
     driver: postgres
     queries:
@@ -402,7 +402,7 @@ processors:
     send_batch_max_size: 5000
     send_batch_size: 5000
 exporters:
-  otlp:
+  otlp_grpc:
     compression: gzip
     endpoint: ${env:K8S_NODE_IP}:4317
     tls:
@@ -423,17 +423,17 @@ service:
   pipelines:
     metrics:
       exporters:
-        - otlp
+        - otlp_grpc
       processors:
         - memory_limiter
         - batch
       receivers:
         - postgresql
-        - sqlquery/postgresql_top_queries
-        - sqlquery/pg_table_stats
-        - sqlquery/pg_bloat
-        - sqlquery/pg_connections
-        - sqlquery/pg_locks
-        - sqlquery/pg_replication
-        - sqlquery/pg_wal
-        - sqlquery/pg_vacuum_progress
+        - sql_query/postgresql_top_queries
+        - sql_query/pg_table_stats
+        - sql_query/pg_bloat
+        - sql_query/pg_connections
+        - sql_query/pg_locks
+        - sql_query/pg_replication
+        - sql_query/pg_wal
+        - sql_query/pg_vacuum_progress

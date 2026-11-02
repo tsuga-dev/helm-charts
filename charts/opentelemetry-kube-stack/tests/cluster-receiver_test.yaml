@@ -22,7 +22,7 @@ tests:
       # The shared top-level image reaches the collector.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0
 
   - it: should not include tsuga exporter when enabledForClusterReceiver is false
     set:

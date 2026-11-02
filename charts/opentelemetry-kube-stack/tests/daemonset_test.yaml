@@ -26,7 +26,7 @@ tests:
       # The shared top-level image reaches the collector.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0
       # The plural is the name a collector at this chart's floor emits.
       - contains:
           path: spec.config.processors.k8s_attributes.extract.metadata
@@ -587,7 +587,7 @@ tests:
       # The agent is unaffected by a stale image on a collector it does not run.
       - equal:
           path: spec.image
-          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0
+          value: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0
 
   - it: should not apply the version floor when customConfig replaces the default
     set:
