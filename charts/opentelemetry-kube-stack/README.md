@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.15.0](https://img.shields.io/badge/Version-0.15.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.16.0](https://img.shields.io/badge/Version-0.16.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -570,7 +570,7 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | cluster.tolerations | list | [] | Cluster-specific tolerations. If not set, inherits from global tolerations configuration. |
 | clusterName | string | "" (must be set) | REQUIRED. Name of the cluster, attached to all telemetry as k8s.cluster.name. The install fails while this is empty and any collector is rendering the chart's default config. |
 | fullnameOverride | string | "" | Override the full name used in resource naming. |
-| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.161.0"` | Collector image used by all three collectors. Must be v0.161.0 or newer: the default config extracts `container.image.tags`, which older collectors accept and never emit, so the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
+| image | string | `"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.164.0"` | Collector image used by all three collectors. Must be v0.161.0 or newer: the default config extracts `container.image.tags`, which older collectors accept and never emit, so the chart fails the render on an older tag. Keep the tag, because an untagged image resolves to :latest and skips that check. |
 | k8sAttributes.metadata | list | see values.yaml | Kubernetes metadata to attach to telemetry. Dropping `k8s.pod.name` and `k8s.pod.uid` is the largest cardinality saving available here, at the cost of per-pod identification. An unsupported field name fails the collector at startup. |
 | nameOverride | string | "" | Override the chart name used in resource naming. |
 | nodeSelector | object | {} | Node selector applied to every collector. Overridden per collector by agent.nodeSelector, cluster.nodeSelector or statefulset.nodeSelector. |
