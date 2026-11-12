@@ -56,6 +56,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.credentials.secretName }}
                   key: api-token
+                  optional: true
             - name: TSUGA_BASE_URL
               value: {{ .Values.manager.tsugaBaseUrl | quote }}
             {{- with .Values.manager.extraEnvs }}

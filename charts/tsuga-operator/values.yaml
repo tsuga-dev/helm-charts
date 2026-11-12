@@ -17,7 +17,7 @@ credentials:
   create: true
   # -- Secret name. The operator docs and examples use `tsuga-credentials`.
   secretName: tsuga-credentials
-  # -- Tsuga operation key, stored under `api-token`. Required when `credentials.create` is true. Raw key, no `Bearer ` prefix.
+  # -- Tsuga operation key, stored under `api-token`. Raw key, no `Bearer ` prefix. Without it the operator only runs collection: the Dashboard, Monitor and SLO controllers stay off.
   apiToken: ""
   # -- Optional OTLP ingestion key for collectors, stored under `api-key`. Reference it from `TsugaCollectorConfig.spec.export.tokenSecretRef`.
   apiKey: ""
