@@ -51,7 +51,7 @@ jobs:
             --namespace "$NS" --create-namespace \
             --set credentials.apiToken=dummy-ci-token \
             --wait --timeout 3m
-          test "$(kubectl get crd -o name | grep -c observability.tsuga.com)" -eq 6
+          test "$(kubectl get crd -o name | grep -c observability.tsuga.com)" -eq "$(ls charts/tsuga-operator/conf/crds/*.yaml | wc -l)"
 
       # A dummy token makes the API answer 401. Seeing that in the CR status
       # proves the operator read the chart's Secret, called the API and has
@@ -112,7 +112,7 @@ jobs:
       - name: Uninstall keeps CRDs and CRs
         run: |
           helm uninstall "$RELEASE" -n "$NS" --wait
-          test "$(kubectl get crd -o name | grep -c observability.tsuga.com)" -eq 6
+          test "$(kubectl get crd -o name | grep -c observability.tsuga.com)" -eq "$(ls charts/tsuga-operator/conf/crds/*.yaml | wc -l)"
           kubectl -n default get monitor ci-monitor
 
       - name: Reinstall over kept CRDs

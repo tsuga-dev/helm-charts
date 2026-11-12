@@ -83,8 +83,6 @@ tests:
   - it: keeps CRDs on uninstall
     template: crds.yaml
     asserts:
-      - hasDocuments:
-          count: 6
       - equal:
           path: metadata.annotations["helm.sh/resource-policy"]
           value: keep

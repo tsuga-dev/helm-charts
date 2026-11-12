@@ -5,11 +5,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-manager
   labels:
-    helm.sh/chart: tsuga-operator-0.5.1
+    helm.sh/chart: tsuga-operator-0.6.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.5.1"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -168,6 +168,8 @@ rules:
   - slos/status
   - tsugacollectorconfigs/finalizers
   - tsugacollectorconfigs/status
+  - tsugacollectors/finalizers
+  - tsugacollectors/status
   - tsugamonitorings/finalizers
   - tsugamonitorings/status
   - tsugapostgresmonitorings/finalizers
@@ -178,6 +180,7 @@ rules:
   - observability.tsuga.com
   resources:
   - tsugacollectorconfigs
+  - tsugacollectors
   - tsugapostgresmonitorings
   verbs:
   - get
@@ -247,11 +250,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-auth
   labels:
-    helm.sh/chart: tsuga-operator-0.5.1
+    helm.sh/chart: tsuga-operator-0.6.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.5.1"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:
@@ -274,11 +277,11 @@ kind: ClusterRole
 metadata:
   name: example-tsuga-operator-metrics-reader
   labels:
-    helm.sh/chart: tsuga-operator-0.5.1
+    helm.sh/chart: tsuga-operator-0.6.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.5.1"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/managed-by: Helm
 rules:
 - nonResourceURLs:

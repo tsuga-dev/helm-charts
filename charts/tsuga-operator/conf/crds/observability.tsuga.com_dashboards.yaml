@@ -79,6 +79,11 @@ spec:
                   properties:
                     description:
                       type: string
+                    groupId:
+                      description: ID of the group widget this widget belongs to.
+                        The group must be in the same tab and cannot itself belong
+                        to a group.
+                      type: string
                     id:
                       description: Unique widget id sent to Tsuga (required).
                       minLength: 1
@@ -106,6 +111,9 @@ spec:
                       - "y"
                       type: object
                     name:
+                      type: string
+                    tabId:
+                      description: ID of the tab this widget belongs to.
                       type: string
                     visualization:
                       description: |-
