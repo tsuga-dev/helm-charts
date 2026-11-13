@@ -6,11 +6,11 @@ metadata:
   name: example-tsuga-operator
   namespace: default
   labels:
-    helm.sh/chart: tsuga-operator-0.6.0
+    helm.sh/chart: tsuga-operator-0.7.0
     app.kubernetes.io/name: tsuga-operator
     app.kubernetes.io/instance: example
     app.kubernetes.io/component: controller-manager
-    app.kubernetes.io/version: "0.6.0"
+    app.kubernetes.io/version: "0.7.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -22,13 +22,13 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/credentials: 29b7ecc7213bd610b397740125c8e0be5c6303ff40397930c4e874964961fa95
+        checksum/credentials: 4ca05ba06b8fb3d3ce1f36774db946b4703f2791d23896f4a770edfa2b72619e
       labels:
-        helm.sh/chart: tsuga-operator-0.6.0
+        helm.sh/chart: tsuga-operator-0.7.0
         app.kubernetes.io/name: tsuga-operator
         app.kubernetes.io/instance: example
         app.kubernetes.io/component: controller-manager
-        app.kubernetes.io/version: "0.6.0"
+        app.kubernetes.io/version: "0.7.0"
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: example-tsuga-operator
@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: manager
-          image: "ghcr.io/tsuga-dev/tsuga-operator:0.6.0"
+          image: "ghcr.io/tsuga-dev/tsuga-operator:0.7.0"
           imagePullPolicy: IfNotPresent
           args:
             - --leader-elect
