@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-18
+
+### Added
+
+- `driftPolicy` (`Overwrite` or `Warn`, default `Overwrite`) on `Dashboard`, `Monitor` and `SLO`. The operator checks each resource for edits made in Tsuga. `Overwrite` reverts them and emits `DriftReverted`; `Warn` pushes nothing, sets phase `Drifted` and emits `DriftDetected`. Annotate a CR with `observability.tsuga.com/accept-remote=true` to take the Tsuga version as the new baseline. `--drift-check-interval` sets the check interval (default `10m`, minimum `1m`). `status` gains `remoteFieldHashes` and `lastDriftCheckAt`. See [Drift detection](https://github.com/tsuga-dev/tsuga-operator/blob/v0.8.0/docs/site/concepts/reconciliation.md#drift-detection).
+- `MonitorFolder` and `DashboardFolder` manage Tsuga monitor and dashboard folders. A folder nests inside one top-level folder through `parentFolderRef` (same namespace) or `parentFolderId`. Deleting a folder waits until it is empty in Tsuga and never deletes or moves its contents. Folders always revert edits made in Tsuga, as `driftPolicy: Overwrite` does. The Tsuga API key needs read access to monitor and dashboard folders. See [Monitors](https://github.com/tsuga-dev/tsuga-operator/blob/v0.8.0/docs/site/monitors/index.md#file-the-monitor-in-a-folder) and [Dashboards](https://github.com/tsuga-dev/tsuga-operator/blob/v0.8.0/docs/site/dashboards/index.md#file-the-dashboard-in-a-folder).
+- `Monitor` `folderRef` and `Dashboard` `folderRef` file a resource in a folder of the same namespace; `Dashboard` also accepts `folderId`. A raw ID takes precedence over a ref, and with neither the resource keeps its current folder. A Monitor or Dashboard is pushed again when its referenced folder is recreated with a new ID.
+- `observability.tsuga.com/orphan-if-not-empty: "true"` on a `MonitorFolder` or `DashboardFolder`: when Tsuga refuses to delete the folder because it is not empty, the operator removes the resource and leaves the folder in Tsuga, once no Monitor, Dashboard or child folder in the namespace references it.
+- The folder controllers and folder watches start only when this release's `MonitorFolder` and `DashboardFolder` CRDs are installed. Ship the CRDs and the ClusterRole with the image. With an older chart the operator runs as before, but the old Monitor and Dashboard CRDs have no `folderRef`: `kubectl apply` rejects it and tools that skip validation have it pruned, leaving the resource unfiled.
+
+### Changed
+
+- Monitors and SLOs now revert UI edits by default. Before, they kept them until the next spec change. Set `driftPolicy: Warn` to keep them.
+- Dashboards are re-pushed only when they have drifted, no longer every 10 minutes.
+- The first check after upgrade records a baseline and reverts nothing, so UI edits made before the upgrade are not detected.
+- The manager needs `create` and `patch` on `events`, and the Tsuga API key needs read access to dashboards, monitors and SLOs. If the API key lacks read access, the check fails with 401/403: the resource stays in `Error` and nothing is pushed. The operator retries every 30 seconds, so it recovers on its own once read access is granted. A permanent client error such as 400 or 422 on the check leaves `Error` until the CR changes.
+- When a remote delete fails, `status.message` shows the API's reason while the phase stays `Deleting`, and a delete Tsuga refuses (a non-retryable 4xx) is retried every 30 seconds instead of with a growing backoff. The generic `Deleting remote resource` message is gone.
+
 ## [0.7.0] - 2026-11-13
 
 ### Added

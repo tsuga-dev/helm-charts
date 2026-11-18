@@ -56,6 +56,16 @@ spec:
           spec:
             description: DashboardSpec is the desired state of a Tsuga dashboard.
             properties:
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               filters:
                 description: Filters applied to every widget on the dashboard.
                 items:
@@ -73,6 +83,23 @@ spec:
                   - values
                   type: object
                 type: array
+              folderId:
+                description: Optional dashboard folder ID in Tsuga. When unset (and
+                  no folderRef), the dashboard keeps its current folder.
+                maxLength: 250
+                minLength: 1
+                type: string
+              folderRef:
+                description: |-
+                  Optional reference to a DashboardFolder custom resource in the same namespace.
+                  folderId takes precedence when both are set.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
               graphs:
                 description: Ordered widgets that compose the dashboard.
                 items:
@@ -168,11 +195,18 @@ spec:
             - message: exactly one of owner or ownerName is required
               rule: has(self.owner) != has(self.ownerName)
           status:
-            description: SyncStatus is the observed state of a resource synced to
-              the Tsuga API.
+            description: DashboardStatus is the observed state of a Tsuga dashboard.
             properties:
+              folderId:
+                description: Dashboard folder ID last sent to Tsuga from folderRef
+                type: string
               id:
                 description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
                 type: string
               lastSyncedAt:
                 description: Last successful sync time
@@ -191,8 +225,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true

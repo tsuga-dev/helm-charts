@@ -19,7 +19,6 @@ rules:
   - ""
   resources:
   - endpoints
-  - events
   - nodes
   - persistentvolumeclaims
   - persistentvolumes
@@ -30,6 +29,16 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - ""
@@ -145,7 +154,9 @@ rules:
 - apiGroups:
   - observability.tsuga.com
   resources:
+  - dashboardfolders
   - dashboards
+  - monitorfolders
   - monitors
   - slos
   - tsugamonitorings
@@ -157,7 +168,9 @@ rules:
 - apiGroups:
   - observability.tsuga.com
   resources:
+  - dashboardfolders/status
   - dashboards/status
+  - monitorfolders/status
   - monitors/status
   - slos/status
   - tsugacollectorconfigs/finalizers

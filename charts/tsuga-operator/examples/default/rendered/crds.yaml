@@ -11,8 +11,183 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
+  name: dashboardfolders.observability.tsuga.com
+spec:
+  group: observability.tsuga.com
+  names:
+    kind: DashboardFolder
+    listKind: DashboardFolderList
+    plural: dashboardfolders
+    shortNames:
+    - tdf
+    singular: dashboardfolder
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.owner
+      name: Owner
+      type: string
+    - jsonPath: .spec.ownerName
+      name: OwnerName
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.id
+      name: TsugaID
+      type: string
+    - jsonPath: .status.parentFolderId
+      name: Parent
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DashboardFolderSpec is the desired state of a Tsuga dashboard
+              folder.
+            properties:
+              name:
+                maxLength: 250
+                minLength: 1
+                type: string
+              owner:
+                description: Team ID that owns the folder and controls access to it.
+                  Exactly one of owner and ownerName is required.
+                maxLength: 250
+                minLength: 1
+                type: string
+              ownerName:
+                description: |-
+                  Name of the team that owns the folder. The operator resolves it to
+                  the team ID on every push to Tsuga.
+                maxLength: 250
+                minLength: 1
+                type: string
+              parentFolderId:
+                description: |-
+                  Optional parent dashboard folder ID in Tsuga. The parent must be a top-level folder.
+                  When unset, the folder keeps its current parent.
+                maxLength: 250
+                minLength: 1
+                type: string
+              parentFolderRef:
+                description: |-
+                  Optional reference to a parent DashboardFolder custom resource in the same namespace.
+                  parentFolderId takes precedence when both are set.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              tags:
+                description: Tags applied to the folder.
+                items:
+                  properties:
+                    key:
+                      maxLength: 128
+                      type: string
+                    value:
+                      maxLength: 256
+                      type: string
+                  required:
+                  - key
+                  - value
+                  type: object
+                type: array
+            required:
+            - name
+            type: object
+            x-kubernetes-validations:
+            - message: exactly one of owner or ownerName is required
+              rule: has(self.owner) != has(self.ownerName)
+          status:
+            description: DashboardFolderStatus is the observed state of a Tsuga dashboard
+              folder.
+            properties:
+              id:
+                description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
+                type: string
+              lastSyncedAt:
+                description: Last successful sync time
+                format: date-time
+                type: string
+              message:
+                description: Last error or status message
+                type: string
+              observedGeneration:
+                description: Last generation successfully reconciled
+                format: int64
+                type: integer
+              ownerId:
+                description: |-
+                  Team ID resolved from spec.ownerName at the last successful push, reused
+                  until the spec changes.
+                type: string
+              parentFolderId:
+                description: Parent folder ID last pushed to Tsuga from parentFolderRef.
+                type: string
+              phase:
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
+                type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+# Source: tsuga-operator/templates/crds.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+    helm.sh/resource-policy: keep
+  labels:
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: dashboards.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -65,6 +240,16 @@ spec:
           spec:
             description: DashboardSpec is the desired state of a Tsuga dashboard.
             properties:
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               filters:
                 description: Filters applied to every widget on the dashboard.
                 items:
@@ -82,6 +267,23 @@ spec:
                   - values
                   type: object
                 type: array
+              folderId:
+                description: Optional dashboard folder ID in Tsuga. When unset (and
+                  no folderRef), the dashboard keeps its current folder.
+                maxLength: 250
+                minLength: 1
+                type: string
+              folderRef:
+                description: |-
+                  Optional reference to a DashboardFolder custom resource in the same namespace.
+                  folderId takes precedence when both are set.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
               graphs:
                 description: Ordered widgets that compose the dashboard.
                 items:
@@ -177,11 +379,18 @@ spec:
             - message: exactly one of owner or ownerName is required
               rule: has(self.owner) != has(self.ownerName)
           status:
-            description: SyncStatus is the observed state of a resource synced to
-              the Tsuga API.
+            description: DashboardStatus is the observed state of a Tsuga dashboard.
             properties:
+              folderId:
+                description: Dashboard folder ID last sent to Tsuga from folderRef
+                type: string
               id:
                 description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
                 type: string
               lastSyncedAt:
                 description: Last successful sync time
@@ -200,8 +409,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true
@@ -222,8 +438,183 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
+  name: monitorfolders.observability.tsuga.com
+spec:
+  group: observability.tsuga.com
+  names:
+    kind: MonitorFolder
+    listKind: MonitorFolderList
+    plural: monitorfolders
+    shortNames:
+    - tmf
+    singular: monitorfolder
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.owner
+      name: Owner
+      type: string
+    - jsonPath: .spec.ownerName
+      name: OwnerName
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.id
+      name: TsugaID
+      type: string
+    - jsonPath: .status.parentFolderId
+      name: Parent
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MonitorFolderSpec is the desired state of a Tsuga monitor
+              folder.
+            properties:
+              name:
+                maxLength: 250
+                minLength: 1
+                type: string
+              owner:
+                description: Team ID that owns the folder and controls access to it.
+                  Exactly one of owner and ownerName is required.
+                maxLength: 250
+                minLength: 1
+                type: string
+              ownerName:
+                description: |-
+                  Name of the team that owns the folder. The operator resolves it to
+                  the team ID on every push to Tsuga.
+                maxLength: 250
+                minLength: 1
+                type: string
+              parentFolderId:
+                description: |-
+                  Optional parent monitor folder ID in Tsuga. The parent must be a top-level folder.
+                  When unset, the folder keeps its current parent.
+                maxLength: 250
+                minLength: 1
+                type: string
+              parentFolderRef:
+                description: |-
+                  Optional reference to a parent MonitorFolder custom resource in the same namespace.
+                  parentFolderId takes precedence when both are set.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              tags:
+                description: Tags applied to the folder.
+                items:
+                  properties:
+                    key:
+                      maxLength: 128
+                      type: string
+                    value:
+                      maxLength: 256
+                      type: string
+                  required:
+                  - key
+                  - value
+                  type: object
+                type: array
+            required:
+            - name
+            type: object
+            x-kubernetes-validations:
+            - message: exactly one of owner or ownerName is required
+              rule: has(self.owner) != has(self.ownerName)
+          status:
+            description: MonitorFolderStatus is the observed state of a Tsuga monitor
+              folder.
+            properties:
+              id:
+                description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
+                type: string
+              lastSyncedAt:
+                description: Last successful sync time
+                format: date-time
+                type: string
+              message:
+                description: Last error or status message
+                type: string
+              observedGeneration:
+                description: Last generation successfully reconciled
+                format: int64
+                type: integer
+              ownerId:
+                description: |-
+                  Team ID resolved from spec.ownerName at the last successful push, reused
+                  until the spec changes.
+                type: string
+              parentFolderId:
+                description: Parent folder ID last pushed to Tsuga from parentFolderRef.
+                type: string
+              phase:
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
+                type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+# Source: tsuga-operator/templates/crds.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+    helm.sh/resource-policy: keep
+  labels:
+    app.kubernetes.io/component: controller-manager
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tsuga-operator
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: monitors.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -298,10 +689,31 @@ spec:
                 required:
                 - name
                 type: object
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               folderId:
                 description: Optional monitor folder ID in Tsuga. When unset, the
                   monitor keeps its current folder.
                 type: string
+              folderRef:
+                description: |-
+                  Optional reference to a MonitorFolder custom resource in the same namespace.
+                  folderId takes precedence when both are set. When neither is set, the monitor keeps its current folder.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
               message:
                 type: string
               name:
@@ -361,8 +773,16 @@ spec:
                 description: Tsuga dashboard ID last sent to Tsuga, resolved from
                   dashboardId or dashboardRef
                 type: string
+              folderId:
+                description: Monitor folder ID last sent to Tsuga from folderRef
+                type: string
               id:
                 description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
                 type: string
               lastSyncedAt:
                 description: Last successful sync time
@@ -381,8 +801,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true
@@ -403,8 +830,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: slos.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -504,6 +931,16 @@ spec:
               description:
                 maxLength: 50000
                 type: string
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               name:
                 maxLength: 250
                 minLength: 1
@@ -577,6 +1014,11 @@ spec:
               id:
                 description: Tsuga resource ID
                 type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
+                type: string
               lastSyncedAt:
                 description: Last successful sync time
                 format: date-time
@@ -594,8 +1036,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true
@@ -616,8 +1065,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: tsugacollectorconfigs.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -4570,8 +5019,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: tsugacollectors.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -4765,8 +5214,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: tsugamonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -4994,8 +5443,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.7.0
-    helm.sh/chart: tsuga-operator-0.7.0
+    app.kubernetes.io/version: 0.8.0
+    helm.sh/chart: tsuga-operator-0.8.0
   name: tsugapostgresmonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
