@@ -78,10 +78,31 @@ spec:
                 required:
                 - name
                 type: object
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               folderId:
                 description: Optional monitor folder ID in Tsuga. When unset, the
                   monitor keeps its current folder.
                 type: string
+              folderRef:
+                description: |-
+                  Optional reference to a MonitorFolder custom resource in the same namespace.
+                  folderId takes precedence when both are set. When neither is set, the monitor keeps its current folder.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
               message:
                 type: string
               name:
@@ -141,8 +162,16 @@ spec:
                 description: Tsuga dashboard ID last sent to Tsuga, resolved from
                   dashboardId or dashboardRef
                 type: string
+              folderId:
+                description: Monitor folder ID last sent to Tsuga from folderRef
+                type: string
               id:
                 description: Tsuga resource ID
+                type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
                 type: string
               lastSyncedAt:
                 description: Last successful sync time
@@ -161,8 +190,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true

@@ -103,6 +103,16 @@ spec:
               description:
                 maxLength: 50000
                 type: string
+              driftPolicy:
+                default: Overwrite
+                description: |-
+                  How the operator reacts to changes made in Tsuga outside Kubernetes:
+                  Overwrite reverts them to match the spec, Warn keeps them and reports
+                  the drift until the annotation observability.tsuga.com/accept-remote is set.
+                enum:
+                - Overwrite
+                - Warn
+                type: string
               name:
                 maxLength: 250
                 minLength: 1
@@ -176,6 +186,11 @@ spec:
               id:
                 description: Tsuga resource ID
                 type: string
+              lastDriftCheckAt:
+                description: Last time the remote resource was compared against the
+                  recorded hashes
+                format: date-time
+                type: string
               lastSyncedAt:
                 description: Last successful sync time
                 format: date-time
@@ -193,8 +208,15 @@ spec:
                   until the spec changes.
                 type: string
               phase:
-                description: 'Human-readable phase: Ready, Error, Deleting'
+                description: 'Human-readable phase: Ready, Error, Deleting, Drifted'
                 type: string
+              remoteFieldHashes:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Hashes of the remote fields the operator manages, taken from the last GET
+                  and used to detect changes made outside Kubernetes.
+                type: object
             type: object
         type: object
     served: true
