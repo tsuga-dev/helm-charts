@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-11-18
+
+### Changed
+
+- Requests to the Tsuga API send `x-tsuga-source: kubernetes-operator`, so Tsuga shows the Kubernetes operator, not an API key, as the author of the dashboards, monitors, SLOs and folders it creates or updates. Resources already created keep their author until the operator next updates them.
+
 ## [0.8.0] - 2026-11-18
 
 ### Added

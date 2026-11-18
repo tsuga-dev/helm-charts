@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: dashboardfolders.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -186,8 +186,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: dashboards.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -438,8 +438,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: monitorfolders.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -613,8 +613,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: monitors.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -830,8 +830,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: slos.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -1065,8 +1065,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: tsugacollectorconfigs.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -5019,8 +5019,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: tsugacollectors.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -5214,8 +5214,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: tsugamonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
@@ -5443,8 +5443,8 @@ metadata:
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tsuga-operator
-    app.kubernetes.io/version: 0.8.0
-    helm.sh/chart: tsuga-operator-0.8.0
+    app.kubernetes.io/version: 0.8.1
+    helm.sh/chart: tsuga-operator-0.8.1
   name: tsugapostgresmonitorings.observability.tsuga.com
 spec:
   group: observability.tsuga.com
