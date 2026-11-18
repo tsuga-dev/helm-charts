@@ -9,13 +9,18 @@ templates:
 set:
   credentials.apiToken: test-token
 tests:
-  - it: fails without an API token when the chart creates the Secret
+  - it: creates the Secret without api-token for collection-only installs
     template: secret.yaml
     set:
       credentials.apiToken: ""
+      credentials.apiKey: ingest-key
+      credentials.otlpEndpoint: https://otlp.example
     asserts:
-      - failedTemplate:
-          errorMessage: credentials.apiToken is required when credentials.create is true
+      - equal:
+          path: stringData
+          value:
+            api-key: ingest-key
+            otlp-endpoint: https://otlp.example
 
   - it: stores optional collector keys in the same Secret
     template: secret.yaml
@@ -44,6 +49,7 @@ tests:
           value:
             name: my-creds
             key: api-token
+            optional: true
         template: deployment.yaml
       - notExists:
           path: spec.template.metadata.annotations
