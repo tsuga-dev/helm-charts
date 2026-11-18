@@ -36,11 +36,13 @@ To manage the Secret yourself (External Secrets, sealed secrets, GitOps), set `c
 
 ## CRDs
 
-CRDs are rendered from `conf/crds/` when `crds.create=true` (the default), so `helm upgrade` updates them. They are annotated with `helm.sh/resource-policy: keep`: `helm uninstall` leaves the CRDs and your custom resources in place. Deleting a Dashboard, Monitor or SLO CR deletes the remote Tsuga object, so remove CRDs deliberately, with the operator still running:
+CRDs are rendered from `conf/crds/` when `crds.create=true` (the default), so `helm upgrade` updates them. They are annotated with `helm.sh/resource-policy: keep`: `helm uninstall` leaves the CRDs and your custom resources in place. Deleting a Dashboard, Monitor, SLO, DashboardFolder or MonitorFolder CR deletes the remote Tsuga object, so remove CRDs deliberately, with the operator still running:
 
 ```bash
 kubectl delete crd dashboards.observability.tsuga.com monitors.observability.tsuga.com slos.observability.tsuga.com \
-  tsugacollectorconfigs.observability.tsuga.com tsugamonitorings.observability.tsuga.com tsugapostgresmonitorings.observability.tsuga.com
+  dashboardfolders.observability.tsuga.com monitorfolders.observability.tsuga.com \
+  tsugacollectorconfigs.observability.tsuga.com tsugacollectors.observability.tsuga.com \
+  tsugamonitorings.observability.tsuga.com tsugapostgresmonitorings.observability.tsuga.com
 ```
 
 To bump the CRDs to a new operator release, copy `config/crd/bases/*.yaml` from the matching `tsuga-operator` tag into `conf/crds/`.
