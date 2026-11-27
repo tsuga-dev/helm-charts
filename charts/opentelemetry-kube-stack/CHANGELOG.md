@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [opentelemetry-kube-stack-0.17.0] - 2026-11-27
+
+### Added
+- The agent turns every `exception` event recorded on a span into a log, through the `exceptions` connector and a new `logs/span_exceptions` pipeline. The log body is the exception message, and it carries the span's trace and span IDs, so it links back to the trace. Severity is ERROR only when the span's status is Error. On by default; disable with `agent.spanExceptions.enabled=false`
+
+### Upgrade notes
+- Log volume grows by one record per span exception event, each with its stack trace. Applications that both record an exception on the span and log it themselves send that error twice; set `agent.spanExceptions.enabled=false` if that matters for you
+- The new pipeline exports to `otlp_http/tsuga` and the logs pipeline's `extraExporters`. The logs pipeline's `extraProcessors` do not apply to it
+
 ## [opentelemetry-kube-stack-0.16.0] - 2026-11-01
 
 ### Changed

@@ -221,6 +221,14 @@
                         }
                     }
                 },
+                "spanExceptions": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
+                },
                 "tolerations": {
                     "type": "array"
                 }
