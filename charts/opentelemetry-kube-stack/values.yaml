@@ -487,6 +487,15 @@ agent:
       - name: http.response.status_code
       - name: http.route
 
+  # -- exceptions connector options (logs generated from span exception events).
+  spanExceptions:
+    # -- Emit a log for every `exception` event recorded on a span, with the
+    # exception message as body and the span's trace and span IDs. Severity is
+    # ERROR only when the span's status is Error. Applications that both record
+    # the exception on the span and log it themselves get the error twice.
+    # @default -- true
+    enabled: true
+
   # -- Replace default config with complete custom configuration.
   # When set, this completely replaces the default collector configuration.
   # Use this for full control over the OpenTelemetry Collector config

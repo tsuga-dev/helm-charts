@@ -186,6 +186,18 @@ processors:
       - key: k8s.node.name
         value: ${env:K8S_NODE_NAME}
         action: insert
+{{- if .Values.agent.spanExceptions.enabled }}
+  # The exceptions connector leaves the body empty and marks every record ERROR,
+  # including exceptions the application handled. Semantic conventions only
+  # guarantee one of exception.type and exception.message, hence the fallback.
+  transform/span_exceptions:
+    error_mode: ignore
+    log_statements:
+      - set(log.body, log.attributes["exception.type"]) where log.attributes["exception.type"] != nil
+      - set(log.body, log.attributes["exception.message"]) where log.attributes["exception.message"] != nil
+      - set(log.severity_number, SEVERITY_NUMBER_UNSPECIFIED) where log.attributes["status.code"] != "STATUS_CODE_ERROR"
+      - set(log.severity_text, "") where log.attributes["status.code"] != "STATUS_CODE_ERROR"
+{{- end }}
 exporters:
 {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
   {{include "opentelemetry-kube-stack.tsugaExporters" . | nindent 2}}
@@ -198,6 +210,9 @@ connectors:
     aggregation_temporality: {{ .Values.agent.spanMetrics.aggregationTemporality }}
     dimensions:
       {{- toYaml .Values.agent.spanMetrics.dimensions | nindent 6 }}
+{{- end }}
+{{- if .Values.agent.spanExceptions.enabled }}
+  exceptions: {}
 {{- end }}
 service:
 {{- if $healthCheck }}
@@ -264,6 +279,9 @@ service:
         {{- if ne .Values.agent.spanMetrics.enabled false }}
         - span_metrics
         {{- end }}
+        {{- if .Values.agent.spanExceptions.enabled }}
+        - exceptions
+        {{- end }}
       processors:
         - memory_limiter
 {{- if .Values.resourceDetection.enabled }}
@@ -278,6 +296,28 @@ service:
         - batch
       receivers:
         - otlp
+{{- if .Values.agent.spanExceptions.enabled }}
+    # Its own pipeline so the transform only sees connector output. The spans
+    # were already enriched in the traces pipeline, and the connector copies
+    # their resource, so k8s_attributes and resource are not repeated here.
+    logs/span_exceptions:
+      receivers:
+        - exceptions
+      processors:
+        - memory_limiter
+        - transform/span_exceptions
+{{- if .Values.redaction.enabled }}
+        - redaction
+{{- end }}
+        - batch
+      exporters:
+        {{- if ne (index .Values "tsuga" "enabledForDaemonset") false }}
+        - otlp_http/tsuga
+        {{- end }}
+        {{- range dig "config" "service" "pipelines" "logs" "extraExporters" (list) .Values.agent }}
+        - {{ . }}
+        {{- end }}
+{{- end }}
   telemetry:
     {{- include "opentelemetry-kube-stack.otelTelemetry" (dict "root" . "component" "agent") | nindent 4 }}
 {{- end}}

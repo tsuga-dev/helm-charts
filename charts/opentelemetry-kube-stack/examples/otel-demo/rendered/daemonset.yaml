@@ -286,6 +286,16 @@ spec:
         - action: insert
           key: k8s.node.name
           value: ${env:K8S_NODE_NAME}
+      transform/span_exceptions:
+        error_mode: ignore
+        log_statements:
+        - set(log.body, log.attributes["exception.type"]) where log.attributes["exception.type"]
+          != nil
+        - set(log.body, log.attributes["exception.message"]) where log.attributes["exception.message"]
+          != nil
+        - set(log.severity_number, SEVERITY_NUMBER_UNSPECIFIED) where log.attributes["status.code"]
+          != "STATUS_CODE_ERROR"
+        - set(log.severity_text, "") where log.attributes["status.code"] != "STATUS_CODE_ERROR"
     exporters:
       otlp_http/tsuga:
         compression: gzip
@@ -301,6 +311,7 @@ spec:
         observe_nodes: true
         observe_services: true
     connectors:
+      exceptions: {}
       span_metrics:
         aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
         dimensions:
@@ -325,6 +336,15 @@ spec:
           receivers:
           - otlp
           - receiver_creator/logs
+        logs/span_exceptions:
+          exporters:
+          - otlp_http/tsuga
+          processors:
+          - memory_limiter
+          - transform/span_exceptions
+          - batch
+          receivers:
+          - exceptions
         metrics:
           exporters:
           - otlp_http/tsuga
@@ -346,6 +366,7 @@ spec:
           exporters:
           - otlp_http/tsuga
           - span_metrics
+          - exceptions
           processors:
           - memory_limiter
           - k8s_attributes

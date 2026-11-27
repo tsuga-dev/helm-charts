@@ -1,6 +1,6 @@
 # opentelemetry-kube-stack
 
-![Version: 0.16.0](https://img.shields.io/badge/Version-0.16.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
+![Version: 0.17.0](https://img.shields.io/badge/Version-0.17.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1](https://img.shields.io/badge/AppVersion-v1-informational?style=flat-square)
 
 A comprehensive Helm chart for OpenTelemetry Kubernetes operator with Tsuga integration, featuring dual deployment pattern (agent DaemonSet + cluster receiver), secure credential management, and production-ready configurations for telemetry collection to Tsuga platform.
 
@@ -67,9 +67,11 @@ The chart deploys two collectors by default, plus two that are opt-in:
 - **Resource/node** (`resource/node`): Adds `k8s.node.name` from the downward API with action `insert`, so it only writes when the attribute is missing and anything that already carries a node name keeps it. `kubelet_stats` sets it on its node metric group and `k8s_attributes` sets it for every pod it could associate; what is left is `host_metrics`, which reads the node's kernel and touches no pod so `k8s_attributes` can never associate it, plus records whose pod missed the informer cache. Those all belong to this node: the operator gives `daemonset` collectors a Service with `internalTrafficPolicy: Local`, so OTLP sent to the agent Service reaches the agent on the sender's own node.
 - **Redaction** (`redaction`): Masks credentials in attributes and log bodies. **Off by default** — enable with `redaction.enabled=true`. Runs after the enrichment processors and before `batch`, in every pipeline, so it also sees what enrichment added. See [Redaction](#redaction).
 - **Batch**: Batches telemetry for efficient processing (`send_batch_size`/`send_batch_max_size` = 5000). Last in every default pipeline. User `extraProcessors` are appended after the default list, so anything you add runs on already-batched data.
+- **Transform/span_exceptions** (`transform/span_exceptions`): Shapes the logs the `exceptions` connector emits. Sets the body to `exception.message` (or `exception.type` when there is no message), and keeps the connector's ERROR severity only when the span's status is Error, so exceptions the application handled carry no severity. Present only while `agent.spanExceptions.enabled` is true.
 
 **Default Connectors:**
 - **Span Metrics** (`span_metrics`): Generates RED metrics from spans (see dimensions below). Note the underscored type name — the canonical name at this chart's collector floor. Disable with `agent.spanMetrics.enabled=false`.
+- **Exceptions** (`exceptions`): Emits one log per `exception` event recorded on a span, carrying the span's trace and span IDs, its attributes, `span.name`, `span.kind`, `status.code` and the `exception.*` attributes. It reads spans after the traces pipeline's enrichment and redaction, like `span_metrics`. Applications that both record an exception on the span and log it themselves send that error twice. Disable with `agent.spanExceptions.enabled=false`.
 
 **Default Exporters:**
 - **otlp_http/tsuga**: Forwards all telemetry to the Tsuga endpoint with authentication (enabled unless `tsuga.enabledForDaemonset=false`)
@@ -77,9 +79,10 @@ The chart deploys two collectors by default, plus two that are opt-in:
 **Service Pipelines:**
 - **Logs**: `otlp` (+`file_log` when `agent.collectLogs`) → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
 - **Metrics**: `otlp`, `kubelet_stats`, [`span_metrics`], `host_metrics` → `memory_limiter`, `cumulative_to_delta`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`
-- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`, [`span_metrics`]
+- **Traces**: `otlp` → `memory_limiter`, [`resource_detection`], `k8s_attributes`, `resource`, `resource/node`, [`redaction`], `batch` → `otlp_http/tsuga`, [`span_metrics`], [`exceptions`]
+- **Logs/span_exceptions** [only while `agent.spanExceptions.enabled`]: `exceptions` → `memory_limiter`, `transform/span_exceptions`, [`redaction`], `batch` → `otlp_http/tsuga` plus the logs pipeline's `extraExporters`. Its own pipeline so the transform only sees connector output; the logs pipeline's `extraProcessors` do not apply to it.
 
-Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, `redaction` only when `redaction.enabled=true`, and `span_metrics` only while `agent.spanMetrics.enabled` is true.
+Components in [brackets] are conditional: `resource_detection` appears only when `resourceDetection.enabled=true`, `redaction` only when `redaction.enabled=true`, `span_metrics` only while `agent.spanMetrics.enabled` is true, and `exceptions` only while `agent.spanExceptions.enabled` is true.
 
 Collector self-telemetry is configured under `service::telemetry` rather than in a pipeline, and is pushed to Tsuga by the collector's own embedded SDK. Bypassing the pipelines is deliberate: it means these metrics still arrive when a pipeline is wedged, which is when they matter most. Because supplying a reader replaces the collector's default one, nothing is served on `:8888`. See [docs/collector-internal-metrics.md](docs/collector-internal-metrics.md).
 
@@ -524,6 +527,8 @@ Three things to know before extending them. `url_sanitizer` and `db_sanitizer` a
 | agent.otlp.grpcEndpoint | string | "${env:MY_POD_IP}:4317" | gRPC listen address. Set to "" to disable the gRPC protocol. |
 | agent.otlp.httpEndpoint | string | "${env:MY_POD_IP}:4318" | HTTP listen address. Set to "" to disable the HTTP protocol. Emptying both endpoints leaves the otlp receiver with no protocol, which the collector rejects at startup. |
 | agent.resources | object | {} | Resource limits and requests for the agent. Replaces the top-level resources block wholesale rather than merging, so a partial override drops whatever it does not restate. |
+| agent.spanExceptions | object | `{"enabled":true}` | exceptions connector options (logs generated from span exception events). |
+| agent.spanExceptions.enabled | bool | true | Emit a log for every `exception` event recorded on a span, with the exception message as body and the span's trace and span IDs. Severity is ERROR only when the span's status is Error. Applications that both record the exception on the span and log it themselves get the error twice. |
 | agent.spanMetrics | object | `{"aggregationTemporality":"AGGREGATION_TEMPORALITY_DELTA","dimensions":[{"default":"GET","name":"http.request.method"},{"name":"http.response.status_code"},{"name":"http.route"}],"enabled":true}` | span_metrics connector options (RED metrics generated from spans). |
 | agent.spanMetrics.aggregationTemporality | string | AGGREGATION_TEMPORALITY_DELTA | Aggregation temporality of the generated metrics. Delta drops a series once its spans stop; cumulative keeps re-exporting the last value forever, which cumulative_to_delta then reads as an endless run of zeros. |
 | agent.spanMetrics.dimensions | list | see values.yaml | Span attributes to keep as metric dimensions. `default` supplies a value when the attribute is absent. |

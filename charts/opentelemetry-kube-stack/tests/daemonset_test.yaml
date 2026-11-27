@@ -456,14 +456,77 @@ tests:
     asserts:
       # The connector and both pipeline references must all go, or the collector
       # rejects the config with an unknown component reference.
-      - isNull:
-          path: spec.config.connectors
+      - notExists:
+          path: spec.config.connectors.span_metrics
       - equal:
           path: spec.config.service.pipelines.metrics.receivers
           value: [otlp, kubelet_stats, host_metrics]
       - equal:
           path: spec.config.service.pipelines.traces.exporters
-          value: [otlp_http/tsuga]
+          value: [otlp_http/tsuga, exceptions]
+
+  - it: should turn span exception events into logs by default
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.connectors.exceptions
+          value: {}
+      - contains:
+          path: spec.config.service.pipelines.traces.exporters
+          content: exceptions
+      - equal:
+          path: spec.config.service.pipelines["logs/span_exceptions"]
+          value:
+            receivers: [exceptions]
+            processors: [memory_limiter, transform/span_exceptions, batch]
+            exporters: [otlp_http/tsuga]
+      # The connector marks every record ERROR; only a span with Error status keeps it.
+      - contains:
+          path: spec.config.processors["transform/span_exceptions"].log_statements
+          content: set(log.severity_number, SEVERITY_NUMBER_UNSPECIFIED) where log.attributes["status.code"] != "STATUS_CODE_ERROR"
+
+  - it: should remove span exception logs entirely when disabled
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      agent.spanExceptions.enabled: false
+    release:
+      name: "test-release"
+    asserts:
+      - notExists:
+          path: spec.config.connectors.exceptions
+      - notExists:
+          path: spec.config.processors["transform/span_exceptions"]
+      - notExists:
+          path: spec.config.service.pipelines["logs/span_exceptions"]
+      - equal:
+          path: spec.config.service.pipelines.traces.exporters
+          value: [otlp_http/tsuga, span_metrics]
+
+  - it: should send span exception logs wherever the logs pipeline sends its data
+    set:
+      clusterName: "test-cluster"
+      agent.enabled: true
+      tsuga.enabledForDaemonset: false
+      redaction.enabled: true
+      redaction.config:
+        allow_all_keys: true
+      agent.config.extraExporters:
+        debug: {}
+      agent.config.service.pipelines.logs.extraExporters: [debug]
+    release:
+      name: "test-release"
+    asserts:
+      - equal:
+          path: spec.config.service.pipelines["logs/span_exceptions"].exporters
+          value: [debug]
+      - equal:
+          path: spec.config.service.pipelines["logs/span_exceptions"].processors
+          value: [memory_limiter, transform/span_exceptions, redaction, batch]
 
   - it: should let span metric dimensions be replaced
     set:
